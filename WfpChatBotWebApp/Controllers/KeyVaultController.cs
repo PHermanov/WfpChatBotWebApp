@@ -17,7 +17,14 @@ namespace WfpChatBotWebApp.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok(_keyVaultManager.GetSecret("Ping"));
+            try
+            {
+                return Ok(_keyVaultManager.GetSecret("Ping"));
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.ToString());
+            }
         }
     }
 }
