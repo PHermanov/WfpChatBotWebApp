@@ -2,5 +2,5 @@ namespace WfpChatBotWebApp.Secrets;
 
 public interface IKeyVaultManager
 {
-    public Task<string> GetSecret(string secretName);
+    public Task<string> GetSecretAsync(string secretName);
 }

@@ -15,11 +15,11 @@ namespace WfpChatBotWebApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
             try
             {
-                return Ok(_keyVaultManager.GetSecret("Ping"));
+                return Ok(await _keyVaultManager.GetSecretAsync("Ping"));
             }
             catch (Exception ex)
             {

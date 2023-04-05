@@ -9,7 +9,7 @@ public class KeyVaultManager : IKeyVaultManager
     public KeyVaultManager(SecretClient secretClient)
         => _secretClient = secretClient;
 
-    public async Task<string> GetSecret(string secretName)
+    public async Task<string> GetSecretAsync(string secretName)
     {
         KeyVaultSecret keyValueSecret = await _secretClient.GetSecretAsync(secretName);
         return keyValueSecret.Value;
