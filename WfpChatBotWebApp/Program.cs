@@ -4,7 +4,6 @@ using WfpChatBotWebApp.Secrets;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddAzureClients(azureClientFactoryBuilder =>
 {
     azureClientFactoryBuilder.AddSecretClient(builder.Configuration.GetSection("KeyVault"));
