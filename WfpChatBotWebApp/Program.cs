@@ -7,17 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"]),
-    new DefaultAzureCredential()).Build();
+    new DefaultAzureCredential());
 
 builder.Services.AddHttpClient("telegram_bot_client")
-    .AddTypedClient<ITelegramBotClient>((httpClient, serviceProvider) =>
+    .AddTypedClient<ITelegramBotClient>(httpClient =>
     {
-        var botToken = serviceProvider.GetService<IConfiguration>().GetValue<string>("BotToken");
+        var botToken = builder.Configuration.GetValue<string>("BotToken");
+        //var botToken =  serviceProvider.GetService<IConfiguration>().GetValue<string>("BotToken");
         TelegramBotClientOptions options = new(botToken);
         return new TelegramBotClient(options, httpClient);
     });
 
-builder.Services.AddHostedService<ConfigureWebhook>();
+//builder.Services.AddHostedService<ConfigureWebhook>();
 
 builder.Services.AddControllers();
 
