@@ -1,4 +1,5 @@
 using Azure.Identity;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 using Telegram.Bot;
 using WfpChatBotWebApp;
 
@@ -14,6 +15,8 @@ builder.Logging.AddApplicationInsights(
         config.ConnectionString = builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS"),
     configureApplicationInsightsLoggerOptions: _ => { }
 );
+
+builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Information", LogLevel.Trace);
 
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
