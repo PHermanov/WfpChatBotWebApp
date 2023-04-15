@@ -33,10 +33,8 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.UseHttpsRedirection();
+app.MapBotWebhookRoute<TelegramBotClient>(route: "/bot");
 
-app.UseAuthorization();
-//app.MapBotWebhookRoute<TelegramBotController>(route: botConfiguration.Route);
 app.MapControllers();
 
 app.Run();

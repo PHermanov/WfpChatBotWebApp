@@ -26,7 +26,7 @@ public class ConfigureWebhook : IHostedService
             var hostAddress = _configuration.GetValue<string>("HostAddress");
             var secretToken = _configuration.GetValue<string>("SecretToken");
 
-            var url = $"{hostAddress}telegrambot";
+            var url = $"{hostAddress}bot";
 
             _logger.LogInformation("Seting webhook {hook}", url);
 

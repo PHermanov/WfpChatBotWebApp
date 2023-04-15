@@ -4,8 +4,6 @@ using Telegram.Bot.Types;
 
 namespace WfpChatBotWebApp.Controllers;
 
-[ApiController]
-[Route("[controller]")]
 public class TelegramBotController : ControllerBase
 {
     private readonly string _secretToken;
@@ -19,7 +17,7 @@ public class TelegramBotController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("bot_webhook")]
+    [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
     {
         if (!IsValidRequest(HttpContext.Request))
@@ -38,7 +36,7 @@ public class TelegramBotController : ControllerBase
                 cancellationToken: cancellationToken);
         }
 
-        return Accepted();
+        return Ok();
     }
 
     //[HttpGet]
