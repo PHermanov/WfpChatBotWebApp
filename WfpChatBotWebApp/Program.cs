@@ -1,7 +1,6 @@
 using Azure.Identity;
 using Telegram.Bot;
 using WfpChatBotWebApp;
-using Microsoft.Extensions.Logging.AzureAppServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
