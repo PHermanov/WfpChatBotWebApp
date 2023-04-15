@@ -7,11 +7,13 @@ public class ConfigureWebhook : IHostedService
 {
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ConfigureWebhook> _logger;
 
-    public ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration)
+    public ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration, ILogger<ConfigureWebhook> logger)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -22,8 +24,12 @@ public class ConfigureWebhook : IHostedService
         var hostAddress = _configuration.GetValue<string>("HostAddress");
         var secretToken = _configuration.GetValue<string>("SecretToken");
 
+        var url = $"{hostAddress}telegrambot";
+
+        _logger.LogInformation("Seting webhook {hook}", url);
+
         await botClient.SetWebhookAsync(
-            $"{hostAddress}telegrambot",
+            url,
             allowedUpdates: Array.Empty<UpdateType>(),
             secretToken: secretToken,
             cancellationToken: cancellationToken);
