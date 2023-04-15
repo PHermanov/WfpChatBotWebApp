@@ -9,11 +9,11 @@ public class ConfigureWebhook : IHostedService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConfigureWebhook> _logger;
 
-    public ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration, ILogger<ConfigureWebhook> logger)
+    public ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration, ILoggerFactory loggerFactory)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger<ConfigureWebhook>();
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
