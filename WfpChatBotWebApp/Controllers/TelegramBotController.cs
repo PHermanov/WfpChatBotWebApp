@@ -17,7 +17,7 @@ public class TelegramBotController : ControllerBase
         _botClient = botClient;
     }
 
-    [HttpPost]
+    [HttpPost("bot_webhook")]
     public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
     {
         if (!IsValidRequest(HttpContext.Request))

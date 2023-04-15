@@ -1,6 +1,7 @@
 using Azure.Identity;
 using Telegram.Bot;
 using WfpChatBotWebApp;
+using WfpChatBotWebApp.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +28,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+//app.MapBotWebhookRoute<TelegramBotController>(route: botConfiguration.Route);
 app.MapControllers();
 
 app.Run();
