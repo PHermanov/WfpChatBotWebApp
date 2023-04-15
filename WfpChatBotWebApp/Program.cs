@@ -13,12 +13,10 @@ builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
     {
         var botToken = builder.Configuration.GetValue<string>("BotToken");
-        //var botToken =  serviceProvider.GetService<IConfiguration>().GetValue<string>("BotToken");
-        TelegramBotClientOptions options = new(botToken);
-        return new TelegramBotClient(options, httpClient);
+        return new TelegramBotClient(new TelegramBotClientOptions(botToken), httpClient);
     });
 
-//builder.Services.AddHostedService<ConfigureWebhook>();
+builder.Services.AddHostedService<ConfigureWebhook>();
 
 builder.Services.AddControllers();
 
