@@ -18,21 +18,30 @@ public class ConfigureWebhook : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
-        var hostAddress = _configuration.GetValue<string>("HostAddress");
-        var secretToken = _configuration.GetValue<string>("SecretToken");
+            var hostAddress = _configuration.GetValue<string>("HostAddress");
+            var secretToken = _configuration.GetValue<string>("SecretToken");
 
-        var url = $"{hostAddress}telegrambot";
+            var url = $"{hostAddress}telegrambot";
 
-        _logger.LogInformation("Seting webhook {hook}", url);
+            _logger.LogInformation("Seting webhook {hook}", url);
 
-        await botClient.SetWebhookAsync(
-            url,
-            allowedUpdates: Array.Empty<UpdateType>(),
-            secretToken: secretToken,
-            cancellationToken: cancellationToken);
+            await botClient.SetWebhookAsync(
+                url,
+                allowedUpdates: Array.Empty<UpdateType>(),
+                secretToken: secretToken,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e.Message);
+            throw;
+        }
+
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
