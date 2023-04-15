@@ -18,7 +18,8 @@ builder.Logging.AddApplicationInsights(
 
 builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Information", LogLevel.Trace);
 
-builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddApplicationInsightsTelemetry(o =>
+    o.ConnectionString = builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS"));
 
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
