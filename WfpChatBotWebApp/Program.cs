@@ -5,15 +5,16 @@ using Microsoft.Extensions.Logging.AzureAppServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-builder.Logging.AddAzureWebAppDiagnostics();
-
 // Add services to the container.
 builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"]),
     new DefaultAzureCredential());
+
+builder.Logging.AddApplicationInsights(
+    configureTelemetryConfiguration: config =>
+        config.ConnectionString = builder.Configuration.GetConnectionString(builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS")),
+    configureApplicationInsightsLoggerOptions: _ => { }
+);
 
 builder.Services.Configure<AzureFileLoggerOptions>(options =>
 {
