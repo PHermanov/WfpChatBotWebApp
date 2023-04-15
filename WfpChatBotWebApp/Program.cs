@@ -12,7 +12,7 @@ builder.Configuration.AddAzureKeyVault(
 
 builder.Logging.AddApplicationInsights(
     configureTelemetryConfiguration: config =>
-        config.ConnectionString = builder.Configuration.GetConnectionString(builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS")),
+        config.ConnectionString = builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS"),
     configureApplicationInsightsLoggerOptions: _ => { }
 );
 
