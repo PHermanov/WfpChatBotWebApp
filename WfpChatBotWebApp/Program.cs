@@ -16,13 +16,6 @@ builder.Logging.AddApplicationInsights(
     configureApplicationInsightsLoggerOptions: _ => { }
 );
 
-builder.Services.Configure<AzureFileLoggerOptions>(options =>
-{
-    options.FileName = "bot-azure-log";
-    options.FileSizeLimit = 50 * 1024;
-    options.RetainedFileCountLimit = 10;
-});
-
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
     {
