@@ -33,7 +33,13 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.MapBotWebhookRoute<TelegramBotClient>(route: "/bot");
+app.UseCors(corsPolicyBuilder =>
+{
+    corsPolicyBuilder
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+});
 
 app.MapControllers();
 

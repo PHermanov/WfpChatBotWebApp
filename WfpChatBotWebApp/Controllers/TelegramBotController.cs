@@ -4,32 +4,30 @@ using Telegram.Bot.Types;
 
 namespace WfpChatBotWebApp.Controllers;
 
+[ApiController]
+[Route("[controller]")]
+
 public class TelegramBotController : ControllerBase
 {
     private readonly string _secretToken;
     private readonly ITelegramBotClient _botClient;
-    private readonly ILogger<TelegramBotController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public TelegramBotController(IConfiguration configuration, ITelegramBotClient botClient, ILogger<TelegramBotController> logger)
+    public TelegramBotController(IConfiguration configuration, ITelegramBotClient botClient)
     {
         _secretToken = configuration.GetValue<string>("SecretToken");
         _botClient = botClient;
-        _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
     {
         if (!IsValidRequest(HttpContext.Request))
-        {
-            _logger.LogWarning("Unauthorized");
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
-        }
-
 
         if (update.Message is { Text: "/ping" })
         {
-            _logger.LogWarning("Ping received");
             await _botClient.SendTextMessageAsync(
                 chatId: update.Message.Chat.Id,
                 text: "pong",
@@ -39,11 +37,13 @@ public class TelegramBotController : ControllerBase
         return Ok();
     }
 
-    //[HttpGet]
-    //public string Test()
-    //{
-    //    return _secretToken;
-    //}
+    [HttpGet]
+    public string Test()
+    {
+        var hostAddress = _configuration.GetValue<string>("HostAddress");
+
+        return $"{hostAddress}telegrambot";
+    }
 
     private bool IsValidRequest(HttpRequest request)
         => request.Headers.TryGetValue("X-Telegram-Bot-Api-Secret-Token", out var secretTokenHeader)
