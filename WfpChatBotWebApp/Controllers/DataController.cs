@@ -15,22 +15,22 @@ public class DataController : ControllerBase
         _appDbContext = appDbContext;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Get([FromQuery]string name, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrEmpty(name))
-        {
-            return BadRequest("No Name provided");
-        }
+    //[HttpGet]
+    //public async Task<IActionResult> Get([FromQuery]string name, CancellationToken cancellationToken)
+    //{
+    //    if (string.IsNullOrEmpty(name))
+    //    {
+    //        return BadRequest("No Name provided");
+    //    }
 
-        var data = await _appDbContext.TextMessages.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
+    //    var data = await _appDbContext.TextMessages.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
 
-        if (data != null)
-        {
-            return Ok(data);
-        }
+    //    if (data != null)
+    //    {
+    //        return Ok(data);
+    //    }
 
-        return NotFound("Data is not in DB");
-    }
+    //    return NotFound("Data is not in DB");
+    //}
 }
 
