@@ -25,7 +25,7 @@ public class DataController : ControllerBase
 
         var data = await _appDbContext.TextMessages.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
 
-        if (data == null)
+        if (data != null)
         {
             return Ok(data);
         }
