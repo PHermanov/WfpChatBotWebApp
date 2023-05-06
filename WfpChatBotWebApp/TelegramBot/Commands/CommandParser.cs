@@ -9,12 +9,12 @@ public static class CommandParser
     {
         command = null!;
 
-        var split = message.Text?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-
-        if (!split.Any())
+        if (string.IsNullOrEmpty(message.Text))
         {
             return false;
         }
+
+        var split = message.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
         var commandName = split[0].ToLower();
 
@@ -25,9 +25,19 @@ public static class CommandParser
                     command = new HelpCommand { ChatId = message.Chat.Id };
                     return true;
                 }
-            case "ping":
+            case "/ping":
                 {
                     command = new PingCommand { ChatId = message.Chat.Id };
+                    return true;
+                }
+            case "/echo":
+                {
+                    command = new EchoCommand
+                    {
+                        ChatId = message.Chat.Id, 
+                        Text = split.Length > 1 ? message.Text[message.Text.IndexOf(' ')..] : "Default echo answer" 
+
+                    };
                     return true;
                 }
         }
