@@ -1,7 +1,9 @@
 using Azure.Identity;
 using Microsoft.Extensions.Logging.ApplicationInsights;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
+using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +26,12 @@ builder.Services.AddHttpClient("telegram_bot_client")
         var botToken = builder.Configuration.GetValue<string>("BotToken");
         return new TelegramBotClient(new TelegramBotClientOptions(botToken), httpClient);
     });
+
+builder.Services.AddDbContext<AppDbContext>(
+    dbContextOptions => dbContextOptions
+        .UseMySql(builder.Configuration.GetValue<string>("azure-mysql-connectionstring-349a2"),
+            ServerVersion.AutoDetect(builder.Configuration.GetValue<string>("azure-mysql-connectionstring-349a2"))
+    ));
 
 builder.Services.AddHostedService<ConfigureWebhook>();
 
