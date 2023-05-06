@@ -1,7 +1,12 @@
-﻿namespace WfpChatBotWebApp.TelegramBot.Commands;
+﻿using Telegram.Bot.Types;
 
-public class CommandBase
+namespace WfpChatBotWebApp.TelegramBot.Commands;
+
+public abstract class CommandBase
 {
-    public long ChatId { get; init; }
+    public long ChatId { get; }
+
+    protected CommandBase(Message message)
+     => ChatId = message.Chat.Id;
 }
 

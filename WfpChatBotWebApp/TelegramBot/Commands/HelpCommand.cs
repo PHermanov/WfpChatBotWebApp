@@ -1,10 +1,14 @@
 ﻿using MediatR;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
 public class HelpCommand : CommandBase, IRequest
-{ }
+{
+    public HelpCommand(Message message) : base(message)
+    { }
+}
 
 public class HelpCommandHandler : IRequestHandler<HelpCommand>
 {

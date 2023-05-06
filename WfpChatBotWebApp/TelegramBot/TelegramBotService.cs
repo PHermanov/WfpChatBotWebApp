@@ -27,7 +27,6 @@ public class TelegramBotService : ITelegramBotService
             if (message is { From.IsBot: false, Type: MessageType.Text }
                 && !string.IsNullOrWhiteSpace(message.Text))
             {
-                var chatId = message.Chat.Id;
                 var userName = message.From.Username;
                 var text = message.Text;
 
@@ -45,7 +44,8 @@ public class TelegramBotService : ITelegramBotService
                 //else
                 if (text.StartsWith(@"/"))
                 {
-                    if (CommandParser.TryParse(update.Message, out var command))
+                    var command = CommandParser.Parse(update.Message);
+                    if (command != null)
                     {
                         await _mediator.Send(command, cancellationToken);
                     }
