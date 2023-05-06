@@ -18,6 +18,11 @@ public class DataController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery]string name, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(name))
+        {
+            return BadRequest("No Name provided");
+        }
+
         var data = await _appDbContext.TextMessages.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
 
         if (data == null)
@@ -25,7 +30,7 @@ public class DataController : ControllerBase
             return Ok(data);
         }
 
-        return NotFound();
+        return NotFound("Data is not in DB");
     }
 }
 
