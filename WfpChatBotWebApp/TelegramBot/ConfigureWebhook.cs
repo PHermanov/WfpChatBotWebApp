@@ -1,7 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
-namespace WfpChatBotWebApp;
+namespace WfpChatBotWebApp.TelegramBot;
 
 public class ConfigureWebhook : IHostedService
 {
@@ -28,11 +28,11 @@ public class ConfigureWebhook : IHostedService
 
             var url = $"{hostAddress}telegrambot";
 
-            _logger.LogInformation("Seting webhook {hook}", url);
+            _logger.LogInformation("Setting webhook {hook}", url);
 
             await botClient.SetWebhookAsync(
                 url,
-                allowedUpdates: Array.Empty<UpdateType>(),
+                allowedUpdates: new[] { UpdateType.Message },
                 secretToken: secretToken,
                 cancellationToken: cancellationToken);
         }

@@ -1,11 +1,11 @@
 using Azure.Identity;
 using Microsoft.Extensions.Logging.ApplicationInsights;
+using System.Reflection;
 using Telegram.Bot;
-using WfpChatBotWebApp;
+using WfpChatBotWebApp.TelegramBot;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"]),
     new DefaultAzureCredential());
@@ -29,9 +29,11 @@ builder.Services.AddHostedService<ConfigureWebhook>();
 
 builder.Services.AddControllers().AddNewtonsoftJson();
 
-var app = builder.Build();
+builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
-// Configure the HTTP request pipeline.
+builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
+
+var app = builder.Build();
 
 app.UseCors(corsPolicyBuilder =>
 {

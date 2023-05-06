@@ -1,23 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
-using Telegram.Bot;
 using Telegram.Bot.Types;
+using WfpChatBotWebApp.TelegramBot;
 
 namespace WfpChatBotWebApp.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-
 public class TelegramBotController : ControllerBase
 {
     private readonly string _secretToken;
-    private readonly ITelegramBotClient _botClient;
-    private readonly IConfiguration _configuration;
+    private readonly ITelegramBotService _telegramBotService;
 
-    public TelegramBotController(IConfiguration configuration, ITelegramBotClient botClient)
+    public TelegramBotController(IConfiguration configuration, ITelegramBotService telegramBotService)
     {
         _secretToken = configuration.GetValue<string>("SecretToken");
-        _botClient = botClient;
-        _configuration = configuration;
+        _telegramBotService = telegramBotService;
     }
 
     [HttpPost]
@@ -26,23 +23,9 @@ public class TelegramBotController : ControllerBase
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
 
-        if (update.Message is { Text: "/ping" })
-        {
-            await _botClient.SendTextMessageAsync(
-                chatId: update.Message.Chat.Id,
-                text: "pong",
-                cancellationToken: cancellationToken);
-        }
+        await _telegramBotService.HandleUpdateAsync(update, cancellationToken);
 
         return Ok();
-    }
-
-    [HttpGet]
-    public string Test()
-    {
-        var hostAddress = _configuration.GetValue<string>("HostAddress");
-
-        return $"{hostAddress}telegrambot";
     }
 
     private bool IsValidRequest(HttpRequest request)
