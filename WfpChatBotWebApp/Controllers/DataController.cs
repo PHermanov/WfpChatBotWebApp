@@ -16,7 +16,7 @@ public class DataController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(string name, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get([FromQuery]string name, CancellationToken cancellationToken)
     {
         var data = await _appDbContext.TextMessages.FirstOrDefaultAsync(m => m.Name == name, cancellationToken);
 
