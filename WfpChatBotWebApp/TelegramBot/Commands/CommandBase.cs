@@ -9,4 +9,3 @@ public abstract class CommandBase
     protected CommandBase(Message message)
      => ChatId = message.Chat.Id;
 }
-

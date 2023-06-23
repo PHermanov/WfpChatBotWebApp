@@ -36,7 +36,7 @@ public static class TelegramBotClientExtensions
         }
     }
 
-    public static string GetAllParamText(this Message message, string defaultText)
-        => message.Text!.TrimEnd().Contains(' ') ? message.Text[message.Text.IndexOf(' ')..] : defaultText;
+    public static string GetAllParamText(this Message message)
+        => message.Text!.TrimEnd().Contains(' ') ? message.Text[message.Text.IndexOf(' ')..] : string.Empty;
 }
 

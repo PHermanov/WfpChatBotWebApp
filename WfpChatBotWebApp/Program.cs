@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
+using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,8 @@ builder.Services.AddDbContext<AppDbContext>(
             ServerVersion.AutoDetect(builder.Configuration.GetValue<string>("azure-mysql-connectionstring-349a2"))
     ));
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddHostedService<ConfigureWebhook>();
 
 builder.Services.AddControllers().AddNewtonsoftJson();
@@ -40,6 +43,7 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
+builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 
 var app = builder.Build();
 

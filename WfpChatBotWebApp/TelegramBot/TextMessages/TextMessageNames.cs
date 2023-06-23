@@ -1,0 +1,42 @@
+﻿namespace WfpChatBotWebApp.TelegramBot.TextMessages;
+public static class TextMessageNames
+{
+    public static string WhatWanted = nameof(WhatWanted);
+    public static string AllMonthWinners = nameof(AllMonthWinners);
+    public static string AllWinners = nameof(AllWinners);
+    public static string AllYearWinners = nameof(AllYearWinners);
+    public static string Congrats = nameof(Congrats);
+    public static string FuckOff = nameof(FuckOff);
+    public static string Help = nameof(Help);
+    public static string MainYearWinnerMultiple = nameof(MainYearWinnerMultiple);
+    public static string MainYearWinnerSingle = nameof(MainYearWinnerSingle);
+    public static string MamotaSays = nameof(MamotaSays);
+    public static string MissedGames = nameof(MissedGames);
+    public static string Month1 = nameof(Month1);
+    public static string Month2 = nameof(Month2);
+    public static string Month3 = nameof(Month3);
+    public static string Month4 = nameof(Month4);
+    public static string Month5 = nameof(Month5);
+    public static string Month6 = nameof(Month6);
+    public static string Month7 = nameof(Month7);
+    public static string Month8 = nameof(Month8);
+    public static string Month9 = nameof(Month9);
+    public static string Month10 = nameof(Month10);
+    public static string Month11 = nameof(Month11);
+    public static string Month12 = nameof(Month12);
+    public static string MonthWinner = nameof(MonthWinner);
+    public static string NewWinner = nameof(NewWinner);
+    public static string TodayString = nameof(TodayString);
+    public static string TodayWinnerAlreadySet = nameof(TodayWinnerAlreadySet);
+    public static string TodayWinnerAlreadySetUkr = nameof(TodayWinnerAlreadySetUkr);
+    public static string Tomorrow = nameof(Tomorrow);
+    public static string TopMonthWinners = nameof(TopMonthWinners);
+    public static string WednesdayMyDudes = nameof(WednesdayMyDudes);
+    public static string WinnerForever = nameof(WinnerForever);
+    public static string WinnerNotSetYet = nameof(WinnerNotSetYet);
+    public static string WinnerOfTheYear = nameof(WinnerOfTheYear);
+    public static string YearAllMonthWinnersMsg = nameof(YearAllMonthWinnersMsg);
+    public static string YearByCountWinnerMsg = nameof(YearByCountWinnerMsg);
+    public static string YearSummarizeMsg = nameof(YearSummarizeMsg);
+    public static string YesterdayWinner = nameof(YesterdayWinner);
+}

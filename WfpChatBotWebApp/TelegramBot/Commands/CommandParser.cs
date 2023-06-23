@@ -20,7 +20,7 @@ public static class CommandParser
         {
             "/helpaz" => new HelpCommand(message),
             "/ping" => new PingCommand(message),
-            "/echo" => new EchoCommand(message, "default response"),
+            "/echo" => new EchoCommand(message),
             _ => null
         };
     }
