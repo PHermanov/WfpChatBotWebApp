@@ -8,9 +8,7 @@ public static class CommandParser
     public static IRequest? Parse(Message message)
     {
         if (string.IsNullOrEmpty(message.Text))
-        {
             return null;
-        }
 
         var split = message.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 

@@ -30,7 +30,8 @@ public class MeCommandHandler : IRequestHandler<MeCommand>
         string reply;
         if (string.IsNullOrWhiteSpace(request.Param))
         {
-            reply = await _textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
+            var phrase = await _textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
+            reply = $"{phrase} *{request.FromMention}*";
         }
         else
         {
