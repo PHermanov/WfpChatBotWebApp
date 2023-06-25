@@ -64,7 +64,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
             _logger.LogError("GoogleApiKey is null");
             return;
         }
-
+        
         var split = googleKeys.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
         if (split.Length < 2 || string.IsNullOrEmpty(split[0]) || string.IsNullOrEmpty(split[1]))
@@ -73,7 +73,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
             return;
         }
 
-        var urlParams = $"v1?key={googleKeys[0]}&cx={googleKeys[1]}&q={request.Param}";
+        var urlParams = $"v1?key={split[0]}&cx={split[1]}&q={request.Param.Trim()}";
 
         var httpClient = _httpClientFactory.CreateClient("Google");
         var googleResponseMessage = await httpClient.GetAsync(urlParams, cancellationToken);
