@@ -22,6 +22,7 @@ public static class CommandParser
             "/ping" => new PingCommand(message),
             "/echo" => new EchoCommand(message),
             "/gaz" => new GoogleCommand(message),
+            "/meaz" => new MeCommand(message),
             _ => null
         };
     }

@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Telegram.Bot;
@@ -49,11 +48,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
             if (string.IsNullOrEmpty(responsePhrase))
                 return;
 
-            await _botClient.TrySendTextMessageAsync(
-                chatId: request.ChatId,
-                text: $"{request.FromMention} *{responsePhrase}*",
-                parseMode: ParseMode.Markdown,
-                cancellationToken: cancellationToken);
+            await _botClient.TrySendTextMessageAsync(request.ChatId, $"{request.FromMention} *{responsePhrase}*", ParseMode.Markdown, cancellationToken: cancellationToken);
 
             return;
         }
@@ -94,7 +89,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
             return;
         }
 
-        _logger.LogInformation($"Parsed {searchResults.Items.Count} results");
+        _logger.LogInformation("Parsed {searchResultsCount} results", searchResults.Items.Count);
 
         var resultItems = searchResults.Items.Take(3).ToArray();
 
@@ -102,10 +97,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
         {
             var msg = $"{result.Title}{Environment.NewLine}{result.Link}";
 
-            await _botClient.TrySendTextMessageAsync(
-                chatId: request.ChatId,
-                text: msg,
-                cancellationToken: cancellationToken);
+            await _botClient.TrySendTextMessageAsync(request.ChatId, msg, cancellationToken: cancellationToken);
         }
     }
 }
