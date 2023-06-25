@@ -76,25 +76,24 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
         var urlParams = $"v1?key={split[0]}&cx={split[1]}&q={request.Param.Trim()}";
 
         var httpClient = _httpClientFactory.CreateClient("Google");
-        var googleResponseMessage = await httpClient.GetAsync(urlParams, cancellationToken);
+        var googleResponseMessage = await httpClient.GetStringAsync(urlParams, cancellationToken);
 
-        if (!googleResponseMessage.IsSuccessStatusCode)
+        //if (!googleResponseMessage.IsSuccessStatusCode)
+        //{
+        //    _logger.LogInformation("Google returned not success status");
+        //    return;
+        //}
+
+        var searchResults = JsonSerializer.Deserialize<GoogleResponseModel>(googleResponseMessage);
+        if (searchResults == null)
         {
-            _logger.LogInformation("Google returned not success status");
+            _logger.LogInformation("Parsed 0 results");
             return;
         }
 
-        await using var contentStream = await googleResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
+        _logger.LogInformation($"Parsed {searchResults.Items.Count} results");
 
-        var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
-
-        var resultItems = searchResults?.Items.Take(3);
-
-        if (resultItems == null)
-        {
-            _logger.LogInformation("Google returned no results");
-            return;
-        }
+        var resultItems = searchResults.Items.Take(3).ToArray();
 
         foreach (var result in resultItems)
         {
