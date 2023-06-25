@@ -1,6 +1,6 @@
 using Azure.Identity;
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
@@ -11,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"]),
     new DefaultAzureCredential());
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
