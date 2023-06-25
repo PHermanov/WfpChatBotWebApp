@@ -1,0 +1,1 @@
+[![Build and deploy ASP.Net Core app to Azure Web App - WfpChatBotWebApp](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/master_wfpchatbotwebapp.yml/badge.svg)](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/master_wfpchatbotwebapp.yml)
