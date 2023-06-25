@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -64,7 +65,7 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
             _logger.LogError("GoogleApiKey is null");
             return;
         }
-        
+
         var split = googleKeys.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
         if (split.Length < 2 || string.IsNullOrEmpty(split[0]) || string.IsNullOrEmpty(split[1]))
@@ -76,15 +77,17 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
         var urlParams = $"v1?key={split[0]}&cx={split[1]}&q={request.Param.Trim()}";
 
         var httpClient = _httpClientFactory.CreateClient("Google");
-        var googleResponseMessage = await httpClient.GetStringAsync(urlParams, cancellationToken);
+        var httpResponseMessage = await httpClient.GetAsync(urlParams, cancellationToken);
 
-        //if (!googleResponseMessage.IsSuccessStatusCode)
-        //{
-        //    _logger.LogInformation("Google returned not success status");
-        //    return;
-        //}
+        if (!httpResponseMessage.IsSuccessStatusCode)
+        {
+            _logger.LogInformation("Google returned not success status");
+            return;
+        }
 
-        var searchResults = JsonSerializer.Deserialize<GoogleResponseModel>(googleResponseMessage);
+        await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
+
+        var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
         if (searchResults == null)
         {
             _logger.LogInformation("Parsed 0 results");
@@ -109,12 +112,15 @@ public class GoogleCommandHandler : IRequestHandler<GoogleCommand>
 
 public class SearchResultModel
 {
+    [JsonPropertyName("title")]
     public string Title { get; init; } = string.Empty;
+
+    [JsonPropertyName("link")]
     public string Link { get; init; } = string.Empty;
 }
 
 public class GoogleResponseModel
 {
-    // public string Kind { get; init; }
+    [JsonPropertyName("items")]
     public List<SearchResultModel> Items { get; set; } = new();
 }
