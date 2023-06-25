@@ -2,7 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using WfpChatBotWebApp.TelegramBot.Commands;
+using WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 namespace WfpChatBotWebApp.TelegramBot;
 

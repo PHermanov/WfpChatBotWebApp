@@ -7,8 +7,7 @@ namespace WfpChatBotWebApp.TelegramBot;
 
 public static class TelegramBotClientExtensions
 {
-    public static async Task<Message> TrySendTextMessageAsync(
-        this ITelegramBotClient client,
+    public static async Task TrySendTextMessageAsync(this ITelegramBotClient client,
         ChatId chatId,
         string text,
         ParseMode parseMode = ParseMode.Html,
@@ -20,7 +19,7 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            return await client.SendTextMessageAsync(
+            await client.SendTextMessageAsync(
                 chatId: chatId,
                 text: text,
                 parseMode: parseMode,
@@ -32,11 +31,7 @@ public static class TelegramBotClientExtensions
         }
         catch
         {
-            return default!;
         }
     }
-
-    public static string GetAllParamText(this Message message)
-        => message.Text!.TrimEnd().Contains(' ') ? message.Text[message.Text.IndexOf(' ')..] : string.Empty;
 }
 

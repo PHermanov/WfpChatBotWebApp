@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot.Types;
 
-namespace WfpChatBotWebApp.TelegramBot.Commands;
+namespace WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 public static class CommandParser
 {
@@ -21,6 +21,7 @@ public static class CommandParser
             "/helpaz" => new HelpCommand(message),
             "/ping" => new PingCommand(message),
             "/echo" => new EchoCommand(message),
+            "/gaz" => new GoogleCommand(message),
             _ => null
         };
     }

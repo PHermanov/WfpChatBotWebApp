@@ -1,5 +1,4 @@
 using Azure.Identity;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
@@ -13,26 +12,23 @@ builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"]),
     new DefaultAzureCredential());
 
-builder.Logging.AddApplicationInsights(
-    configureTelemetryConfiguration: config =>
-        config.ConnectionString = builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS"),
-    configureApplicationInsightsLoggerOptions: _ => { }
-);
-
-builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("Information", LogLevel.Trace);
-
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
     {
-        var botToken = builder.Configuration.GetValue<string>("BotToken");
+        var botToken = builder.Configuration["BotToken"];
         return new TelegramBotClient(new TelegramBotClientOptions(botToken), httpClient);
     });
 
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions
-        .UseMySql(builder.Configuration.GetValue<string>("azure-mysql-connectionstring-349a2"),
-            ServerVersion.AutoDetect(builder.Configuration.GetValue<string>("azure-mysql-connectionstring-349a2"))
+        .UseMySql(builder.Configuration["azure-mysql-connectionstring-349a2"],
+            ServerVersion.AutoDetect(builder.Configuration["azure-mysql-connectionstring-349a2"])
     ));
+
+builder.Services.AddHttpClient("Google", httpClient =>
+{
+    httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"]);
+});
 
 builder.Services.AddMemoryCache();
 

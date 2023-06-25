@@ -1,16 +1,14 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class EchoCommand : CommandBase, IRequest
+public class EchoCommand : CommandWithParam, IRequest
 {
-    public string Text { get; }
-
-    public EchoCommand(Message message) : base(message)
-        => Text = message.GetAllParamText();
+    public EchoCommand(Message message) : base(message) { }
 }
 
 public class EchoCommandHandler : IRequestHandler<EchoCommand>
@@ -26,9 +24,9 @@ public class EchoCommandHandler : IRequestHandler<EchoCommand>
 
     public async Task Handle(EchoCommand request, CancellationToken cancellationToken)
     {
-        var text = string.IsNullOrEmpty(request.Text) 
-            ? await _textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken) 
-            : request.Text;
+        var text = string.IsNullOrEmpty(request.Param)
+            ? await _textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken)
+            : request.Param;
 
         await _botClient.TrySendTextMessageAsync(request.ChatId, text, cancellationToken: cancellationToken);
     }

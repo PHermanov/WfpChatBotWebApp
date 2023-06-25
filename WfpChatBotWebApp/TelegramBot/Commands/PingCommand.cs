@@ -1,13 +1,13 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
 public class PingCommand : CommandBase, IRequest
 {
-    public PingCommand(Message message) : base(message)
-    { }
+    public PingCommand(Message message) : base(message) { }
 }
 
 public class PingCommandHandler : IRequestHandler<PingCommand>
