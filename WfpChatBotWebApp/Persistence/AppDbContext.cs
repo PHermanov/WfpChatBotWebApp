@@ -15,6 +15,8 @@ public partial class AppDbContext : DbContext
     }
 
     public virtual DbSet<TextMessage> TextMessages { get; set; }
+    public virtual DbSet<Result> Results { get; set; }
+    public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,17 +27,39 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<TextMessage>(entity =>
         {
             entity.HasKey(e => e.Name).HasName("PRIMARY");
-
             entity.ToTable("textmessages");
-
             entity.HasIndex(e => e.Name, "name_UNIQUE").IsUnique();
-
             entity.Property(e => e.Name)
                 .HasMaxLength(45)
                 .HasColumnName("name");
             entity.Property(e => e.Text)
                 .HasColumnType("text")
                 .HasColumnName("text");
+        });
+
+        modelBuilder.Entity<Result>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("results");
+
+            entity.Property(e => e.ChatId).HasColumnName("chatid");
+            entity.Property(e => e.PlayedAt).HasColumnName("playedat");
+            entity.Property(e => e.UserId).HasColumnName("userid");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("users");
+
+            entity.Property(e => e.ChatId).HasColumnName("chatid");
+            entity.Property(e => e.Inactive).HasColumnName("inactive");
+            entity.Property(e => e.UserId).HasColumnName("userid");
+            entity.Property(e => e.UserName)
+                .HasColumnType("text")
+                .HasColumnName("username");
         });
 
         OnModelCreatingPartial(modelBuilder);
