@@ -5,9 +5,7 @@ namespace WfpChatBotWebApp.Persistence;
 
 public partial class AppDbContext : DbContext
 {
-    public AppDbContext()
-    {
-    }
+    public AppDbContext() { }
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -16,7 +14,7 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<TextMessage> TextMessages { get; set; }
     public virtual DbSet<Result> Results { get; set; }
-    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<BotUser> BotUsers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,7 +46,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("userid");
         });
 
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<BotUser>(entity =>
         {
             entity
                 .HasNoKey()

@@ -22,10 +22,10 @@ builder.Services.AddHttpClient("telegram_bot_client")
         return new TelegramBotClient(new TelegramBotClientOptions(botToken), httpClient);
     });
 
+var connectionString = builder.Configuration["azure-mysql-connectionstring-349a2"];
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions
-        .UseMySql(builder.Configuration["azure-mysql-connectionstring-349a2"],
-            ServerVersion.AutoDetect(builder.Configuration["azure-mysql-connectionstring-349a2"])
+        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)
     ));
 
 builder.Services.AddHttpClient("Google", httpClient =>
@@ -40,6 +40,8 @@ builder.Services.AddHostedService<ConfigureWebhook>();
 builder.Services.AddControllers().AddNewtonsoftJson();
 
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+builder.Services.AddScoped<IGameRepository, GameRepository>();
 
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ITextMessageService, TextMessageService>();
