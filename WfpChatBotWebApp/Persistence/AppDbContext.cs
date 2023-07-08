@@ -37,10 +37,8 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<Result>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("results");
-
+            entity.HasKey(r => r.Id).HasName("PRIMARY");
+            entity.ToTable("results");
             entity.Property(e => e.ChatId).HasColumnName("chatid");
             entity.Property(e => e.PlayedAt).HasColumnName("playedat");
             entity.Property(e => e.UserId).HasColumnName("userid");
@@ -48,10 +46,8 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<BotUser>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("users");
-
+            entity.HasKey(r => r.Id).HasName("PRIMARY");
+            entity.ToTable("users");
             entity.Property(e => e.ChatId).HasColumnName("chatid");
             entity.Property(e => e.Inactive).HasColumnName("inactive");
             entity.Property(e => e.UserId).HasColumnName("userid");
