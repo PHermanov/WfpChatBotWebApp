@@ -5,10 +5,10 @@ namespace WfpChatBotWebApp.Persistence;
 
 public interface IGameRepository
 {
-    Task CheckPlayerAsync(long chatId, long userId, string userName);
-    Task<List<BotUser>> GetAllPlayersAsync(long chatId);
+    Task CheckUserAsync(long chatId, long userId, string userName);
+    Task<List<BotUser>> GetAllUsersAsync(long chatId);
     Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId);
-    Task<BotUser?> GetPlayerByUserNameAsync(long chatId, string userName);
+    Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
     Task<Result?> GetTodayResultAsync(long chatId);
     Task<Result?> GetYesterdayResultAsync(long chatId);
     Task<Result?> GetLastPlayedGameAsync(long chatId);

@@ -2,6 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 namespace WfpChatBotWebApp.TelegramBot;
@@ -14,10 +15,12 @@ public interface ITelegramBotService
 public class TelegramBotService : ITelegramBotService
 {
     private readonly IMediator _mediator;
+    private readonly IGameRepository _gameRepository;
 
-    public TelegramBotService(IMediator mediator)
+    public TelegramBotService(IMediator mediator, IGameRepository gameRepository)
     {
         _mediator = mediator;
+        _gameRepository = gameRepository;
     }
 
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
@@ -35,7 +38,7 @@ public class TelegramBotService : ITelegramBotService
                     userName = $"{message.From.FirstName} {message.From.LastName}";
                 }
 
-                // var newPlayer = await _gameRepository.CheckPlayerAsync(chatId, message.From.Id, userName);
+                await _gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName);
 
                 //if (IsBotMentioned(message))
                 //{

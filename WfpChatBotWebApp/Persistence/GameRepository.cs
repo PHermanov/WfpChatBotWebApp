@@ -15,7 +15,7 @@ public class GameRepository : IGameRepository
         _cache = cache;
     }
 
-    public async Task CheckPlayerAsync(long chatId, long userId, string userName)
+    public async Task CheckUserAsync(long chatId, long userId, string userName)
     {
         if (_cache.TryGetValue((chatId, userId), out bool saved) && saved)
         {
@@ -51,13 +51,13 @@ public class GameRepository : IGameRepository
         }
     }
 
-    public async Task<List<BotUser>> GetAllPlayersAsync(long chatId)
+    public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
         => await _context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
     public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
         => await _context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
 
-    public async Task<BotUser?> GetPlayerByUserNameAsync(long chatId, string userName)
+    public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
         => await _context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
 
     public async Task<Result?> GetTodayResultAsync(long chatId)
