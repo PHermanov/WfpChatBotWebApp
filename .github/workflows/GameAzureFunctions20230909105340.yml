@@ -1,8 +1,8 @@
-name: Build and deploy .NET Core application to Function App GameAzureFunctions20230909105340
+name: Deploy GameAzureFunctions
 on:
   push:
     branches:
-    - master
+      - master
 env:
   AZURE_FUNCTIONAPP_NAME: GameAzureFunctions20230909105340
   AZURE_FUNCTIONAPP_PACKAGE_PATH: GameAzureFunctions/published
@@ -13,34 +13,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-    - name: Restore
-      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-    - name: Build
-      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    - name: Publish
-      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
-    - name: Publish Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: functionapp
-        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      - uses: actions/checkout@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+      - name: Restore
+        run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+      - name: Build
+        run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+      - name: Publish
+        run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+      - name: Publish Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: functionapp
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v3
-      with:
-        name: functionapp
-        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-    - name: Deploy to Azure Function App
-      uses: Azure/functions-action@v1
-      with:
-        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        publish-profile: ${{ secrets.GameAzureFunctions20230909105340_FB15 }}
-        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: functionapp
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      - name: Deploy to Azure Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          publish-profile: ${{ secrets.GameAzureFunctions20230909105340_FB15 }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
