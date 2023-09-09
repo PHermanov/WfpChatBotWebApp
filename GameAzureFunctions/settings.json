@@ -1,0 +1,6 @@
+﻿{
+  "SecretSettings": {
+    "SqlConnectionString": "Sql connection string",
+    "BlobConnectionString": "Blob connection string"
+  }
+}
