@@ -19,13 +19,8 @@ public class Startup : FunctionsStartup
         var config = new ConfigurationBuilder()
             //.SetBasePath(appDirectory)
             //.AddJsonFile(Path.Combine(appDirectory, "settings.json"), optional: true, reloadOnChange: true)
-            .AddAzureKeyVault(new Uri("https://wfpbotkeyvault.vault.azure.net/"), new DefaultAzureCredential())
-            .Build();
-
-        builder.Services.Configure<SecretSettings>(config.GetSection("SecretSettings"));
-
-        builder.Services.AddSingleton<IConfiguration>(config);
-
+            .AddAzureKeyVault(new Uri("https://wfpbotkeyvault.vault.azure.net/"), new DefaultAzureCredential());
+        
         builder.Services.AddHttpClient();
     }
 }
