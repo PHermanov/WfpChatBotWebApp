@@ -40,7 +40,7 @@ public partial class AppDbContext : DbContext
             entity.HasKey(r => r.Id).HasName("PRIMARY");
             entity.ToTable("results");
             entity.Property(e => e.ChatId).HasColumnName("chatid");
-            entity.Property(e => e.PlayedAt).HasColumnName("playedat");
+            entity.Property(e => e.PlayedAt).HasColumnName("playdate");
             entity.Property(e => e.UserId).HasColumnName("userid");
         });
 
