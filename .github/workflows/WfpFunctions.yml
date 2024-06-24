@@ -1,4 +1,4 @@
-name: Build and deploy .NET Core application to Function App WfpFunctions
+name: Azure Functions
 on:
   push:
     branches:
