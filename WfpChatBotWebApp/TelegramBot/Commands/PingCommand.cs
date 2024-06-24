@@ -5,20 +5,12 @@ using WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class PingCommand : CommandBase, IRequest
+public class PingCommand(Message message) : CommandBase(message), IRequest;
+
+public class PingCommandHandler(ITelegramBotClient botClient) : IRequestHandler<PingCommand>
 {
-    public PingCommand(Message message) : base(message) { }
-}
-
-public class PingCommandHandler : IRequestHandler<PingCommand>
-{
-    private readonly ITelegramBotClient _botClient;
-
-    public PingCommandHandler(ITelegramBotClient botClient)
-        => _botClient = botClient;
-
     public async Task Handle(PingCommand request, CancellationToken cancellationToken)
     {
-        await _botClient.TrySendTextMessageAsync(request.ChatId, "Pong", cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", cancellationToken: cancellationToken);
     }
 }

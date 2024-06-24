@@ -7,30 +7,20 @@ using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class MeCommand : CommandWithParam, IRequest
+public class MeCommand(Message message) : CommandWithParam(message), IRequest;
+
+public class MeCommandHandler(
+    ITelegramBotClient botClient,
+    ITextMessageService textMessageService,
+    ILogger<MeCommandHandler> logger)
+    : IRequestHandler<MeCommand>
 {
-    public MeCommand(Message message) : base(message) { }
-}
-
-public class MeCommandHandler : IRequestHandler<MeCommand>
-{
-    private readonly ITelegramBotClient _botClient;
-    private readonly ITextMessageService _textMessageService;
-    private readonly ILogger<MeCommandHandler> _logger;
-
-    public MeCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService, ILogger<MeCommandHandler> logger)
-    {
-        _botClient = botClient;
-        _textMessageService = textMessageService;
-        _logger = logger;
-    }
-
     public async Task Handle(MeCommand request, CancellationToken cancellationToken)
     {
         string reply;
         if (string.IsNullOrWhiteSpace(request.Param))
         {
-            var phrase = await _textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
+            var phrase = await textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
             reply = $"{phrase} *{request.FromMention}*";
         }
         else
@@ -40,14 +30,14 @@ public class MeCommandHandler : IRequestHandler<MeCommand>
 
         try
         {
-            await _botClient.DeleteMessageAsync(request.ChatId, request.MessageId, cancellationToken);
+            await botClient.DeleteMessageAsync(request.ChatId, request.MessageId, cancellationToken);
         }
         catch (Exception)
         {
-            _logger.LogError("Can not delete message");
+            logger.LogError("Can not delete message");
             return;
         }
 
-        await _botClient.TrySendTextMessageAsync(request.ChatId, reply, ParseMode.Markdown, cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(request.ChatId, reply, ParseMode.Markdown, cancellationToken: cancellationToken);
     }
 }

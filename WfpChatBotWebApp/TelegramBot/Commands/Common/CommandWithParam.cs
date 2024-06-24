@@ -2,12 +2,9 @@
 
 namespace WfpChatBotWebApp.TelegramBot.Commands.Common;
 
-public abstract class CommandWithParam : CommandBase
+public abstract class CommandWithParam(Message message) : CommandBase(message)
 {
-    public string Param { get; }
-
-    protected CommandWithParam(Message message) : base(message)
-    {
-        Param = message.Text!.TrimEnd().Contains(' ') ? message.Text[message.Text.IndexOf(' ')..] : string.Empty;
-    }
+    public string Param { get; } = message.Text!.TrimEnd().Contains(' ') 
+        ? message.Text[message.Text.IndexOf(' ')..] 
+        : string.Empty;
 }

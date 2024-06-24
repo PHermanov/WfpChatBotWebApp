@@ -4,20 +4,11 @@ using WfpChatBotWebApp.Persistence.Entities;
 using WfpChatBotWebApp.Persistence.Models;
 
 namespace WfpChatBotWebApp.Persistence;
-public class GameRepository : IGameRepository
+public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRepository
 {
-    private readonly AppDbContext _context;
-    private readonly IMemoryCache _cache;
-
-    public GameRepository(AppDbContext context, IMemoryCache cache)
-    {
-        _context = context;
-        _cache = cache;
-    }
-
     public async Task CheckUserAsync(long chatId, long userId, string userName)
     {
-        if (_cache.TryGetValue((chatId, userId), out bool saved) && saved)
+        if (cache.TryGetValue((chatId, userId), out bool saved) && saved)
         {
             return;
         }
@@ -26,13 +17,13 @@ public class GameRepository : IGameRepository
 
         if (userById != null)
         {
-            _cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
+            cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
 
             if (userById.Inactive)
             {
                 userById.Inactive = false;
                 userById.UserName = userName;
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
         }
         else
@@ -44,38 +35,38 @@ public class GameRepository : IGameRepository
                 UserName = userName
             };
 
-            await _context.BotUsers.AddAsync(newUser);
-            await _context.SaveChangesAsync();
+            await context.BotUsers.AddAsync(newUser);
+            await context.SaveChangesAsync();
 
-            _cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
+            cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
         }
     }
 
     public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
-        => await _context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
+        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
     public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
-        => await _context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
+        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
 
     public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
-        => await _context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
+        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
 
     public async Task<Result?> GetTodayResultAsync(long chatId)
-        => await _context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today);
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today);
 
     public async Task<Result?> GetYesterdayResultAsync(long chatId)
-        => await _context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1));
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1));
 
     public async Task<Result?> GetLastPlayedGameAsync(long chatId)
-        => await _context.Results
+        => await context.Results
             .Where(r => r.ChatId == chatId)
             .OrderByDescending(r => r.PlayedAt)
             .FirstOrDefaultAsync();
 
     public async Task SaveResultAsync(Result result)
     {
-        await _context.Results.AddAsync(result);
-        await _context.SaveChangesAsync();
+        await context.Results.AddAsync(result);
+        await context.SaveChangesAsync();
     }
 
     public async Task<List<PlayerCountViewModel>> GetAllWinnersForMonthAsync(long chatId, DateTime date)
@@ -85,28 +76,28 @@ public class GameRepository : IGameRepository
         => await GetMonthResults(chatId, date).FirstOrDefaultAsync();
 
     public async Task<long[]> GetAllChatsIdsAsync()
-        => await _context.BotUsers.Select(p => p.ChatId)
+        => await context.BotUsers.Select(p => p.ChatId)
             .Distinct()
             .ToArrayAsync();
 
     public async Task<List<PlayerCountViewModel>> GetAllWinnersAsync(long chatId)
-        => await _context.Results.Where(r => r.ChatId == chatId)
+        => await context.Results.Where(r => r.ChatId == chatId)
             .ApplyGrouping()
             .ToListAsync();
 
     private IOrderedQueryable<PlayerCountViewModel> GetMonthResults(long chatId, DateTime date)
-        => _context.Results
+        => context.Results
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == date.Year && r.PlayedAt.Date.Month == date.Month)
             .ApplyGrouping();
 
     public async Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year)
-        => await _context.Results
+        => await context.Results
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
             .ApplyGrouping()
             .FirstOrDefaultAsync();
 
     public async Task<List<PlayerCountViewModel>> GetAllWinnersForYearAsync(long chatId, int year)
-        => await _context.Results
+        => await context.Results
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
             .ApplyGrouping()
             .ToListAsync();

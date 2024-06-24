@@ -12,17 +12,8 @@ public interface ITelegramBotService
     Task HandleUpdateAsync(Update update, CancellationToken cancellationToken);
 }
 
-public class TelegramBotService : ITelegramBotService
+public class TelegramBotService(IMediator mediator, IGameRepository gameRepository) : ITelegramBotService
 {
-    private readonly IMediator _mediator;
-    private readonly IGameRepository _gameRepository;
-
-    public TelegramBotService(IMediator mediator, IGameRepository gameRepository)
-    {
-        _mediator = mediator;
-        _gameRepository = gameRepository;
-    }
-
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
         if (update.Message is { } message)
@@ -38,7 +29,7 @@ public class TelegramBotService : ITelegramBotService
                     userName = $"{message.From.FirstName} {message.From.LastName}";
                 }
 
-                await _gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName);
+                await gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName);
 
                 //if (IsBotMentioned(message))
                 //{
@@ -50,7 +41,7 @@ public class TelegramBotService : ITelegramBotService
                     var command = CommandParser.Parse(update.Message);
                     if (command != null)
                     {
-                        await _mediator.Send(command, cancellationToken);
+                        await mediator.Send(command, cancellationToken);
                     }
                 }
                 //else

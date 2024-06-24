@@ -2,19 +2,11 @@
 
 namespace WfpChatBotWebApp.TelegramBot.Commands.Common;
 
-public abstract class CommandBase
+public abstract class CommandBase(Message message)
 {
-    public long ChatId { get; }
+    public long ChatId { get; } = message.Chat.Id;
     public string FromMention => @$"[{(FromName.StartsWith("@") ? FromName : $"@{FromName}")}](tg://user?id={FromId})";
-    public int MessageId { get; }
-    private long FromId { get; }
-    private string FromName { get; }
-
-    protected CommandBase(Message message)
-    {
-        ChatId = message.Chat.Id;
-        FromId = message.From?.Id ?? -1;
-        MessageId = message.MessageId;
-        FromName = message.From?.Username ?? string.Empty;
-    }
+    public int MessageId { get; } = message.MessageId;
+    private long FromId { get; } = message.From?.Id ?? -1;
+    private string FromName { get; } = message.From?.Username ?? string.Empty;
 }
