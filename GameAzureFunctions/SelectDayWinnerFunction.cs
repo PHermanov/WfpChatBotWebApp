@@ -19,7 +19,7 @@ public class SelectDayWinnerFunction
     }
 
     [FunctionName("SelectDayWinner")]
-    public void Run([TimerTrigger("0 0 12 * * *")] TimerInfo myTimer, ILogger log)
+    public void Run([TimerTrigger("0 30 12 * * *")] TimerInfo myTimer, ILogger log)
     {
         log.LogInformation($"{nameof(SelectDayWinnerFunction)} function executed at: {DateTime.Now}");
         var hostAddress = _configuration.GetValue<string>("HostAddress");
