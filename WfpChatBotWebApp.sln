@@ -11,9 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureFunctions", "AzureFunctions", "{6652B4BE-B160-44A9-BDF6-95DE997BB246}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameAzureFunctions", "GameAzureFunctions\GameAzureFunctions.csproj", "{B55BF387-2310-479F-97CB-D65F0145FB80}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WfpFunctions", "Functions\WfpFunctions\WfpFunctions.csproj", "{F2E2EC1C-32F3-41C3-97A6-BB9C98771578}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,16 +23,13 @@ Global
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B55BF387-2310-479F-97CB-D65F0145FB80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B55BF387-2310-479F-97CB-D65F0145FB80}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B55BF387-2310-479F-97CB-D65F0145FB80}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B55BF387-2310-479F-97CB-D65F0145FB80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2E2EC1C-32F3-41C3-97A6-BB9C98771578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2E2EC1C-32F3-41C3-97A6-BB9C98771578}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2E2EC1C-32F3-41C3-97A6-BB9C98771578}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2E2EC1C-32F3-41C3-97A6-BB9C98771578}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{B55BF387-2310-479F-97CB-D65F0145FB80} = {6652B4BE-B160-44A9-BDF6-95DE997BB246}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EA1A2839-7A93-4126-8644-1D3C55777D28}

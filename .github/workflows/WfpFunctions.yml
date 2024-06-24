@@ -1,14 +1,14 @@
-name: Build and deploy .NET Core application to Function App WfpFucntionApp
+name: Build and deploy .NET Core application to Function App WfpFunctions
 on:
   push:
     branches:
     - master
 env:
-  AZURE_FUNCTIONAPP_NAME: WfpFucntionApp
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: GameAzureFunctions/published
+  AZURE_FUNCTIONAPP_NAME: WfpFunctions
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: Functions/WfpFunctions/published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
-  WORKING_DIRECTORY: GameAzureFunctions
+  WORKING_DIRECTORY: Functions/WfpFunctions
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,5 +42,5 @@ jobs:
       uses: Azure/functions-action@v1
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        publish-profile: ${{ secrets.WfpFucntionApp_E3CA }}
+        publish-profile: ${{ secrets.WfpFunctions_4605 }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}

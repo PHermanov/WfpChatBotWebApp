@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "GameAzureFunctions": {
+    "WfpFunctions": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7153",
+      "commandLineArgs": "--port 7028",
       "launchBrowser": false
     }
   }
