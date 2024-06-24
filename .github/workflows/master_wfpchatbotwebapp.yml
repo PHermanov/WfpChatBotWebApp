@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - master
+    paths:
+      - WfpChatBotWebApp/**
   workflow_dispatch:
 
 jobs:
