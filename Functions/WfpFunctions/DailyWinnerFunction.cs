@@ -17,7 +17,7 @@ public class DailyWinnerFunction
     }
 
     [FunctionName("DailyWinnerFunction")]
-    public void Run([TimerTrigger("0 12 15 * * *")]TimerInfo myTimer, ILogger log)
+    public void Run([TimerTrigger("0 10 12 * * *")]TimerInfo myTimer, ILogger log)
     {
         log.LogInformation("DailyWinner function executed at: {Now}", DateTime.UtcNow);
 
