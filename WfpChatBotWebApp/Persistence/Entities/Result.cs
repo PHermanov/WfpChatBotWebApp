@@ -3,7 +3,7 @@
 public class Result
 {
     public int Id { get; set; }
-    public int ChatId { get; set; }
-    public int UserId { get; set; }
+    public long ChatId { get; set; }
+    public long UserId { get; set; }
     public DateTime PlayedAt { get; set; }
 }

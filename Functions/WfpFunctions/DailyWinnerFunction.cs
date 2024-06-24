@@ -9,20 +9,20 @@ namespace WfpFunctions;
 public class DailyWinnerFunction
 {
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
 
     public DailyWinnerFunction(IConfiguration configuration, HttpClient httpClient)
     {
-        _configuration = configuration;
         _httpClient = httpClient;
+        _httpClient.BaseAddress = new Uri(configuration.GetValue<string>("HostAddress"));
     }
 
     [FunctionName("DailyWinnerFunction")]
-
-    public void Run([TimerTrigger("0 35 13 * * *")]TimerInfo myTimer, ILogger log)
+    public void Run([TimerTrigger("0 10 15 * * *")]TimerInfo myTimer, ILogger log)
     {
-        log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-        var hostAddress = _configuration.GetValue<string>("HostAddress");
-        log.LogInformation(hostAddress + "123");
+        log.LogInformation("DailyWinner function executed at: {Now}", DateTime.UtcNow);
+
+        var response = _httpClient.PostAsync("job/daily", null).Result;
+        
+        log.LogInformation("DailyWinner received response: {Code}, {Reason}", response.StatusCode, response.ReasonPhrase);
     }
 }

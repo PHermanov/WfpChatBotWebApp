@@ -45,6 +45,9 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
+    public async Task<List<BotUser>> GetActiveUsersAsync(long chatId)
+        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
+    
     public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
 

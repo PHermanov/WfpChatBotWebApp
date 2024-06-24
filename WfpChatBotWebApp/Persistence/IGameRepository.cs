@@ -7,6 +7,7 @@ public interface IGameRepository
 {
     Task CheckUserAsync(long chatId, long userId, string userName);
     Task<List<BotUser>> GetAllUsersAsync(long chatId);
+    Task<List<BotUser>> GetActiveUsersAsync(long chatId);
     Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId);
     Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
     Task<Result?> GetTodayResultAsync(long chatId);
