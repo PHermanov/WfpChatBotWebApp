@@ -1,2 +1,1 @@
 [![Deploy WfpChatBotWebApp](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/master_wfpchatbotwebapp.yml/badge.svg)](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/master_wfpchatbotwebapp.yml)
-[![Deploy GameAzureFunctions](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/GameAzureFunctions20230909105340.yml/badge.svg)](https://github.com/PHermanov/WfpChatBotWebApp/actions/workflows/GameAzureFunctions20230909105340.yml)
