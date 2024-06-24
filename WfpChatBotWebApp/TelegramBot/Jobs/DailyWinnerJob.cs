@@ -42,6 +42,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient, IGameRepository
                     chatId: chatId,
                     text: "already played",
                     parseMode: ParseMode.Markdown);
+                return;
             }
 
             var users = await gameRepository.GetActiveUsersAsync(chatId);
