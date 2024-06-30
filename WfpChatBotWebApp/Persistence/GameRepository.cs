@@ -45,8 +45,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
-    public async Task<List<BotUser>> GetActiveUsersAsync(long chatId)
-        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
+    public async Task<List<BotUser>> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
+        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync(cancellationToken);
     
     public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
@@ -54,8 +54,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
 
-    public async Task<Result?> GetTodayResultAsync(long chatId)
-        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today);
+    public async Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken)
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today, cancellationToken);
 
     public async Task<Result?> GetYesterdayResultAsync(long chatId)
         => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1));
@@ -66,10 +66,10 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .OrderByDescending(r => r.PlayedAt)
             .FirstOrDefaultAsync();
 
-    public async Task SaveResultAsync(Result result)
+    public async Task SaveResultAsync(Result result, CancellationToken cancellationToken)
     {
-        await context.Results.AddAsync(result);
-        await context.SaveChangesAsync();
+        await context.Results.AddAsync(result, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<List<PlayerCountViewModel>> GetAllWinnersForMonthAsync(long chatId, DateTime date)

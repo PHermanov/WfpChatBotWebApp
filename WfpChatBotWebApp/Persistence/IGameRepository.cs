@@ -7,13 +7,13 @@ public interface IGameRepository
 {
     Task CheckUserAsync(long chatId, long userId, string userName);
     Task<List<BotUser>> GetAllUsersAsync(long chatId);
-    Task<List<BotUser>> GetActiveUsersAsync(long chatId);
+    Task<List<BotUser>> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken);
     Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId);
     Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
-    Task<Result?> GetTodayResultAsync(long chatId);
+    Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken);
     Task<Result?> GetYesterdayResultAsync(long chatId);
     Task<Result?> GetLastPlayedGameAsync(long chatId);
-    Task SaveResultAsync(Result result);
+    Task SaveResultAsync(Result result, CancellationToken cancellationToken);
     Task<List<PlayerCountViewModel>> GetAllWinnersForMonthAsync(long chatId, DateTime date);
     Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date);
     Task<long[]> GetAllChatsIdsAsync();

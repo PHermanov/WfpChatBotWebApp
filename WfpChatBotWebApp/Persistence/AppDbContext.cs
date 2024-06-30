@@ -56,6 +56,24 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("username");
         });
 
+        modelBuilder.Entity<StickerEntity>(entity =>
+        {
+            entity.HasKey(r => r.Name).HasName("PRIMARY");
+            entity.ToTable("stickers");
+            entity.HasIndex(e => e.Name, "name_UNIQUE").IsUnique();
+            entity.Property(e => e.Name)
+                .HasMaxLength(45)
+                .HasColumnName("name");
+            entity.Property(e => e.Set)
+                .HasColumnType("text")
+                .HasMaxLength(10)
+                .HasColumnName("sticker_set");
+            entity.Property(e => e.Url)
+                .HasColumnType("text")
+                .HasMaxLength(200)
+                .HasColumnName("url");
+        });
+        
         OnModelCreatingPartial(modelBuilder);
     }
 

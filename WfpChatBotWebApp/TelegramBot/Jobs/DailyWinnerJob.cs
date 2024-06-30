@@ -3,14 +3,14 @@ using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Entities;
+using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
 public class DailyWinnerJobRequest : IRequest
-{
-}
+{ }
 
-public class DailyWinnerJobHandler(ITelegramBotClient botClient, IGameRepository gameRepository, ILogger<DailyWinnerJobHandler> logger)
+public class DailyWinnerJobHandler(ITelegramBotClient botClient,  ITextMessageService textMessageService, IGameRepository gameRepository, ILogger<DailyWinnerJobHandler> logger)
     : IRequestHandler<DailyWinnerJobRequest>
 {
     public async Task Handle(DailyWinnerJobRequest request, CancellationToken cancellationToken)
@@ -23,29 +23,29 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient, IGameRepository
         
         for (var i = 0; i < allChatIds.Length; i++)
         {
-            await ProcessDailyWinnerForChat(allChatIds[i]);
+            await ProcessDailyWinnerForChat(allChatIds[i], cancellationToken);
         }
     }
 
-    private async Task ProcessDailyWinnerForChat(long chatId)
+    private async Task ProcessDailyWinnerForChat(long chatId, CancellationToken cancellationToken)
     {
         logger.LogInformation("Executed {Name} for {ChatId}", nameof(ProcessDailyWinnerForChat), chatId);
         
         try
         {
-            var todayResult = await gameRepository.GetTodayResultAsync(chatId);
+            var todayResult = await gameRepository.GetTodayResultAsync(chatId, cancellationToken);
 
             if (todayResult != null)
             {
-                // Messages.TodayWinnerAlreadySet;
                 await botClient.TrySendTextMessageAsync(
                     chatId: chatId,
-                    text: "already played",
-                    parseMode: ParseMode.Markdown);
+                    text: await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken),
+                    parseMode: ParseMode.Markdown,
+                    cancellationToken: cancellationToken);
                 return;
             }
 
-            var users = await gameRepository.GetActiveUsersAsync(chatId);
+            var users = await gameRepository.GetActiveUsersAsync(chatId, cancellationToken);
             var newWinner = users[new Random().Next(users.Count)];
 
             todayResult = new Result
@@ -55,15 +55,15 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient, IGameRepository
                 PlayedAt = DateTime.Today
             };
 
-            await gameRepository.SaveResultAsync(todayResult);
+            await gameRepository.SaveResultAsync(todayResult, cancellationToken);
 
-            var messageTemplate = "New Winner {0}"; // Messages.NewWinner;
-            var msg = string.Format(messageTemplate, newWinner.GetUserMention());
+            var messageTemplate = await textMessageService.GetMessageByNameAsync(TextMessageNames.NewWinner, cancellationToken);
 
             await botClient.TrySendTextMessageAsync(
                 chatId: chatId,
-                text: msg,
-                parseMode: ParseMode.Markdown);
+                text: string.Format(messageTemplate, newWinner.GetUserMention()),
+                parseMode: ParseMode.Markdown,
+                cancellationToken: cancellationToken);
 
             // await botClient.TrySendStickerAsync(
             //     chatId: chatId,
