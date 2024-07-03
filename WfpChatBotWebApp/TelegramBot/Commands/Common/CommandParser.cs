@@ -26,6 +26,7 @@ public static class CommandParser
             "/today_az" => new TodayCommand(message),
             "/yesterday_az" => new YesterdayCommand(message),
             "/tomorrow_az" => new TomorrowCommand(message),
+            "/month_az" => new MonthCommand(message),
             _ => null
         };
     }

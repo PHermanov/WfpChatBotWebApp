@@ -50,11 +50,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Distinct()
             .ToArrayAsync(cancellationToken);
     
-    public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
-        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
-
     public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
+    
+    public async Task<BotUser[]> GetInactivePlayersAsync(long chatId, CancellationToken cancellationToken)
+        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == true).ToArrayAsync(cancellationToken);
     
     public async Task<BotUser?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
@@ -84,11 +84,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<List<PlayerCountViewModel>> GetAllWinnersForMonthAsync(long chatId, DateTime date)
-        => await GetMonthResults(chatId, date).ToListAsync();
+    public async Task<PlayerCountViewModel[]> GetAllWinnersForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken)
+        => await GetMonthResults(chatId, date).ToArrayAsync(cancellationToken);
 
-    public async Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date)
-        => await GetMonthResults(chatId, date).FirstOrDefaultAsync();
+    public async Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken)
+        => await GetMonthResults(chatId, date).FirstOrDefaultAsync(cancellationToken);
 
     public async Task<List<PlayerCountViewModel>> GetAllWinnersAsync(long chatId)
         => await context.Results.Where(r => r.ChatId == chatId)
