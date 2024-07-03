@@ -1,6 +1,7 @@
 using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
@@ -11,7 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddAzureKeyVault(
     new Uri(builder.Configuration["AzureKeyVaultUri"] ?? string.Empty),
-    new DefaultAzureCredential());
+    new DefaultAzureCredential(),
+    new AzureKeyVaultConfigurationOptions { ReloadInterval = TimeSpan.FromMinutes(10) });
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -27,12 +29,10 @@ var connectionString = builder.Configuration["azure-mysql-connectionstring-349a2
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions
         .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)
-    ));
+        ));
 
-builder.Services.AddHttpClient("Google", httpClient =>
-{
-    httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"] ?? string.Empty);
-});
+builder.Services.AddHttpClient("Google",
+    httpClient => { httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"] ?? string.Empty); });
 
 builder.Services.AddMemoryCache();
 
