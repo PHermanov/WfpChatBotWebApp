@@ -72,11 +72,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1), cancellationToken);
 
-    public async Task<Result?> GetLastPlayedGameAsync(long chatId)
+    public async Task<Result?> GetLastPlayedGameAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results
             .Where(r => r.ChatId == chatId)
             .OrderByDescending(r => r.PlayedAt)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
     public async Task SaveResultAsync(Result result, CancellationToken cancellationToken)
     {

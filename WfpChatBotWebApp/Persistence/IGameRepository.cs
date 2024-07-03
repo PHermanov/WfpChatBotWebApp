@@ -12,7 +12,7 @@ public interface IGameRepository
     Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
     Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken);
     Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken);
-    Task<Result?> GetLastPlayedGameAsync(long chatId);
+    Task<Result?> GetLastPlayedGameAsync(long chatId, CancellationToken cancellationToken);
     Task SaveResultAsync(Result result, CancellationToken cancellationToken);
     Task<List<PlayerCountViewModel>> GetAllWinnersForMonthAsync(long chatId, DateTime date);
     Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date);
