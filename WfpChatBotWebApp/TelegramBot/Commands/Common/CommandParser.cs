@@ -18,13 +18,14 @@ public static class CommandParser
 
         return commandName switch
         {
-            "/helpaz" => new HelpCommand(message),
+            "/help_az" => new HelpCommand(message),
             "/ping" => new PingCommand(message),
             "/echo" => new EchoCommand(message),
-            "/gaz" => new GoogleCommand(message),
-            "/meaz" => new MeCommand(message),
-            "/todayaz" => new TodayCommand(message),
-            "/yesterdayaz" => new YesterdayCommand(message), 
+            "/g_az" => new GoogleCommand(message),
+            "/me_az" => new MeCommand(message),
+            "/today_az" => new TodayCommand(message),
+            "/yesterday_az" => new YesterdayCommand(message),
+            "/tomorrow_az" => new TomorrowCommand(message),
             _ => null
         };
     }
