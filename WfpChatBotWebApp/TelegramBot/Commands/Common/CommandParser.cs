@@ -23,6 +23,8 @@ public static class CommandParser
             "/echo" => new EchoCommand(message),
             "/gaz" => new GoogleCommand(message),
             "/meaz" => new MeCommand(message),
+            "/todayaz" => new TodayCommand(message),
+            "/yesterdayaz" => new YesterdayCommand(message), 
             _ => null
         };
     }

@@ -14,7 +14,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             return;
         }
 
-        var userById = await GetUserByUserIdAsync(chatId, userId, cancellationToken);
+        var userById = await GetUserByUserIdAndChatIdAsync(chatId, userId, cancellationToken);
 
         if (userById != null)
         {
@@ -56,7 +56,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId, CancellationToken cancellationToken)
+    public async Task<BotUser?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
 
     public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
@@ -69,8 +69,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today, cancellationToken);
 
-    public async Task<Result?> GetYesterdayResultAsync(long chatId)
-        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1));
+    public async Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken)
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1), cancellationToken);
 
     public async Task<Result?> GetLastPlayedGameAsync(long chatId)
         => await context.Results

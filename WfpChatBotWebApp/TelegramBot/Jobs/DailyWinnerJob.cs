@@ -43,12 +43,12 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
             if (todayResult != null)
             {
-                var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken); 
-                var todayWinner = await gameRepository.GetUserByUserIdAsync(todayResult.ChatId, todayResult.UserId, cancellationToken);
-                
+                var todayWinner = await gameRepository.GetUserByUserIdAndChatIdAsync(todayResult.ChatId, todayResult.UserId, cancellationToken);
                 if (todayWinner == null)
                     return;
-                    
+                
+                var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken);     
+                
                 await botClient.TrySendTextMessageAsync(
                     chatId: chatId,
                     text: string.Format(messageTemplateAlreadySet, todayWinner.GetUserMention()),
