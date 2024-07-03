@@ -11,7 +11,7 @@ public class StickerService(IGameRepository repository, IConfiguration configura
 {
     public async Task<string> GetRandomStickerFromSet(string set, CancellationToken cancellationToken)
     {
-        var stickers = await repository.GetStickersBySet(set, cancellationToken);
+        var stickers = await repository.GetStickersBySetAsync(set, cancellationToken);
 
         return stickers.Length != 0 
             ? stickers[new Random().Next(stickers.Length)].Url + configuration.GetValue<string>("StickerSas")

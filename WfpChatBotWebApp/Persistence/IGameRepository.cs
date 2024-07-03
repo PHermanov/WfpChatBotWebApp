@@ -7,7 +7,7 @@ public interface IGameRepository
 {
     Task CheckUserAsync(long chatId, long userId, string userName);
     Task<List<BotUser>> GetAllUsersAsync(long chatId);
-    Task<List<BotUser>> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken);
+    Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken);
     Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId);
     Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
     Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken);
@@ -20,5 +20,5 @@ public interface IGameRepository
     Task<List<PlayerCountViewModel>> GetAllWinnersAsync(long chatId);
     Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year);
     Task<List<PlayerCountViewModel>> GetAllWinnersForYearAsync(long chatId, int year);
-    Task<StickerEntity[]> GetStickersBySet(string set, CancellationToken cancellationToken);
+    Task<StickerEntity[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken);
 }

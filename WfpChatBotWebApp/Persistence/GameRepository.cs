@@ -44,15 +44,17 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     }
 
     public async Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken)
-        => await context.BotUsers.Select(p => p.ChatId)
+        => await context.BotUsers
+            .Where(p => p.ChatId < 0) // chats ids are negative
+            .Select(p => p.ChatId)
             .Distinct()
             .ToArrayAsync(cancellationToken);
     
     public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
-    public async Task<List<BotUser>> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
-        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync(cancellationToken);
+    public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
+        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
     public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
@@ -113,7 +115,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
 
     #region Stickers
 
-    public async Task<StickerEntity[]> GetStickersBySet(string set, CancellationToken cancellationToken)
+    public async Task<StickerEntity[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken)
         => await context.Stickers
             .Where(s => s.Set == set)
             .ToArrayAsync(cancellationToken);

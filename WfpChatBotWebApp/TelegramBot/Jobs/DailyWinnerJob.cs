@@ -10,8 +10,7 @@ using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
-public class DailyWinnerJobRequest : IRequest
-{ }
+public class DailyWinnerJobRequest : IRequest;
 
 public class DailyWinnerJobHandler(ITelegramBotClient botClient,  
     ITextMessageService textMessageService, 
@@ -53,7 +52,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
             }
 
             var users = await gameRepository.GetActiveUsersAsync(chatId, cancellationToken);
-            var newWinner = users[new Random().Next(users.Count)];
+            var newWinner = users[new Random().Next(users.Length)];
 
             todayResult = new Result
             {
@@ -80,7 +79,6 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
                     sticker: InputFile.FromUri(stickerUrl),
                     cancellationToken: cancellationToken);
             }
-            
         }
         catch (Exception e)
         {
