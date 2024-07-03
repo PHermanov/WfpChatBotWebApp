@@ -4,12 +4,13 @@ using System.Reflection;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
+using WfpChatBotWebApp.TelegramBot.Services;
 using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddAzureKeyVault(
-    new Uri(builder.Configuration["AzureKeyVaultUri"]),
+    new Uri(builder.Configuration["AzureKeyVaultUri"] ?? string.Empty),
     new DefaultAzureCredential());
 
 builder.Logging.ClearProviders();
@@ -18,7 +19,7 @@ builder.Logging.AddConsole();
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
     {
-        var botToken = builder.Configuration["BotToken"];
+        var botToken = builder.Configuration["BotToken"] ?? string.Empty;
         return new TelegramBotClient(new TelegramBotClientOptions(botToken), httpClient);
     });
 
@@ -30,7 +31,7 @@ builder.Services.AddDbContext<AppDbContext>(
 
 builder.Services.AddHttpClient("Google", httpClient =>
 {
-    httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"]);
+    httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"] ?? string.Empty);
 });
 
 builder.Services.AddMemoryCache();
@@ -45,6 +46,7 @@ builder.Services.AddScoped<IGameRepository, GameRepository>();
 
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ITextMessageService, TextMessageService>();
+builder.Services.AddScoped<IStickerService, StickerService>();
 
 var app = builder.Build();
 

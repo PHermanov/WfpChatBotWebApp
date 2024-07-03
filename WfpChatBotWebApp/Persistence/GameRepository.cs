@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Persistence.Models;
 namespace WfpChatBotWebApp.Persistence;
 public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRepository
 {
+    #region Users 
     public async Task CheckUserAsync(long chatId, long userId, string userName)
     {
         if (cache.TryGetValue((chatId, userId), out bool saved) && saved)
@@ -42,6 +43,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
         }
     }
 
+    public async Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken)
+        => await context.BotUsers.Select(p => p.ChatId)
+            .Distinct()
+            .ToArrayAsync(cancellationToken);
+    
     public async Task<List<BotUser>> GetAllUsersAsync(long chatId)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToListAsync();
 
@@ -54,6 +60,10 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
 
+    #endregion
+
+    #region Results
+    
     public async Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today, cancellationToken);
 
@@ -78,11 +88,6 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date)
         => await GetMonthResults(chatId, date).FirstOrDefaultAsync();
 
-    public async Task<long[]> GetAllChatsIdsAsync()
-        => await context.BotUsers.Select(p => p.ChatId)
-            .Distinct()
-            .ToArrayAsync();
-
     public async Task<List<PlayerCountViewModel>> GetAllWinnersAsync(long chatId)
         => await context.Results.Where(r => r.ChatId == chatId)
             .ApplyGrouping()
@@ -104,4 +109,14 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
             .ApplyGrouping()
             .ToListAsync();
+    #endregion
+
+    #region Stickers
+
+    public async Task<StickerEntity[]> GetStickersBySet(string set, CancellationToken cancellationToken)
+        => await context.Stickers
+            .Where(s => s.Set == set)
+            .ToArrayAsync(cancellationToken);
+
+    #endregion
 }

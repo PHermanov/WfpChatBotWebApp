@@ -1,6 +1,6 @@
 ﻿using WfpChatBotWebApp.Persistence.Entities;
 
-namespace WfpChatBotWebApp.TelegramBot;
+namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
 public static class MentionExtensions
 {

@@ -15,6 +15,7 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<TextMessage> TextMessages { get; set; }
     public virtual DbSet<Result> Results { get; set; }
     public virtual DbSet<BotUser> BotUsers { get; set; }
+    public virtual DbSet<StickerEntity> Stickers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
