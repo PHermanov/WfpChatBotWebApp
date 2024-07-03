@@ -4,7 +4,7 @@ module.exports = async function (context, myTimer) {
         const options = {
             hostname: process.env["HOST_NAME"],
             port: 443,
-            path: '/job/daily',
+            path: '/job/daily?secret=' + process.env["FUNCTIONS_SECRET"],
             method: 'POST',
             headers: {
                 'Content-Length': 0

@@ -7,14 +7,14 @@ namespace WfpChatBotWebApp.Persistence;
 public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRepository
 {
     #region Users 
-    public async Task CheckUserAsync(long chatId, long userId, string userName)
+    public async Task CheckUserAsync(long chatId, long userId, string userName, CancellationToken cancellationToken)
     {
         if (cache.TryGetValue((chatId, userId), out bool saved) && saved)
         {
             return;
         }
 
-        var userById = await GetUserByUserIdAsync(chatId, userId);
+        var userById = await GetUserByUserIdAsync(chatId, userId, cancellationToken);
 
         if (userById != null)
         {
@@ -24,7 +24,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             {
                 userById.Inactive = false;
                 userById.UserName = userName;
-                await context.SaveChangesAsync();
+                await context.SaveChangesAsync(cancellationToken);
             }
         }
         else
@@ -36,8 +36,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
                 UserName = userName
             };
 
-            await context.BotUsers.AddAsync(newUser);
-            await context.SaveChangesAsync();
+            await context.BotUsers.AddAsync(newUser, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
 
             cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
         }
@@ -56,8 +56,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId)
-        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId);
+    public async Task<BotUser?> GetUserByUserIdAsync(long chatId, long userId, CancellationToken cancellationToken)
+        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
 
     public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);

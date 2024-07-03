@@ -28,7 +28,7 @@ public class TelegramBotService(IMediator mediator, IGameRepository gameReposito
                     userName = $"{message.From.FirstName} {message.From.LastName}";
                 }
 
-                await gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName);
+                await gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName, cancellationToken);
 
                 //if (IsBotMentioned(message))
                 //{

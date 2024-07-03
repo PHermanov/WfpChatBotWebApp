@@ -43,9 +43,15 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
             if (todayResult != null)
             {
+                var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken); 
+                var todayWinner = await gameRepository.GetUserByUserIdAsync(todayResult.ChatId, todayResult.UserId, cancellationToken);
+                
+                if (todayWinner == null)
+                    return;
+                    
                 await botClient.TrySendTextMessageAsync(
                     chatId: chatId,
-                    text: await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken),
+                    text: string.Format(messageTemplateAlreadySet, todayWinner.GetUserMention()),
                     parseMode: ParseMode.Markdown,
                     cancellationToken: cancellationToken);
                 return;
@@ -63,11 +69,11 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
             await gameRepository.SaveResultAsync(todayResult, cancellationToken);
 
-            var messageTemplate = await textMessageService.GetMessageByNameAsync(TextMessageNames.NewWinner, cancellationToken);
+            var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageNames.NewWinner, cancellationToken);
             
             await botClient.TrySendTextMessageAsync(
                 chatId: chatId,
-                text: string.Format(messageTemplate, newWinner.GetUserMention()),
+                text: string.Format(messageTemplateNew, newWinner.GetUserMention()),
                 parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
 
