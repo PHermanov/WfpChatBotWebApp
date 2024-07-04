@@ -53,8 +53,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser[]> GetInactivePlayersAsync(long chatId, CancellationToken cancellationToken)
+    public async Task<BotUser[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == true).ToArrayAsync(cancellationToken);
+
+    public async Task<BotUser[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken)
+        => await context.BotUsers.Where(p => p.ChatId == chatId).ToArrayAsync(cancellationToken);
     
     public async Task<BotUser?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken)
         => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
@@ -85,7 +88,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     }
 
     public async Task<PlayerCountViewModel[]> GetAllWinnersForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken)
-        => await GetMonthResults(chatId, date).ToArrayAsync(cancellationToken);
+            => await GetMonthResults(chatId, date).ToArrayAsync(cancellationToken);
 
     public async Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken)
         => await GetMonthResults(chatId, date).FirstOrDefaultAsync(cancellationToken);

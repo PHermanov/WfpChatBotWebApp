@@ -25,14 +25,21 @@ public class MonthCommandHandler(
             if (winners.Length == 0)
                 return;
 
-            var inactivePlayers = await repository.GetInactivePlayersAsync(request.ChatId, cancellationToken);
-            var inactivePlayersIds = inactivePlayers.Select(p => p.UserId).ToHashSet();
+            var allUsers = await repository.GetAllUsersForChat(request.ChatId, cancellationToken);
 
-            foreach (var inactiveWinner in
-                     winners.Where(inactiveWinner => inactivePlayersIds.Contains(inactiveWinner.UserId)))
+            for (var i = 0; i < winners.Length; i++)
             {
-                var userMissing = await messageService.GetMessageByNameAsync(TextMessageNames.UserMissing, cancellationToken);
-                inactiveWinner.UserName += $" : {userMissing}";
+                var user = allUsers.FirstOrDefault(u => u.UserId == winners[i].UserId);
+                if (user != null)
+                {
+                    winners[i].UserName = user.UserName ?? string.Empty;
+
+                    if (user.Inactive)
+                    {
+                        var userMissing = await messageService.GetMessageByNameAsync(TextMessageNames.UserMissing, cancellationToken);
+                        winners[i].UserName += $" : {userMissing}";
+                    }
+                }
             }
 
             var allMonthWinners = await messageService.GetMessageByNameAsync(TextMessageNames.AllMonthWinners, cancellationToken);
