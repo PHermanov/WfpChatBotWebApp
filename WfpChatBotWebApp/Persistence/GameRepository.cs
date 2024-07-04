@@ -93,10 +93,10 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken)
         => await GetMonthResults(chatId, date).FirstOrDefaultAsync(cancellationToken);
 
-    public async Task<List<PlayerCountViewModel>> GetAllWinnersAsync(long chatId)
+    public async Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results.Where(r => r.ChatId == chatId)
             .ApplyGrouping()
-            .ToListAsync();
+            .ToArrayAsync(cancellationToken);
 
     private IOrderedQueryable<PlayerCountViewModel> GetMonthResults(long chatId, DateTime date)
         => context.Results
