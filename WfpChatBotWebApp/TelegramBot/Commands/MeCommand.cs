@@ -18,16 +18,18 @@ public class MeCommandHandler(
 {
     public async Task Handle(MeCommand request, CancellationToken cancellationToken)
     {
-        string reply;
         if (string.IsNullOrWhiteSpace(request.Param))
         {
             var phrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
-            reply = $"{phrase} *{request.FromMention}*";
+            await botClient.TrySendTextMessageAsync(
+                request.ChatId, 
+                text: $"{phrase} *{request.FromMention}*", 
+                parseMode: ParseMode.Markdown, 
+                cancellationToken: cancellationToken);
+            return;
         }
-        else
-        {
-            reply = $"{request.FromMention} *{request.Param}*";
-        }
+
+        var reply = $"{request.FromMention} *{request.Param}*";
 
         try
         {
@@ -39,6 +41,10 @@ public class MeCommandHandler(
             return;
         }
 
-        await botClient.TrySendTextMessageAsync(request.ChatId, reply, ParseMode.Markdown, cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(
+            request.ChatId, 
+            text: reply, 
+            parseMode: ParseMode.Markdown, 
+            cancellationToken: cancellationToken);
     }
 }

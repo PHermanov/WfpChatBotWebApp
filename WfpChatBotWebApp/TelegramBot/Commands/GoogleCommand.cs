@@ -27,14 +27,17 @@ public class GoogleCommandHandler(
         {
             logger.LogInformation("Search query is empty");
 
-            var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+            var responsePhrase =
+                await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted,
+                    cancellationToken);
 
             if (string.IsNullOrEmpty(responsePhrase))
                 return;
 
-            await botClient.TrySendTextMessageAsync(request.ChatId, 
-                $"{request.FromMention} *{responsePhrase}*", 
-                ParseMode.Markdown, 
+            await botClient.TrySendTextMessageAsync(
+                chatId: request.ChatId,
+                text: $"{request.FromMention} *{responsePhrase}*",
+                parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
 
             return;
@@ -69,7 +72,9 @@ public class GoogleCommandHandler(
 
         await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
 
-        var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
+        var searchResults =
+            await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream,
+                cancellationToken: cancellationToken);
         if (searchResults == null)
         {
             logger.LogInformation("Parsed 0 results");
@@ -91,15 +96,12 @@ public class GoogleCommandHandler(
 
 public class SearchResultModel
 {
-    [JsonPropertyName("title")]
-    public string Title { get; init; } = string.Empty;
+    [JsonPropertyName("title")] public string Title { get; init; } = string.Empty;
 
-    [JsonPropertyName("link")]
-    public string Link { get; init; } = string.Empty;
+    [JsonPropertyName("link")] public string Link { get; init; } = string.Empty;
 }
 
 public class GoogleResponseModel
 {
-    [JsonPropertyName("items")]
-    public List<SearchResultModel> Items { get; set; } = new();
+    [JsonPropertyName("items")] public List<SearchResultModel> Items { get; set; } = new();
 }

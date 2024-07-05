@@ -8,24 +8,22 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class HelpCommand(Message message) : CommandBase(message), IRequest;
+public class HelpCommand(Message message) : CommandWithParam(message), IRequest;
 
 public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService)
     : IRequestHandler<HelpCommand>
 {
     public async Task Handle(HelpCommand request, CancellationToken cancellationToken)
     {
-        var message = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+        var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
 
-        if (string.IsNullOrEmpty(message))
+        if (string.IsNullOrEmpty(responsePhrase))
             return;
         
-        var text = $"{request.FromMention} *{message}*";
-
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
             parseMode: ParseMode.Markdown,
-            text: text,
+            text: $"{request.FromMention} *{responsePhrase}*",
             cancellationToken: cancellationToken);
     }
 }
