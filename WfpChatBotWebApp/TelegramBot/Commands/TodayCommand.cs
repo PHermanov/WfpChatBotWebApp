@@ -5,7 +5,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
+using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -26,7 +26,7 @@ public class TodayCommandHandler(
             if (todayWinner == null)
                 return;
 
-            var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken);
+            var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.TodayWinnerAlreadySet, cancellationToken);
 
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
@@ -38,7 +38,7 @@ public class TodayCommandHandler(
         {
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
-                text: await textMessageService.GetMessageByNameAsync(TextMessageNames.WinnerNotSetYet, cancellationToken),
+                text: await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WinnerNotSetYet, cancellationToken),
                 parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
 
@@ -50,7 +50,7 @@ public class TodayCommandHandler(
                 if (yesterdayWinner == null)
                     return;
 
-                var messageTemplateYesterdayWinner = await textMessageService.GetMessageByNameAsync(TextMessageNames.YesterdayWinner, cancellationToken);
+                var messageTemplateYesterdayWinner = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YesterdayWinner, cancellationToken);
                 await botClient.TrySendTextMessageAsync(
                     chatId:request.ChatId,
                     text: string.Format(messageTemplateYesterdayWinner, yesterdayWinner.GetUserMention()),

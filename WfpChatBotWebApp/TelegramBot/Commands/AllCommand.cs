@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
+using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -33,13 +33,13 @@ public class AllCommandHandler(ITelegramBotClient botClient,
 
                 if (user.Inactive)
                 {
-                    var userMissing = await messageService.GetMessageByNameAsync(TextMessageNames.UserMissing, cancellationToken);
+                    var userMissing = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.UserMissing, cancellationToken);
                     winners[i].UserName += $" : {userMissing}";
                 }
             }
         }
 
-        var msg = await messageService.GetMessageByNameAsync(TextMessageNames.AllWinners, cancellationToken)
+        var msg = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.AllWinners, cancellationToken)
                   + Environment.NewLine
                   + Environment.NewLine
                   + string.Join(Environment.NewLine, winners.ToList());

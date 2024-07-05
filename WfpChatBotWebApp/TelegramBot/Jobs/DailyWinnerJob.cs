@@ -6,7 +6,6 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Entities;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -63,7 +62,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
     private async Task SendNewWinnerMessage(long chatId, BotUser newWinner, CancellationToken cancellationToken)
     {
-        var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageNames.NewWinner, cancellationToken);
+        var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
             
         await botClient.TrySendTextMessageAsync(
             chatId: chatId,
@@ -87,7 +86,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         if (todayWinner == null)
             return;
                 
-        var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageNames.TodayWinnerAlreadySet, cancellationToken);     
+        var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.TodayWinnerAlreadySet, cancellationToken);     
                 
         await botClient.TrySendTextMessageAsync(
             chatId: chatId,
@@ -116,7 +115,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
             if (results.Count != 0)
             {
-                var template = await textMessageService.GetMessageByNameAsync(TextMessageNames.MissedGames, cancellationToken);
+                var template = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MissedGames, cancellationToken);
 
                 await botClient.TrySendTextMessageAsync(
                     chatId: chatId,

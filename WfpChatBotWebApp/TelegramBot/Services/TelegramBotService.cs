@@ -11,43 +11,59 @@ public interface ITelegramBotService
     Task HandleUpdateAsync(Update update, CancellationToken cancellationToken);
 }
 
-public class TelegramBotService(IMediator mediator, IGameRepository gameRepository) : ITelegramBotService
+public class TelegramBotService(
+    IMediator mediator, 
+    IGameRepository gameRepository, 
+    IAutoReplyService autoReplyService) 
+    : ITelegramBotService
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        if (update.Message is { } message)
+        var message = update.Message;
+        if (message == null)
+            return;
+
+        if (message.From is { IsBot: true })
+            return;
+
+        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text))
+            || message.Type == MessageType.Photo)
         {
-            if (message is { From.IsBot: false, Type: MessageType.Text }
-                && !string.IsNullOrWhiteSpace(message.Text))
+            var userName = message.From?.Username;
+            var text = message.Text ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(userName))
             {
-                var userName = message.From.Username;
-                var text = message.Text;
+                userName = $"{message.From!.FirstName} {message.From.LastName}";
+            }
 
-                if (string.IsNullOrWhiteSpace(userName))
+            await gameRepository.CheckUserAsync(message.Chat.Id, message.From!.Id, userName, cancellationToken);
+
+            // if (message.Type == MessageType.Photo && message.Photo?.Length > 0)
+            // {
+            //     await _autoReplyService.AutoReplyImageAsync(message, cancellationToken);
+            // }
+            //else if (IsBotMentioned(message))
+            //{
+            //    await _botReplyService.Reply(_botUserName, message);
+            //}
+            //else
+            if (text.StartsWith('/'))
+            {
+                var command = CommandParser.Parse(message);
+                if (command != null)
                 {
-                    userName = $"{message.From.FirstName} {message.From.LastName}";
+                    await mediator.Send(command, cancellationToken);
                 }
-
-                await gameRepository.CheckUserAsync(message.Chat.Id, message.From.Id, userName, cancellationToken);
-
-                //if (IsBotMentioned(message))
-                //{
-                //    await _botReplyService.Reply(_botUserName, message);
-                //}
-                //else
-                if (text.StartsWith(@"/"))
-                {
-                    var command = CommandParser.Parse(update.Message);
-                    if (command != null)
-                    {
-                        await mediator.Send(command, cancellationToken);
-                    }
-                }
-                //else
-                //{
-                //    await _autoReplyService.AutoReplyAsync(message);
-                //    await _autoReplyService.AutoMentionAsync(message);
-                //}
+            }
+            // else if(_tikTokService.ContainsTikTokUrl(message))
+            // {
+            //     await _tikTokService.TryDownloadVideo(message);
+            // }
+            else
+            {
+                await autoReplyService.AutoReplyAsync(message, cancellationToken);
+                //await _autoReplyService.AutoMentionAsync(message);
             }
         }
     }

@@ -3,7 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
+using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -16,7 +16,7 @@ public class TomorrowCommandHandler(ITelegramBotClient botClient, ITextMessageSe
     {
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
-            text: await messageService.GetMessageByNameAsync(TextMessageNames.Tomorrow, cancellationToken),
+            text: await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.Tomorrow, cancellationToken),
             cancellationToken: cancellationToken);
     }
 }

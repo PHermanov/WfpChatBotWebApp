@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
+using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -21,7 +21,7 @@ public class MeCommandHandler(
         string reply;
         if (string.IsNullOrWhiteSpace(request.Param))
         {
-            var phrase = await textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
+            var phrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
             reply = $"{phrase} *{request.FromMention}*";
         }
         else

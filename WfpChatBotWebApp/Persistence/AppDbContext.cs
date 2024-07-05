@@ -17,6 +17,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<BotUser> BotUsers { get; set; }
     public virtual DbSet<StickerEntity> Stickers { get; set; }
 
+    public virtual DbSet<ReplyMessage> ReplyMessages { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -73,6 +75,19 @@ public partial class AppDbContext : DbContext
                 .HasColumnType("text")
                 .HasMaxLength(200)
                 .HasColumnName("url");
+        });
+
+        modelBuilder.Entity<ReplyMessage>(entity =>
+        {
+            entity.HasKey(r => r.Key).HasName("PRIMARY");
+            entity.ToTable("replymessages");
+            entity.HasIndex(e => e.Key, "key_UNIQUE").IsUnique();
+            entity.Property(e => e.Key)
+                .HasMaxLength(15)
+                .HasColumnName("key");
+            entity.Property(e => e.Value)
+                .HasColumnType("text")
+                .HasColumnName("value");
         });
         
         OnModelCreatingPartial(modelBuilder);

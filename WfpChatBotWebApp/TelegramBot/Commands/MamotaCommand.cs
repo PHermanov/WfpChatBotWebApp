@@ -6,7 +6,6 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
-using WfpChatBotWebApp.TelegramBot.TextMessages;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -30,7 +29,7 @@ public class MamotaCommandHandler(
 
             var randomUser = users[new Random().Next(users.Length)];
 
-            var textTemplate = await messageService.GetMessageByNameAsync(TextMessageNames.MamotaSays, cancellationToken);
+            var textTemplate = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MamotaSays, cancellationToken);
 
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
