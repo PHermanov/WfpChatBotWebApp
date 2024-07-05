@@ -60,10 +60,10 @@ public class TelegramBotService(
             // {
             //     await _tikTokService.TryDownloadVideo(message);
             // }
-            else
+            else if(!string.IsNullOrEmpty(text))
             {
                 await autoReplyService.AutoReplyAsync(message, cancellationToken);
-                //await _autoReplyService.AutoMentionAsync(message);
+                await autoReplyService.AutoMentionAsync(message, cancellationToken);
             }
         }
     }

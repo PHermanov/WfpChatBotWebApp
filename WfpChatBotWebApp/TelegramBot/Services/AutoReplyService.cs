@@ -2,6 +2,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
@@ -9,11 +10,20 @@ namespace WfpChatBotWebApp.TelegramBot.Services;
 public interface IAutoReplyService
 {
     Task AutoReplyAsync(Message message, CancellationToken cancellationToken);
+    Task AutoMentionAsync(Message message, CancellationToken cancellationToken);
 }
 
-public partial class AutoReplyService(ITelegramBotClient botClient, IReplyMessagesService replyMessagesService)
+public partial class AutoReplyService(
+    ITelegramBotClient botClient,
+    IGameRepository repository,
+    IReplyMessagesService replyMessagesService)
     : IAutoReplyService
 {
+    [GeneratedRegex("[^а-яА-Яa-zA-ZіІїЇґҐєЄёЁ]")]
+    private static partial Regex MyRegex();
+
+    private static readonly char[] Separator = [' '];
+
     public async Task AutoReplyAsync(Message message, CancellationToken cancellationToken)
     {
         if (message.Text != null)
@@ -48,6 +58,28 @@ public partial class AutoReplyService(ITelegramBotClient botClient, IReplyMessag
         }
     }
 
-    [GeneratedRegex("[^а-яА-Яa-zA-ZіІїЇґҐєЄёЁ]")]
-    private static partial Regex MyRegex();
+    public async Task AutoMentionAsync(Message message, CancellationToken cancellationToken)
+    {
+        var splitText = message.Text!.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
+
+        if (splitText.Any(w => w.Equals("@all", StringComparison.OrdinalIgnoreCase)))
+        {
+            var users = (await repository.GetActiveUsersAsync(message.Chat.Id, cancellationToken))
+                .Where(user => message.From != null && user.UserId != message.From.Id)
+                .ToArray();
+
+            if (users.Length > 0)
+            {
+                var answer = $"\U0001F51D {users.GetUsersMention()}";
+
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await botClient.TrySendTextMessageAsync(
+                    chatId: message.Chat.Id,
+                    text: answer,
+                    parseMode: ParseMode.Markdown,
+                    replyToMessageId: message.MessageId,
+                    cancellationToken: cancellationToken);
+            }
+        }
+    }
 }
