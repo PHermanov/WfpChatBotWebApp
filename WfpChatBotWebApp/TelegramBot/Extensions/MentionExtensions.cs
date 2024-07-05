@@ -9,5 +9,4 @@ public static class MentionExtensions
 
     private static string GetUserMention(this string userName, long userId)
         => @$"[{(userName.StartsWith("@") ? userName : $"@{userName}")}](tg://user?id={userId})";
-    
 }
