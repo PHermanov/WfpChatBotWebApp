@@ -109,11 +109,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .ApplyGrouping()
             .FirstOrDefaultAsync();
 
-    public async Task<List<PlayerCountViewModel>> GetAllWinnersForYearAsync(long chatId, int year)
+    public async Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken)
         => await context.Results
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
             .ApplyGrouping()
-            .ToListAsync();
+            .ToArrayAsync(cancellationToken);
     #endregion
 
     #region Stickers

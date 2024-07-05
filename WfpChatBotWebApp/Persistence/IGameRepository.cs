@@ -20,6 +20,6 @@ public interface IGameRepository
     Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken);
     Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year);
-    Task<List<PlayerCountViewModel>> GetAllWinnersForYearAsync(long chatId, int year);
+    Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken);
     Task<StickerEntity[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken);
 }

@@ -15,6 +15,15 @@ public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageServic
     public async Task Handle(HelpCommand request, CancellationToken cancellationToken)
     {
         var message = await textMessageService.GetMessageByNameAsync(TextMessageNames.WhatWanted, cancellationToken);
-        await botClient.TrySendTextMessageAsync(request.ChatId, message, cancellationToken: cancellationToken);
+
+        if (string.IsNullOrEmpty(message))
+            return;
+        
+        var text = $"{request.FromMention} *{message}*";
+
+        await botClient.TrySendTextMessageAsync(
+            chatId: request.ChatId,
+            text: text,
+            cancellationToken: cancellationToken);
     }
 }

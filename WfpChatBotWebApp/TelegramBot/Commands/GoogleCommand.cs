@@ -32,7 +32,10 @@ public class GoogleCommandHandler(
             if (string.IsNullOrEmpty(responsePhrase))
                 return;
 
-            await botClient.TrySendTextMessageAsync(request.ChatId, $"{request.FromMention} *{responsePhrase}*", ParseMode.Markdown, cancellationToken: cancellationToken);
+            await botClient.TrySendTextMessageAsync(request.ChatId, 
+                $"{request.FromMention} *{responsePhrase}*", 
+                ParseMode.Markdown, 
+                cancellationToken: cancellationToken);
 
             return;
         }
