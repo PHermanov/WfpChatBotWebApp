@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -23,6 +24,7 @@ public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageServic
 
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
+            parseMode: ParseMode.Markdown,
             text: text,
             cancellationToken: cancellationToken);
     }
