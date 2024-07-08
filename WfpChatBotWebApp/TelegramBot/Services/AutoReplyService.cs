@@ -70,12 +70,10 @@ public partial class AutoReplyService(
 
             if (users.Length > 0)
             {
-                var answer = $"\U0001F51D {users.GetUsersMention()}";
-
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 await botClient.TrySendTextMessageAsync(
                     chatId: message.Chat.Id,
-                    text: answer,
+                    text: $"\U0001F51D {users.GetUsersMention()}",
                     parseMode: ParseMode.Markdown,
                     replyToMessageId: message.MessageId,
                     cancellationToken: cancellationToken);

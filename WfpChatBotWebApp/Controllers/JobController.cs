@@ -8,9 +8,6 @@ namespace WfpChatBotWebApp.Controllers;
 [Route("[controller]")]
 public class JobController(IConfiguration configuration, IMediator mediator) : ControllerBase
 {
-    private readonly string _secretToken = configuration.GetValue<string>("FunctionsSecret") ??
-                                           throw new NullReferenceException("Functions secret token not found");
-
     [HttpPost("{jobName}")]
     public async Task<IActionResult> Post([FromRoute] string jobName, [FromQuery] string secret,
         CancellationToken cancellationToken)

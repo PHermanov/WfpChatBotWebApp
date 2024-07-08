@@ -103,11 +103,11 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == date.Year && r.PlayedAt.Date.Month == date.Month)
             .ApplyGrouping();
 
-    public async Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year)
+    public async Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken)
         => await context.Results
             .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
             .ApplyGrouping()
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken)
         => await context.Results
