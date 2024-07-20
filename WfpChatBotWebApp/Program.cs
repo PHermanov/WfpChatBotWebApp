@@ -66,6 +66,7 @@ builder.Services.AddSingleton<IBotReplyService, BotReplyService>();
 builder.Services.AddSlimMessageBus(mbb =>
         {
             mbb
+                .PerMessageScopeEnabled(true)
                 .Produce<Update>(x => x.DefaultTopic("telegram-topic"))
                 .Consume<Update>(x => x.Topic("telegram-topic")
                     .WithConsumer<ITelegramBotService>(nameof(ITelegramBotService.HandleUpdateAsync))
