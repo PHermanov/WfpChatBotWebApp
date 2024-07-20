@@ -59,6 +59,9 @@ builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 
+builder.Services.AddSingleton<IOpenAiService>(_ => new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
+builder.Services.AddScoped<IBotReplyService, BotReplyService>();
+
 var app = builder.Build();
 
 app.UseCors(corsPolicyBuilder =>

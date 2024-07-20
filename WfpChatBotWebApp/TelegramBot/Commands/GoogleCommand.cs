@@ -27,16 +27,15 @@ public class GoogleCommandHandler(
         {
             logger.LogInformation("Search query is empty");
 
-            var responsePhrase =
-                await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted,
-                    cancellationToken);
+            var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
 
             if (string.IsNullOrEmpty(responsePhrase))
                 return;
 
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
-                text: $"{request.FromMention} *{responsePhrase}*",
+                replyToMessageId: request.MessageId,
+                text: $"*{responsePhrase}*",
                 parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
 

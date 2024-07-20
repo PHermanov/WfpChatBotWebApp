@@ -74,7 +74,7 @@ public class MonthlyWinnerJobHandler(
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("{Name} for {ChatId}, Loading user photos. Exception {exception}", nameof(MonthlyWinnerJobHandler), chatId, e.Message);
+                    logger.LogError("{Name} for {ChatId}, Loading user photos. Exception: {exception}", nameof(MonthlyWinnerJobHandler), chatId, e.Message);
                 }
 
                 if (userProfilePhotos == null || userProfilePhotos.Photos.Length == 0)
@@ -123,7 +123,7 @@ public class MonthlyWinnerJobHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for {ChatId}, Exception  {e}", nameof(MonthlyWinnerJobHandler), chatId, e);
+            logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(MonthlyWinnerJobHandler), chatId, e);
         }
     }
 }

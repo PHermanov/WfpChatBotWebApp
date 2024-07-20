@@ -20,13 +20,19 @@ public class MeCommandHandler(
     {
         if (string.IsNullOrWhiteSpace(request.Param))
         {
-            var phrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+            logger.LogInformation("Param is empty");
+            
+            var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+
+            if (string.IsNullOrEmpty(responsePhrase))
+                return;
+
             await botClient.TrySendTextMessageAsync(
-                request.ChatId, 
-                text: $"{phrase} *{request.FromMention}*", 
-                parseMode: ParseMode.Markdown, 
+                chatId: request.ChatId,
+                replyToMessageId: request.MessageId,
+                text: $"*{responsePhrase}*",
+                parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
-            return;
         }
 
         var reply = $"{request.FromMention} *{request.Param}*";

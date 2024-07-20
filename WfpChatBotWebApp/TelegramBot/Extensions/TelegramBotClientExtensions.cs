@@ -7,7 +7,7 @@ namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
 public static class TelegramBotClientExtensions
 {
-    public static async Task TrySendTextMessageAsync(this ITelegramBotClient client,
+    public static async Task<Message?> TrySendTextMessageAsync(this ITelegramBotClient client,
         ChatId chatId,
         string text,
         ParseMode parseMode = ParseMode.Html,
@@ -19,7 +19,7 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            await client.SendTextMessageAsync(
+            return await client.SendTextMessageAsync(
                 chatId: chatId,
                 text: text,
                 parseMode: parseMode,
@@ -29,13 +29,14 @@ public static class TelegramBotClientExtensions
                 replyMarkup: replyMarkup,
                 cancellationToken: cancellationToken);
         }
-        catch  (Exception exception)
+        catch (Exception exception)
         {
             Console.WriteLine(exception.GetType());
             Console.WriteLine(exception.Message);
+            return default;
         }
     }
-    
+
     public static async Task TrySendStickerAsync(
         this ITelegramBotClient client,
         ChatId chatId,
@@ -48,14 +49,14 @@ public static class TelegramBotClientExtensions
         try
         {
             await client.SendStickerAsync(
-                chatId:chatId, 
-                sticker:sticker, 
-                disableNotification:disableNotification, 
-                protectContent:null, 
-                replyToMessageId:replyToMessageId,
-                allowSendingWithoutReply:null, 
-                replyMarkup:replyMarkup, 
-                cancellationToken:cancellationToken);
+                chatId: chatId,
+                sticker: sticker,
+                disableNotification: disableNotification,
+                protectContent: null,
+                replyToMessageId: replyToMessageId,
+                allowSendingWithoutReply: null,
+                replyMarkup: replyMarkup,
+                cancellationToken: cancellationToken);
         }
         catch (Exception exception)
         {
@@ -63,7 +64,7 @@ public static class TelegramBotClientExtensions
             Console.WriteLine(exception.Message);
         }
     }
-    
+
     public static async Task TrySendPhotoAsync(
         this ITelegramBotClient client,
         ILogger logger,
@@ -75,28 +76,50 @@ public static class TelegramBotClientExtensions
         int replyToMessageId = 0,
         IReplyMarkup? replyMarkup = null,
         CancellationToken cancellationToken = default
-       )
+    )
     {
         try
         {
             await client.SendPhotoAsync(
-                chatId:chatId, 
-                photo:photo, 
-                caption:caption, 
-                parseMode:parseMode, 
-                disableNotification:disableNotification, 
-                replyToMessageId:replyToMessageId, 
-                replyMarkup:replyMarkup, 
-                cancellationToken:cancellationToken);
+                chatId: chatId,
+                photo: photo,
+                caption: caption,
+                parseMode: parseMode,
+                disableNotification: disableNotification,
+                replyToMessageId: replyToMessageId,
+                replyMarkup: replyMarkup,
+                cancellationToken: cancellationToken);
         }
         catch (Exception exception)
         {
             logger.LogError(nameof(TrySendPhotoAsync) + ":" + exception.GetType());
             logger.LogError(exception.Message);
-            
-            Console.WriteLine(nameof(TrySendPhotoAsync) + ":" + exception.GetType());
+        }
+    }
+
+    public static async Task TryEditMessageTextAsync(this ITelegramBotClient client,
+        ChatId chatId,
+        int messageId,
+        string text,
+        ParseMode parseMode = ParseMode.Html,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.EditMessageTextAsync(
+                chatId: chatId,
+                messageId: messageId,
+                text: text,
+                parseMode: parseMode,
+                entities: null,
+                disableWebPagePreview: null,
+                replyMarkup: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception.GetType());
             Console.WriteLine(exception.Message);
         }
     }
 }
-

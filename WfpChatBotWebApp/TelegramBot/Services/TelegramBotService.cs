@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
@@ -14,7 +15,10 @@ public interface ITelegramBotService
 public class TelegramBotService(
     IMediator mediator, 
     IGameRepository gameRepository, 
-    IAutoReplyService autoReplyService) 
+    IAutoReplyService autoReplyService,
+    ITelegramBotClient botClient,
+    IBotReplyService botReplyService,
+    ILogger<TelegramBotService> logger) 
     : ITelegramBotService
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
@@ -26,8 +30,7 @@ public class TelegramBotService(
         if (message.From is { IsBot: true })
             return;
 
-        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text))
-            || message.Type == MessageType.Photo)
+        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text)) || message.Type == MessageType.Photo)
         {
             var userName = message.From?.Username;
             var text = message.Text ?? string.Empty;
@@ -43,12 +46,20 @@ public class TelegramBotService(
             // {
             //     await _autoReplyService.AutoReplyImageAsync(message, cancellationToken);
             // }
-            //else if (IsBotMentioned(message))
-            //{
-            //    await _botReplyService.Reply(_botUserName, message);
-            //}
-            //else
-            if (text.StartsWith('/'))
+            //else 
+            var bot = await botClient.GetMeAsync(cancellationToken);
+            if (string.IsNullOrEmpty(bot.Username))
+            {
+                logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
+                return;
+            }
+            
+            if (IsBotMentioned(message, bot.Username))
+            {
+                await botReplyService.Reply(bot.Username, message, cancellationToken);
+            }
+            // command received
+            else if (text.StartsWith('/'))
             {
                 var command = CommandParser.Parse(message);
                 if (command != null)
@@ -67,4 +78,9 @@ public class TelegramBotService(
             }
         }
     }
+    
+    private static bool IsBotMentioned(Message message, string botUserName) =>
+        (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
+         && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
+        || message.ReplyToMessage?.From?.Username == botUserName;
 }
