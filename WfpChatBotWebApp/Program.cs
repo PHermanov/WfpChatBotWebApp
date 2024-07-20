@@ -53,7 +53,6 @@ builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
 builder.Services.AddScoped<IGameRepository, GameRepository>();
-
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
@@ -71,7 +70,7 @@ builder.Services.AddSlimMessageBus(mbb =>
                 .Consume<Update>(x => x.Topic("telegram-topic")
                     .WithConsumer<ITelegramBotService>(nameof(ITelegramBotService.HandleUpdateAsync))
                     .Instances(10))
-                .WithProviderMemory().AutoDeclareFrom();
+                .WithProviderMemory();
         }
     ).AddHttpContextAccessor(); // This is required for the SlimMessageBus.Host.AspNetCore plugin
 
