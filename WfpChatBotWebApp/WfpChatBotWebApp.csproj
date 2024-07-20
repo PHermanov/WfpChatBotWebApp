@@ -38,4 +38,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="StaticFiles\impact.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

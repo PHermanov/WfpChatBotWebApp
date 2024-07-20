@@ -12,6 +12,8 @@ public static class ImageProcessor
 {
     public static async Task<MemoryStream> GetWinnerImageMonth(Stream bowlImageStream, MemoryStream avatarStream, DateTime date)
     {
+        avatarStream.Position = 0;
+        
         var winnerImageStream = new MemoryStream();
         var bowlImage = await Image.LoadAsync(bowlImageStream);
         var avatarImage = await Image.LoadAsync(avatarStream);
@@ -33,9 +35,11 @@ public static class ImageProcessor
         var bowlPoint = new Point(bitmap.Width - bowlWidth - 10, bitmap.Height - bowlHeight - 10);
 
         bitmap.Mutate(x => x.DrawImage(bowlImage, bowlPoint, 1f));
-
-        var font = SystemFonts.CreateFont("Impact", bowlHeight / 3.0f);
-
+        
+        var collection = new FontCollection();
+        var family = collection.Add("StaticFiles/impact.ttf");
+        var font = family.CreateFont(bowlHeight / 3.0f);
+        
         // add date to avatar
         var monthString = date.ToString("MMMM", new System.Globalization.CultureInfo("en-US"));
         var yearString = date.ToString("yyyy");

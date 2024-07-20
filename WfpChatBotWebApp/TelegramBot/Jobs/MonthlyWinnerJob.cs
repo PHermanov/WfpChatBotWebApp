@@ -95,7 +95,6 @@ public class MonthlyWinnerJobHandler(
 
                     var avatarStream = new MemoryStream();
                     await botClient.DownloadFileAsync(photoFile.FilePath ?? string.Empty, avatarStream, cancellationToken);
-                    avatarStream.Position = 0;
 
                     logger.LogInformation("{Name} for {ChatId}, photo file downloaded", nameof(ProcessMonthlyWinnerForChat), chatId);
 
@@ -120,7 +119,6 @@ public class MonthlyWinnerJobHandler(
         catch (Exception e)
         {
             logger.LogError("{Name} for {ChatId}, Exception  {e}", nameof(ProcessMonthlyWinnerForChat), chatId, e);
-            logger.LogError("{Name} for {ChatId}, Exception {exceptionType} {exception}", nameof(ProcessMonthlyWinnerForChat), chatId, e.GetType(), e.Message);
         }
     }
 }
