@@ -69,7 +69,7 @@ builder.Services.AddSlimMessageBus(mbb =>
             mbb
                 .Produce<Update>(x => x.DefaultTopic("telegram-topic"))
                 .Consume<Update>(x => x.Topic("telegram-topic")
-                    .WithConsumer<TelegramBotService>(nameof(TelegramBotService.HandleUpdateAsync))
+                    .WithConsumer<ITelegramBotService>(nameof(ITelegramBotService.HandleUpdateAsync))
                     .Instances(10))
                 .WithProviderMemory().AutoDeclareFrom();
         }
