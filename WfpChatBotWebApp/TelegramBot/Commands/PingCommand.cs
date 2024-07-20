@@ -8,10 +8,12 @@ namespace WfpChatBotWebApp.TelegramBot.Commands;
 
 public class PingCommand(Message message) : CommandBase(message), IRequest;
 
-public class PingCommandHandler(ITelegramBotClient botClient) : IRequestHandler<PingCommand>
+public class PingCommandHandler(ITelegramBotClient botClient, ILogger<PingCommandHandler> logger) 
+    : IRequestHandler<PingCommand>
 {
     public async Task Handle(PingCommand request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("{Name} executed", nameof(PingCommandHandler));
         await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", cancellationToken: cancellationToken);
     }
 }

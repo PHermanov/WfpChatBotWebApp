@@ -18,13 +18,16 @@ public class TelegramBotController(IConfiguration configuration, ITelegramBotSer
     [Consumes(MediaTypeNames.Application.Json)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult Post([FromBody] Update update, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
     {
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
 
+        await telegramBotService.HandleUpdateAsync(update, cancellationToken);
+        
         // fire and forget
-        _ = telegramBotService.HandleUpdateAsync(update, cancellationToken);
+        //_ = Task.Factory.StartNew(async () => await telegramBotService.HandleUpdateAsync(update, cancellationToken), cancellationToken);
+        //_ = telegramBotService.HandleUpdateAsync(update, cancellationToken);
 
         return Ok();
     }
