@@ -59,8 +59,8 @@ public class MonthlyWinnerJobHandler(
 
                 var message = $"{monthWinnerMessage}{Environment.NewLine}\u269C {mention} \u269C{Environment.NewLine}{congratsMessage}";
 
-                bowlImageStream.Seek(0, SeekOrigin.Begin);
-
+                logger.LogInformation("{Name} for {ChatId}, Generated message: {message}", nameof(ProcessMonthlyWinnerForChat), chatId, message);
+                
                 UserProfilePhotos? userProfilePhotos = null;
                 try
                 {
