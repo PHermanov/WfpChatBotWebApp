@@ -21,6 +21,7 @@ public class TelegramBotService(
     ILogger<TelegramBotService> logger) 
     : ITelegramBotService
 {
+    
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
         var message = update.Message;
@@ -83,4 +84,5 @@ public class TelegramBotService(
         (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
          && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
         || message.ReplyToMessage?.From?.Username == botUserName;
+
 }

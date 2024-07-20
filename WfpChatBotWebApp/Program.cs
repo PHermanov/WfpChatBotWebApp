@@ -2,7 +2,10 @@ using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using SlimMessageBus.Host;
+using SlimMessageBus.Host.Memory;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -38,9 +41,7 @@ builder.Services.AddHttpClient("Pictures",
 
 var connectionString = builder.Configuration["azure-mysql-connectionstring-349a2"];
 builder.Services.AddDbContext<AppDbContext>(
-    dbContextOptions => dbContextOptions
-        .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)
-        ));
+    dbContextOptions => dbContextOptions.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddMemoryCache();
 
@@ -53,7 +54,7 @@ builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.G
 
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 
-builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
+builder.Services.AddSingleton<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
@@ -61,6 +62,18 @@ builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 
 builder.Services.AddSingleton<IOpenAiService>(_ => new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
 builder.Services.AddSingleton<IBotReplyService, BotReplyService>();
+
+// Message bus
+builder.Services.AddSlimMessageBus(mbb =>
+        {
+            mbb
+                .Produce<Update>(x => x.DefaultTopic("telegram-topic"))
+                .Consume<Update>(x => x.Topic("telegram-topic")
+                    .WithConsumer<TelegramBotService>(nameof(TelegramBotService.HandleUpdateAsync))
+                    .Instances(10))
+                .WithProviderMemory().AutoDeclareFrom();
+        }
+    ).AddHttpContextAccessor(); // This is required for the SlimMessageBus.Host.AspNetCore plugin
 
 var app = builder.Build();
 

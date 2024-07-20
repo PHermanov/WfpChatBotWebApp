@@ -1,14 +1,13 @@
 using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
+using SlimMessageBus;
 using Telegram.Bot.Types;
-using WfpChatBotWebApp.TelegramBot;
-using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class TelegramBotController(IConfiguration configuration, ITelegramBotService telegramBotService)
+public class TelegramBotController(IConfiguration configuration, IMessageBus bus)
     : ControllerBase
 {
     private readonly string _secretToken = configuration.GetValue<string>("SecretToken") ??
@@ -22,13 +21,15 @@ public class TelegramBotController(IConfiguration configuration, ITelegramBotSer
     {
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
+    
+       // BackgroundJob.Enqueue(() => await telegramBotService.HandleUpdateAsync(update, cancellationToken));
 
-        await telegramBotService.HandleUpdateAsync(update, cancellationToken);
-        
+       bus.Publish(update, cancellationToken: cancellationToken);
+           
         // fire and forget
         //_ = Task.Factory.StartNew(async () => await telegramBotService.HandleUpdateAsync(update, cancellationToken), cancellationToken);
         //_ = telegramBotService.HandleUpdateAsync(update, cancellationToken);
-
+    
         return Ok();
     }
 
