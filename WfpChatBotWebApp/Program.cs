@@ -54,7 +54,7 @@ builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.G
 
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 
-builder.Services.AddSingleton<ITelegramBotService, TelegramBotService>();
+builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();
 builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
