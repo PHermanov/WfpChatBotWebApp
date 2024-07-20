@@ -1,6 +1,6 @@
 CREATE TABLE `results` (
-  `chatid` int NOT NULL,
-  `userid` int NOT NULL,
+  `chatid` BIGINT NOT NULL,
+  `userid` BIGINT NOT NULL,
   `playdate` date NOT NULL,
   `id` int NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)

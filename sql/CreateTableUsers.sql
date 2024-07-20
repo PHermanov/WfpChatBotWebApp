@@ -1,6 +1,6 @@
 CREATE TABLE `users` (
-  `chatid` int NOT NULL,
-  `userid` int NOT NULL,
+  `chatid` BIGINT NOT NULL,
+  `userid` BIGINT NOT NULL,
   `username` text,
   `inactive` tinyint NOT NULL DEFAULT '0',
   `id` int NOT NULL AUTO_INCREMENT,

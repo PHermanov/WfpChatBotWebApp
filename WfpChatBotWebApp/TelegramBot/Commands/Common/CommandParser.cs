@@ -18,19 +18,19 @@ public static class CommandParser
 
         return commandName switch
         {
-            "/help_az" => new HelpCommand(message),
+            "/help" => new HelpCommand(message),
             "/ping" => new PingCommand(message),
             "/echo" => new EchoCommand(message),
-            "/g_az" => new GoogleCommand(message),
-            "/me_az" => new MeCommand(message),
-            "/today_az" => new TodayCommand(message),
-            "/yesterday_az" => new YesterdayCommand(message),
-            "/tomorrow_az" => new TomorrowCommand(message),
-            "/month_az" => new MonthCommand(message),
-            "/all_az" => new AllCommand(message),
-            "/mamota_az" => new MamotaCommand(message),
-            "/year_az" => new YearCommand(message),
-            "/draw_az" => new DrawCommand(message),
+            "/g" => new GoogleCommand(message),
+            "/me" => new MeCommand(message),
+            "/today" => new TodayCommand(message),
+            "/yesterday" => new YesterdayCommand(message),
+            "/tomorrow" => new TomorrowCommand(message),
+            "/month" => new MonthCommand(message),
+            "/all" => new AllCommand(message),
+            "/mamota" => new MamotaCommand(message),
+            "/year" => new YearCommand(message),
+            "/draw" => new DrawCommand(message),
             _ => null
         };
     }

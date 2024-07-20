@@ -22,8 +22,9 @@ public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageServic
         
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
+            replyToMessageId: request.MessageId,
+            text: $"*{responsePhrase}*",
             parseMode: ParseMode.Markdown,
-            text: $"{request.FromMention} *{responsePhrase}*",
             cancellationToken: cancellationToken);
     }
 }
