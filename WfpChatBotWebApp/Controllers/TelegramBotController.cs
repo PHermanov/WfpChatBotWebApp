@@ -21,15 +21,10 @@ public class TelegramBotController(IConfiguration configuration, IMessageBus bus
     {
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
-    
-       // BackgroundJob.Enqueue(() => await telegramBotService.HandleUpdateAsync(update, cancellationToken));
 
-       bus.Publish(update, cancellationToken: cancellationToken);
-           
-        // fire and forget
-        //_ = Task.Factory.StartNew(async () => await telegramBotService.HandleUpdateAsync(update, cancellationToken), cancellationToken);
-        //_ = telegramBotService.HandleUpdateAsync(update, cancellationToken);
-    
+        // no await to achieve fire-and-forget
+        bus.Publish(update, cancellationToken: cancellationToken);
+
         return Ok();
     }
 
