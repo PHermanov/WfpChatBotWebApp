@@ -18,6 +18,7 @@ public class TelegramBotService(
     IAutoReplyService autoReplyService,
     ITelegramBotClient botClient,
     IBotReplyService botReplyService,
+    ITikTokService tikTokService,
     ILogger<TelegramBotService> logger) 
     : ITelegramBotService
 {
@@ -68,10 +69,10 @@ public class TelegramBotService(
                     await mediator.Send(command, cancellationToken);
                 }
             }
-            // else if(_tikTokService.ContainsTikTokUrl(message))
-            // {
-            //     await _tikTokService.TryDownloadVideo(message);
-            // }
+            else if(tikTokService.ContainsTikTokUrl(message))
+            {
+                await tikTokService.TryDownloadVideo(message, cancellationToken);
+            }
             else if(!string.IsNullOrEmpty(text))
             {
                 await autoReplyService.AutoReplyAsync(message, cancellationToken);

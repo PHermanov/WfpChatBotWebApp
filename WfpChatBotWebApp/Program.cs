@@ -58,8 +58,9 @@ builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
+builder.Services.AddScoped<ITikTokService, TikTokService>();
 
-builder.Services.AddSingleton<IOpenAiService>(_ => new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
+builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
 builder.Services.AddSingleton<IBotReplyService, BotReplyService>();
 
 // Message bus
