@@ -66,6 +66,7 @@ public static class TelegramBotClientExtensions
     
     public static async Task TrySendPhotoAsync(
         this ITelegramBotClient client,
+        ILogger logger,
         ChatId chatId,
         InputFile photo,
         string? caption = null,
@@ -73,7 +74,8 @@ public static class TelegramBotClientExtensions
         bool disableNotification = false,
         int replyToMessageId = 0,
         IReplyMarkup? replyMarkup = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+       )
     {
         try
         {
@@ -89,7 +91,10 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.GetType());
+            logger.LogError(nameof(TrySendPhotoAsync) + ":" + exception.GetType());
+            logger.LogError(exception.Message);
+            
+            Console.WriteLine(nameof(TrySendPhotoAsync) + ":" + exception.GetType());
             Console.WriteLine(exception.Message);
         }
     }
