@@ -1,7 +1,7 @@
 ﻿const https = require('https');
 module.exports = async function (context, myTimer) {
     try {
-        context.log("executing Daily Winner");
+        context.log("executing wednesday job");
 
         const options = {
             hostname: process.env["HOST_NAME"],
