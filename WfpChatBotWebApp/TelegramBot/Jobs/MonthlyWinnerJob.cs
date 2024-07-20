@@ -16,6 +16,7 @@ public class MonthlyWinnerJobHandler(
     ITextMessageService textMessageService,
     IGameRepository repository,
     IHttpClientFactory httpClientFactory,
+    IConfiguration configuration,
     ILogger<MonthlyWinnerJobRequest> logger)
     : IRequestHandler<MonthlyWinnerJobRequest>
 {
@@ -28,7 +29,7 @@ public class MonthlyWinnerJobHandler(
         logger.LogInformation("Got {Chats} chats", string.Join(',', allChatIds));
 
         var httpClient = httpClientFactory.CreateClient("Pictures");
-        var bowlImage = await httpClient.GetStreamAsync("bowl.png", cancellationToken);
+        var bowlImage = await httpClient.GetStreamAsync("bowl.png" + configuration.GetValue<string>("StickerSas"), cancellationToken);
         
         for (var i = 0; i < allChatIds.Length; i++)
         {
