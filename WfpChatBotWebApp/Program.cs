@@ -60,7 +60,7 @@ builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 
 builder.Services.AddSingleton<IOpenAiService>(_ => new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
-builder.Services.AddScoped<IBotReplyService, BotReplyService>();
+builder.Services.AddSingleton<IBotReplyService, BotReplyService>();
 
 var app = builder.Build();
 
