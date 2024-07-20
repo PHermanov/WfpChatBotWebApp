@@ -6,10 +6,13 @@ namespace WfpChatBotWebApp.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class JobController(IConfiguration configuration, IMediator mediator) : ControllerBase
+public class JobController(IConfiguration configuration, IMediator mediator) 
+    : ControllerBase
 {
     [HttpPost("{jobName}")]
-    public async Task<IActionResult> Post([FromRoute] string jobName, [FromQuery] string secret,
+    public async Task<IActionResult> Post(
+        [FromRoute] string jobName, 
+        [FromQuery] string secret, 
         CancellationToken cancellationToken)
     {
         if (secret != configuration.GetValue<string>("FunctionsSecret"))
@@ -19,6 +22,7 @@ public class JobController(IConfiguration configuration, IMediator mediator) : C
         {
             "daily" => new DailyWinnerJobRequest(),
             "monthly" => new MonthlyWinnerJobRequest(),
+            "wednesday" => new WednesdayJobRequest(),
             _ => null
         };
 

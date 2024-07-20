@@ -38,8 +38,8 @@ public class MamotaCommandHandler(
                 cancellationToken: cancellationToken);
 
             var stickerUrl = await stickerService.GetRandomStickerFromSet(StickerService.StickerSet.Mamota, cancellationToken);
-            
-            if(string.IsNullOrWhiteSpace(stickerUrl))
+
+            if (string.IsNullOrWhiteSpace(stickerUrl))
                 return;
             
             await botClient.TrySendStickerAsync(
