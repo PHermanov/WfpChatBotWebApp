@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using Markdig;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -101,15 +102,18 @@ public static class TelegramBotClientExtensions
         ChatId chatId,
         int messageId,
         string text,
-        ParseMode parseMode = ParseMode.MarkdownV2,
+        ParseMode parseMode = ParseMode.Html,
         CancellationToken cancellationToken = default)
     {
         try
         {
+            var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+            var html = Markdown.ToHtml(text, pipeline);
+            
             await client.EditMessageTextAsync(
                 chatId: chatId,
                 messageId: messageId,
-                text: text,
+                text: html,
                 parseMode: parseMode,
                 entities: null,
                 disableWebPagePreview: null,
