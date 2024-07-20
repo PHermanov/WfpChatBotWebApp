@@ -119,6 +119,7 @@ public class MonthlyWinnerJobHandler(
         }
         catch (Exception e)
         {
+            logger.LogError("{Name} for {ChatId}, Exception  {e}", nameof(ProcessMonthlyWinnerForChat), chatId, e);
             logger.LogError("{Name} for {ChatId}, Exception {exceptionType} {exception}", nameof(ProcessMonthlyWinnerForChat), chatId, e.GetType(), e.Message);
         }
     }
