@@ -23,7 +23,7 @@ public class OpenAiService(string key) : IOpenAiService
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
-            messagesQueue = new(maxTokens: 100_000);
+            messagesQueue = new ChatMessageQueue(maxTokens: 100_000);
             _messageQueues.Add(contextKey, messagesQueue);
         }
 

@@ -101,7 +101,7 @@ public static class TelegramBotClientExtensions
         ChatId chatId,
         int messageId,
         string text,
-        ParseMode parseMode = ParseMode.Html,
+        ParseMode parseMode = ParseMode.Markdown,
         CancellationToken cancellationToken = default)
     {
         try
