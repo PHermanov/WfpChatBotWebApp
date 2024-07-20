@@ -30,6 +30,12 @@ builder.Services.AddHttpClient("Google",
         httpClient.BaseAddress = new Uri(builder.Configuration["GoogleSearchUri"] ?? string.Empty);
     });
 
+builder.Services.AddHttpClient("Pictures",
+    httpClient =>
+    {
+        httpClient.BaseAddress = new Uri(builder.Configuration["PicturesUri"] ?? string.Empty);
+    });
+
 var connectionString = builder.Configuration["azure-mysql-connectionstring-349a2"];
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions

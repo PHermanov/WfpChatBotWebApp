@@ -444,6 +444,8 @@ $RECYCLE.BIN/
 *.secret
 *.db
 local.settings.json
+*.png
+*.jpg
 
 ##
 ## RUST

@@ -63,5 +63,35 @@ public static class TelegramBotClientExtensions
             Console.WriteLine(exception.Message);
         }
     }
+    
+    public static async Task TrySendPhotoAsync(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        InputFile photo,
+        string? caption = null,
+        ParseMode parseMode = ParseMode.Html,
+        bool disableNotification = false,
+        int replyToMessageId = 0,
+        IReplyMarkup? replyMarkup = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.SendPhotoAsync(
+                chatId:chatId, 
+                photo:photo, 
+                caption:caption, 
+                parseMode:parseMode, 
+                disableNotification:disableNotification, 
+                replyToMessageId:replyToMessageId, 
+                replyMarkup:replyMarkup, 
+                cancellationToken:cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception.GetType());
+            Console.WriteLine(exception.Message);
+        }
+    }
 }
 

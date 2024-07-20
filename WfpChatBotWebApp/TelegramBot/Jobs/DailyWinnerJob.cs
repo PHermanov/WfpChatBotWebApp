@@ -38,7 +38,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
         try
         {
-            var users = await repository.GetActiveUsersAsync(chatId, cancellationToken);
+            var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
             
             await ProcessMissedGames(chatId, users, cancellationToken);
             

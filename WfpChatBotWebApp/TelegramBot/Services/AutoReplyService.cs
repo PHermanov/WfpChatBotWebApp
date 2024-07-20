@@ -64,7 +64,7 @@ public partial class AutoReplyService(
 
         if (splitText.Any(w => w.Equals("@all", StringComparison.OrdinalIgnoreCase)))
         {
-            var users = (await repository.GetActiveUsersAsync(message.Chat.Id, cancellationToken))
+            var users = (await repository.GetActiveUsersForChatAsync(message.Chat.Id, cancellationToken))
                 .Where(user => message.From != null && user.UserId != message.From.Id)
                 .ToArray();
 

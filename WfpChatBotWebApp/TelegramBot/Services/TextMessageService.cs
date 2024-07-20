@@ -19,9 +19,7 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
             return string.Empty;
 
         if (cache.TryGetValue<string>(name, out var text))
-        {
             return string.IsNullOrEmpty(text) ? string.Empty : text;
-        }
 
         try
         {

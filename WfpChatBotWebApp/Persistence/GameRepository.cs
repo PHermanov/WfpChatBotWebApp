@@ -10,9 +10,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task CheckUserAsync(long chatId, long userId, string userName, CancellationToken cancellationToken)
     {
         if (cache.TryGetValue((chatId, userId), out bool saved) && saved)
-        {
             return;
-        }
 
         var userById = await GetUserByUserIdAndChatIdAsync(chatId, userId, cancellationToken);
 
@@ -50,7 +48,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Distinct()
             .ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser[]> GetActiveUsersAsync(long chatId, CancellationToken cancellationToken)
+    public async Task<BotUser[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken)
         => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
     public async Task<BotUser[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken)
@@ -122,6 +120,10 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
         => await context.Stickers
             .Where(s => s.Set == set)
             .ToArrayAsync(cancellationToken);
+
+    public async Task<StickerEntity?> GetImageByNameAsync(string name, CancellationToken cancellationToken)
+        => await context.Stickers
+            .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
 
     #endregion
 }

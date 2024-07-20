@@ -15,9 +15,10 @@ public class JobController(IConfiguration configuration, IMediator mediator) : C
         if (secret != configuration.GetValue<string>("FunctionsSecret"))
             return Unauthorized();
 
-        var request = jobName switch
+        IRequest? request = jobName switch
         {
             "daily" => new DailyWinnerJobRequest(),
+            "monthly" => new MonthlyWinnerJobRequest(),
             _ => null
         };
 

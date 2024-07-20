@@ -22,7 +22,7 @@ public class MamotaCommandHandler(
     {
         try
         {
-            var users = await repository.GetActiveUsersAsync(request.ChatId, cancellationToken);
+            var users = await repository.GetActiveUsersForChatAsync(request.ChatId, cancellationToken);
 
             if (users.Length == 0)
                 return;
