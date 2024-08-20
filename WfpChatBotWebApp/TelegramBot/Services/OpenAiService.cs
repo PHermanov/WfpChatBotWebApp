@@ -4,6 +4,8 @@ using System.Text;
 using OpenAI.Chat;
 using OpenAI.Images;
 using AI.Dev.OpenAI.GPT;
+using Azure;
+using Azure.AI.OpenAI;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -13,17 +15,28 @@ public interface IOpenAiService
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
 }
 
-public class OpenAiService(string key) : IOpenAiService
+public class OpenAiService : IOpenAiService
 {
-    private readonly ChatClient _chatClient = new(model: "gpt-4o", key);
-    private readonly ImageClient _imageClient = new(model: "dall-e-3", key);
+    private readonly ChatClient _chatClient; 
+    private readonly ImageClient _imageClient; 
+    
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
-
+    
+    public OpenAiService(string key, string url)
+    {
+        var azureClient = new AzureOpenAIClient(
+            new Uri(url),
+            new AzureKeyCredential(key));
+        
+        _chatClient = azureClient.GetChatClient("wfp-gtp-4o");
+        _imageClient = azureClient.GetImageClient("wfp-dall-e-3");
+    }
+    
     public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
-            messagesQueue = new ChatMessageQueue(maxTokens: 100_000);
+            messagesQueue = new ChatMessageQueue(maxTokens: 150_000);
             _messageQueues.Add(contextKey, messagesQueue);
         }
 
@@ -33,7 +46,7 @@ public class OpenAiService(string key) : IOpenAiService
 
         var stream = _chatClient.CompleteChatStreamingAsync(
             messagesQueue.ToArray(),
-            new ChatCompletionOptions { Temperature = 0.5f },
+            new ChatCompletionOptions { Temperature = 0.5f, ResponseFormat = ChatResponseFormat.Text},
             cancellationToken);
 
         await foreach (var completion in stream)

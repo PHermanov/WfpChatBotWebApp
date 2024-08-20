@@ -23,7 +23,9 @@ public class TelegramBotController(IConfiguration configuration, IMessageBus bus
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
 
         // no await to achieve fire-and-forget
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         bus.Publish(update, cancellationToken: cancellationToken);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
         return Ok();
     }

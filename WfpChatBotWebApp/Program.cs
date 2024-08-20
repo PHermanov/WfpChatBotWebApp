@@ -59,15 +59,19 @@ builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
-    
-builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
+
+
+var openAiKey = builder.Configuration["OpenAiKey"] ?? string.Empty;
+var openAiUrl = builder.Configuration["OpenAiUrl"] ?? string.Empty;
+builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(openAiKey, openAiUrl));
+
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>
         {
             mbb
-                .PerMessageScopeEnabled(true)
+                .PerMessageScopeEnabled()
                 .Produce<Update>(x => x.DefaultTopic("telegram-topic"))
                 .Consume<Update>(x => x.Topic("telegram-topic")
                     .WithConsumer<ITelegramBotService>(nameof(ITelegramBotService.HandleUpdateAsync))
