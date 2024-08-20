@@ -15,11 +15,10 @@ public class BotReplyService(
     ITelegramBotClient botClient,
     IOpenAiService openAiService,
     ITextMessageService messageService,
+    IContextKeysService contextKeysService,
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
-    private readonly Dictionary<string, Guid> _contextKeys = new();
-
     public async Task Reply(string mention, Message message, CancellationToken cancellationToken)
     {
         var request = !string.IsNullOrEmpty(mention)
@@ -87,7 +86,7 @@ public class BotReplyService(
             ? $"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"
             : $"{message.Chat.Id}_{message.MessageId}";
 
-        if (_contextKeys.TryGetValue(key, out var contextKey))
+        if (contextKeysService.TryGetValue(key, out var contextKey))
         {
             return new KeyValuePair<string, Guid>(key, contextKey);
         }
@@ -95,9 +94,9 @@ public class BotReplyService(
         {
             var newContextKey = Guid.NewGuid();
 
-            _contextKeys[key] = newContextKey;
+            contextKeysService.SetValue(key, newContextKey);
 
-            return new(key, newContextKey);
+            return new KeyValuePair<string, Guid>(key, newContextKey);
         }
     }
 
@@ -105,8 +104,8 @@ public class BotReplyService(
     {
         var key = $"{answer.Chat.Id}_{answer.MessageId}";
 
-        _contextKeys[key] = prevKey.Value;
-
-        _contextKeys.Remove(prevKey.Key);
+        contextKeysService.SetValue(key, prevKey.Value);
+        
+        contextKeysService.RemoveValue(prevKey.Key);
     }
 }

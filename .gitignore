@@ -440,6 +440,8 @@ $RECYCLE.BIN/
 !.vscode/launch.json
 !.vscode/extensions.json
 
+testsettings.json
+
 ## Custom
 *.secret
 *.db

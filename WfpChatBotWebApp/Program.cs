@@ -59,9 +59,10 @@ builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<ITikTokService, TikTokService>();
-
+builder.Services.AddScoped<IBotReplyService, BotReplyService>();
+    
 builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration["OpenAiKey"] ?? string.Empty));
-builder.Services.AddSingleton<IBotReplyService, BotReplyService>();
+builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>
@@ -89,3 +90,9 @@ app.UseCors(corsPolicyBuilder =>
 app.MapControllers();
 
 app.Run();
+
+// For integration tests
+public partial class Program
+{
+
+}
