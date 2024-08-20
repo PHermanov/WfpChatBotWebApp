@@ -1,6 +1,8 @@
-﻿namespace WfpChatBotWebApp.Persistence.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-public class BotUser
+namespace WfpChatBotWebApp.Persistence.Entities;
+
+public class User
 {
     public int Id { get; set; }
     public long ChatId { get; set; }

@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Entities;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using User = WfpChatBotWebApp.Persistence.Entities.User;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -60,7 +61,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         }
     }
 
-    private async Task SendNewWinnerMessage(long chatId, BotUser newWinner, CancellationToken cancellationToken)
+    private async Task SendNewWinnerMessage(long chatId, User newWinner, CancellationToken cancellationToken)
     {
         var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
             
@@ -95,13 +96,13 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
             cancellationToken: cancellationToken);
     }
 
-    private async Task ProcessMissedGames(long chatId, BotUser[] users, CancellationToken cancellationToken)
+    private async Task ProcessMissedGames(long chatId, User[] users, CancellationToken cancellationToken)
     {
         var lastGame = await repository.GetLastPlayedGameAsync(chatId, cancellationToken);
 
         if (lastGame != null)
         {
-            var date = lastGame.PlayedAt.AddDays(1);
+            var date = lastGame.PlayDate.AddDays(1);
             var results = new List<string>();
 
             while (date.Date < DateTime.Today)
@@ -126,7 +127,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         }
     }
 
-    private async Task<BotUser> SelectWinnerForDate(long chatId, DateTime date, BotUser[] users, CancellationToken cancellationToken)
+    private async Task<User> SelectWinnerForDate(long chatId, DateTime date, User[] users, CancellationToken cancellationToken)
     {
         var newWinner = users[new Random().Next(users.Length)];
 
@@ -134,7 +135,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         {
             ChatId = chatId,
             UserId = newWinner.UserId,
-            PlayedAt = date
+            PlayDate = date
         };
 
         await repository.SaveResultAsync(dayResult, cancellationToken);

@@ -36,7 +36,7 @@ public class ReplyMessagesService(AppDbContext appDbContext, IMemoryCache cache)
 
                 if (allData.Length > 0)
                 {
-                    values = allData.ToDictionary(r => r.Key, r => r.Value);
+                    values = allData.ToDictionary(r => r.MessageKey, r => r.MessageValue);
 
                     cache.Set(CacheKey, values, TimeSpan.FromDays(1));
 

@@ -2,6 +2,6 @@
 
 public class ReplyMessage
 {
-    public string Key { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
+    public string MessageKey { get; set; } = string.Empty;
+    public string MessageValue { get; set; } = string.Empty;
 }

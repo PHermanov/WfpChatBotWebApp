@@ -39,9 +39,8 @@ builder.Services.AddHttpClient("Pictures",
         httpClient.BaseAddress = new Uri(builder.Configuration["PicturesUri"] ?? string.Empty);
     });
 
-var connectionString = builder.Configuration["azure-mysql-connectionstring-349a2"];
 builder.Services.AddDbContext<AppDbContext>(
-    dbContextOptions => dbContextOptions.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
 
 builder.Services.AddMemoryCache();
 

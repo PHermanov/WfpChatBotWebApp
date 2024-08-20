@@ -12,7 +12,7 @@ public static class RepositoryExtensions
             {
                 UserId = gr.Key.UserId,
                 Count = gr.Count(),
-                LastWin = gr.Max(r => r.PlayedAt)
+                LastWin = gr.Max(r => r.PlayDate)
             })
             .OrderByDescending(c => c.Count)
             .ThenBy(c => c.LastWin);

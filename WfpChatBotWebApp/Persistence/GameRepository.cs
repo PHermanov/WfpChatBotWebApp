@@ -27,14 +27,14 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
         }
         else
         {
-            var newUser = new BotUser
+            var newUser = new User
             {
                 ChatId = chatId,
                 UserId = userId,
                 UserName = userName
             };
 
-            await context.BotUsers.AddAsync(newUser, cancellationToken);
+            await context.Users.AddAsync(newUser, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
 
             cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
@@ -42,41 +42,41 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     }
 
     public async Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken)
-        => await context.BotUsers
+        => await context.Users
             .Where(p => p.ChatId < 0) // chats ids are negative
             .Select(p => p.ChatId)
             .Distinct()
             .ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken)
-        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
+    public async Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken)
+        => await context.Users.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken)
-        => await context.BotUsers.Where(p => p.ChatId == chatId && p.Inactive == true).ToArrayAsync(cancellationToken);
+    public async Task<User[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken)
+        => await context.Users.Where(p => p.ChatId == chatId && p.Inactive == true).ToArrayAsync(cancellationToken);
 
-    public async Task<BotUser[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken)
-        => await context.BotUsers.Where(p => p.ChatId == chatId).ToArrayAsync(cancellationToken);
+    public async Task<User[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken)
+        => await context.Users.Where(p => p.ChatId == chatId).ToArrayAsync(cancellationToken);
     
-    public async Task<BotUser?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken)
-        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
+    public async Task<User?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken)
+        => await context.Users.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserId == userId, cancellationToken);
 
-    public async Task<BotUser?> GetUserByNameAsync(long chatId, string userName)
-        => await context.BotUsers.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
+    public async Task<User?> GetUserByNameAsync(long chatId, string userName)
+        => await context.Users.FirstOrDefaultAsync(p => p.ChatId == chatId && p.UserName == userName);
 
     #endregion
 
     #region Results
     
     public async Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken)
-        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today, cancellationToken);
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayDate.Date == DateTime.Today, cancellationToken);
 
     public async Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken)
-        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayedAt.Date == DateTime.Today.AddDays(-1), cancellationToken);
+        => await context.Results.FirstOrDefaultAsync(r => r.ChatId == chatId && r.PlayDate.Date == DateTime.Today.AddDays(-1), cancellationToken);
 
     public async Task<Result?> GetLastPlayedGameAsync(long chatId, CancellationToken cancellationToken)
         => await context.Results
             .Where(r => r.ChatId == chatId)
-            .OrderByDescending(r => r.PlayedAt)
+            .OrderByDescending(r => r.PlayDate)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task SaveResultAsync(Result result, CancellationToken cancellationToken)
@@ -98,30 +98,30 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
 
     private IOrderedQueryable<PlayerCountViewModel> GetMonthResults(long chatId, DateTime date)
         => context.Results
-            .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == date.Year && r.PlayedAt.Date.Month == date.Month)
+            .Where(r => r.ChatId == chatId && r.PlayDate.Date.Year == date.Year && r.PlayDate.Date.Month == date.Month)
             .ApplyGrouping();
 
     public async Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken)
         => await context.Results
-            .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
+            .Where(r => r.ChatId == chatId && r.PlayDate.Date.Year == year)
             .ApplyGrouping()
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken)
         => await context.Results
-            .Where(r => r.ChatId == chatId && r.PlayedAt.Date.Year == year)
+            .Where(r => r.ChatId == chatId && r.PlayDate.Date.Year == year)
             .ApplyGrouping()
             .ToArrayAsync(cancellationToken);
     #endregion
 
     #region Stickers
 
-    public async Task<StickerEntity[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken)
+    public async Task<Sticker[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken)
         => await context.Stickers
-            .Where(s => s.Set == set)
+            .Where(s => s.StickerSet == set)
             .ToArrayAsync(cancellationToken);
 
-    public async Task<StickerEntity?> GetImageByNameAsync(string name, CancellationToken cancellationToken)
+    public async Task<Sticker?> GetImageByNameAsync(string name, CancellationToken cancellationToken)
         => await context.Stickers
             .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
 

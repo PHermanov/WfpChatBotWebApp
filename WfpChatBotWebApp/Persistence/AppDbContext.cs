@@ -14,84 +14,71 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<TextMessage> TextMessages { get; set; }
     public virtual DbSet<Result> Results { get; set; }
-    public virtual DbSet<BotUser> BotUsers { get; set; }
-    public virtual DbSet<StickerEntity> Stickers { get; set; }
+    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<Sticker> Stickers { get; set; }
     public virtual DbSet<ReplyMessage> ReplyMessages { get; set; }
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .UseCollation("utf8mb4_0900_ai_ci")
-            .HasCharSet("utf8mb4");
-
-        modelBuilder.Entity<TextMessage>(entity =>
+        modelBuilder.Entity<ReplyMessage>(entity =>
         {
-            entity.HasKey(e => e.Name).HasName("PRIMARY");
-            entity.ToTable("textmessages");
-            entity.HasIndex(e => e.Name, "name_UNIQUE").IsUnique();
-            entity.Property(e => e.Name)
-                .HasMaxLength(45)
-                .HasColumnName("name");
-            entity.Property(e => e.Text)
-                .HasColumnType("text")
-                .HasColumnName("text");
+            entity.HasKey(e => e.MessageKey)
+                .HasName("PK__ReplyMes__E03734E19FB4DF73")
+                .IsClustered(false);
+
+            entity.HasIndex(e => e.MessageKey, "UQ__ReplyMes__E03734E05CAF3063")
+                .IsUnique()
+                .IsClustered();
+
+            entity.Property(e => e.MessageKey).HasMaxLength(15);
         });
 
         modelBuilder.Entity<Result>(entity =>
         {
-            entity.HasKey(r => r.Id).HasName("PRIMARY");
-            entity.ToTable("results");
-            entity.Property(e => e.ChatId).HasColumnName("chatid");
-            entity.Property(e => e.PlayedAt).HasColumnName("playdate");
-            entity.Property(e => e.UserId).HasColumnName("userid");
+            entity
+                .HasKey(e => e.Id)
+                .HasName("PK__Results__3214EC07BF532091");
         });
 
-        modelBuilder.Entity<BotUser>(entity =>
+        modelBuilder.Entity<Sticker>(entity =>
         {
-            entity.HasKey(r => r.Id).HasName("PRIMARY");
-            entity.ToTable("users");
-            entity.Property(e => e.ChatId).HasColumnName("chatid");
-            entity.Property(e => e.Inactive).HasColumnName("inactive");
-            entity.Property(e => e.UserId).HasColumnName("userid");
-            entity.Property(e => e.UserName)
-                .HasColumnType("text")
-                .HasColumnName("username");
+            entity.HasKey(e => e.Name)
+                .HasName("PK__Stickers__737584F653C9340A")
+                .IsClustered(false);
+
+            entity.HasIndex(e => e.Name, "UQ__Stickers__737584F7FFBBA1FD")
+                .IsUnique()
+                .IsClustered();
+
+            entity.Property(e => e.Name).HasMaxLength(45);
+            entity.Property(e => e.StickerSet).HasMaxLength(10);
+            entity.Property(e => e.Url).HasMaxLength(200);
         });
 
-        modelBuilder.Entity<StickerEntity>(entity =>
+        modelBuilder.Entity<TextMessage>(entity =>
         {
-            entity.HasKey(r => r.Name).HasName("PRIMARY");
-            entity.ToTable("stickers");
-            entity.HasIndex(e => e.Name, "name_UNIQUE").IsUnique();
-            entity.Property(e => e.Name)
-                .HasMaxLength(45)
-                .HasColumnName("name");
-            entity.Property(e => e.Set)
-                .HasColumnType("text")
-                .HasMaxLength(10)
-                .HasColumnName("sticker_set");
-            entity.Property(e => e.Url)
-                .HasColumnType("text")
-                .HasMaxLength(200)
-                .HasColumnName("url");
+            entity.HasKey(e => e.Name)
+                .HasName("PK__TextMess__737584F68FABF3D1")
+                .IsClustered(false);
+
+            entity.HasIndex(e => e.Name, "UQ__TextMess__737584F72B75AE3E")
+                .IsUnique()
+                .IsClustered();
+
+            entity.Property(e => e.Name).HasMaxLength(45);
         });
 
-        modelBuilder.Entity<ReplyMessage>(entity =>
+        modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(r => r.Key).HasName("PRIMARY");
-            entity.ToTable("replymessages");
-            entity.HasIndex(e => e.Key, "key_UNIQUE").IsUnique();
-            entity.Property(e => e.Key)
-                .HasMaxLength(15)
-                .HasColumnName("key");
-            entity.Property(e => e.Value)
-                .HasColumnType("text")
-                .HasColumnName("value");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07C6324134");
+
+            entity.Property(e => e.Inactive)
+                .IsRequired()
+                .HasDefaultValueSql("('0')");
         });
-        
+
         OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
-

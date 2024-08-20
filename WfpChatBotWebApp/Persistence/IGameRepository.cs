@@ -6,11 +6,11 @@ namespace WfpChatBotWebApp.Persistence;
 public interface IGameRepository
 {
     Task CheckUserAsync(long chatId, long userId, string userName, CancellationToken cancellationToken);
-    Task<BotUser[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken);
-    Task<BotUser[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken);
-    Task<BotUser[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken);
-    Task<BotUser?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken);
-    Task<BotUser?> GetUserByNameAsync(long chatId, string userName);
+    Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken);
+    Task<User[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken);
+    Task<User[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken);
+    Task<User?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken);
+    Task<User?> GetUserByNameAsync(long chatId, string userName);
     Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken);
     Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken);
     Task<Result?> GetLastPlayedGameAsync(long chatId, CancellationToken cancellationToken);
@@ -21,6 +21,6 @@ public interface IGameRepository
     Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken);
     Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken);
-    Task<StickerEntity[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken);
-    Task<StickerEntity?> GetImageByNameAsync(string name, CancellationToken cancellationToken);
+    Task<Sticker[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken);
+    Task<Sticker?> GetImageByNameAsync(string name, CancellationToken cancellationToken);
 }
