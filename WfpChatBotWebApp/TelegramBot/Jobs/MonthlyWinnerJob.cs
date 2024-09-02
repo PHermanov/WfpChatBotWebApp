@@ -82,7 +82,7 @@ public class MonthlyWinnerJobHandler(
                 {
                     logger.LogInformation("{Name} for {ChatId}, photos not loaded", nameof(MonthlyWinnerJobHandler), chatId);
 
-                    bowlImageStream.Seek(0, SeekOrigin.Begin);
+                    bowlImageStream.Position = 0;
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
                         chatId: chatId,
@@ -111,7 +111,7 @@ public class MonthlyWinnerJobHandler(
                         
                         logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, winner image created. Sending", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
 
-                        winnerImage.Seek(0, SeekOrigin.Begin);
+                        winnerImage.Position = 0;
                         await botClient.TrySendPhotoAsync(
                             logger: logger,
                             chatId: chatId,
@@ -124,7 +124,7 @@ public class MonthlyWinnerJobHandler(
                     {
                         logger.LogError("{Name} for char {ChatId}, user {UserId} Exception in GetWinnerImageMonth {e}", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId, e.Message);
 
-                        bowlImageStream.Seek(0, SeekOrigin.Begin);
+                        bowlImageStream.Position = 0;
                         await botClient.TrySendPhotoAsync(
                             logger: logger,
                             chatId: chatId,

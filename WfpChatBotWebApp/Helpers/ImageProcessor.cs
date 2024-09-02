@@ -59,7 +59,7 @@ public static class ImageProcessor
             Pens.Solid(Color.Black, 2), yearPoint));
 
         await bitmap.SaveAsync(winnerImageStream, new PngEncoder());
-        winnerImageStream.Seek(0, SeekOrigin.Begin);
+        winnerImageStream.Position = 0;
 
         return winnerImageStream;
     }
