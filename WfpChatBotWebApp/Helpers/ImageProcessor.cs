@@ -13,6 +13,7 @@ public static class ImageProcessor
     public static async Task<MemoryStream> GetWinnerImageMonth(Stream bowlImageStream, MemoryStream avatarStream, DateTime date)
     {
         avatarStream.Position = 0;
+        bowlImageStream.Position = 0;
         
         var winnerImageStream = new MemoryStream();
         var bowlImage = await Image.LoadAsync(bowlImageStream);
