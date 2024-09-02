@@ -4,16 +4,16 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Telegram.Bot.Types;
 using Color = SixLabors.ImageSharp.Color;
 
 namespace WfpChatBotWebApp.Helpers;
 
 public static class ImageProcessor
 {
-    public static async Task<MemoryStream> GetWinnerImageMonth(Stream bowlImageStream, MemoryStream avatarStream, DateTime date)
+    public static async Task<InputFile> GetWinnerImageMonth(Stream bowlImageStream, MemoryStream avatarStream, DateTime date)
     {
         avatarStream.Position = 0;
-        bowlImageStream.Position = 0;
         
         var winnerImageStream = new MemoryStream();
         var bowlImage = await Image.LoadAsync(bowlImageStream);
@@ -59,8 +59,8 @@ public static class ImageProcessor
             Pens.Solid(Color.Black, 2), yearPoint));
 
         await bitmap.SaveAsync(winnerImageStream, new PngEncoder());
-        winnerImageStream.Position = 0;
+        winnerImageStream.Seek(0, SeekOrigin.Begin);
 
-        return winnerImageStream;
+        return InputFile.FromStream(winnerImageStream);
     }
 }
