@@ -34,7 +34,7 @@ public class TelegramBotService(
 
         if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text)) 
             || message.Type == MessageType.Photo 
-            || message.Type == MessageType.Audio)
+            || message.Type == MessageType.Voice)
         {
             var userName = message.From?.Username;
             var text = message.Text ?? string.Empty;
@@ -57,7 +57,7 @@ public class TelegramBotService(
                 logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
                 return;
             }
-            if (message is { Type: MessageType.Audio, Audio: not null })
+            if (message is { Type: MessageType.Voice, Audio: not null })
             {
                 await audioTranscribeService.Reply(message, cancellationToken);
             }
