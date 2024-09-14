@@ -57,8 +57,9 @@ public class TelegramBotService(
                 logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
                 return;
             }
-            if (message is { Type: MessageType.Voice, Audio: not null })
+            if (message is { Type: MessageType.Voice, Voice: not null })
             {
+                logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService), message.Chat.Id);
                 await audioTranscribeService.Reply(message, cancellationToken);
             }
             else if (IsBotMentioned(message, bot.Username))

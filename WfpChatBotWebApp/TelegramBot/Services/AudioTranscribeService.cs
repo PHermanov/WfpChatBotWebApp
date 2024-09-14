@@ -66,6 +66,7 @@ public class AudioTranscribeService(
                 chatId: message.Chat.Id,
                 text: messageText,
                 parseMode: ParseMode.Html,
+                replyToMessageId: message.MessageId,
                 cancellationToken: cancellationToken);
         }
         catch (Exception e)
