@@ -88,9 +88,9 @@ public class OpenAiService : IOpenAiService
     public async Task<string> ProcessAudio(Stream audioStream,  CancellationToken cancellationToken)
     {
         audioStream.Position = 0;
-        // var options = new AudioTranscriptionOptions { ResponseFormat = AudioTranscriptionFormat.Text };
+        var options = new AudioTranscriptionOptions { Language = "uk" };
         
-        var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice.wav", cancellationToken: cancellationToken);
+        var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice.wav", options, cancellationToken);
         return audioTranscriptionResult.Value.Text;
     }
 }
