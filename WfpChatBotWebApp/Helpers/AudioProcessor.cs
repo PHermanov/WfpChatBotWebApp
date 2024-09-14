@@ -1,4 +1,5 @@
-﻿using NReco.VideoConverter;
+﻿using FFMpegCore;
+using FFMpegCore.Pipes;
 
 namespace WfpChatBotWebApp.Helpers;
 
@@ -14,14 +15,13 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
     {
         try
         {
-            var fileName = Path.GetTempFileName();
-            using var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.DeleteOnClose);
-            audioStream.CopyTo(fileStream);
-
-            var converter = new FFMpegConverter();
-
             var output = new MemoryStream();
-            converter.ConvertMedia(fileName, output, "mp3");
+            
+            FFMpegArguments
+                .FromPipeInput(new StreamPipeSource(audioStream))
+                .OutputToPipe(new StreamPipeSink(output), options => 
+                    options.ForceFormat("mp3"))
+                .ProcessSynchronously(true, new FFOptions { BinaryFolder = "StaticFiles", TemporaryFilesFolder = "/tmp" });
 
             return output;
         }
