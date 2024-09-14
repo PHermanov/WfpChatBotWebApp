@@ -6,6 +6,7 @@ using OpenAI.Images;
 using AI.Dev.OpenAI.GPT;
 using Azure;
 using Azure.AI.OpenAI;
+using OpenAI.Audio;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -13,23 +14,30 @@ public interface IOpenAiService
 {
     IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, CancellationToken cancellationToken);
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
+    Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken);
 }
 
 public class OpenAiService : IOpenAiService
 {
+    
     private readonly ChatClient _chatClient; 
     private readonly ImageClient _imageClient; 
+    private readonly AudioClient _audioClient; 
     
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
     
-    public OpenAiService(string key, string url)
+    public OpenAiService(ConfigurationManager config)
     {
-        var azureClient = new AzureOpenAIClient(
-            new Uri(url),
-            new AzureKeyCredential(key));
+        var openAiKey = config["OpenAiKey"] ?? string.Empty;
+        var openAiUrl = config["OpenAiUrl"] ?? string.Empty;
         
-        _chatClient = azureClient.GetChatClient("wfp-gtp-4o");
-        _imageClient = azureClient.GetImageClient("wfp-dall-e-3");
+        var azureClient = new AzureOpenAIClient(
+            new Uri(openAiUrl),
+            new AzureKeyCredential(openAiKey));
+        
+        _chatClient = azureClient.GetChatClient(config["OpenAiChatModelName"]);
+        _imageClient = azureClient.GetImageClient(config["OpenAiImageModelName"]);
+        _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
     }
     
     public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -76,6 +84,14 @@ public class OpenAiService : IOpenAiService
             yield return res.Value.ImageUri.OriginalString;
         }
     }
+
+    public async Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken)
+    {
+        var options = new AudioTranscriptionOptions { ResponseFormat = AudioTranscriptionFormat.Text };
+        
+        var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice_note.ogg", options, cancellationToken);
+        return audioTranscriptionResult.Value.Text;
+    }
 }
 
 public class ChatMessageQueue(int maxTokens)
@@ -94,8 +110,7 @@ public class ChatMessageQueue(int maxTokens)
         {
             while (_internalQueue.ToArray().Sum(cm => GPT3Tokenizer.Encode(cm.Content.FirstOrDefault()?.Text!).Count) > maxTokens
                    && _internalQueue.TryDequeue(out _))
-            {
-            }
+            { }
         }
     }
 

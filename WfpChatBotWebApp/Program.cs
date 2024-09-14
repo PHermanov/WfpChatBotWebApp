@@ -59,12 +59,9 @@ builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
+builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 
-
-var openAiKey = builder.Configuration["OpenAiKey"] ?? string.Empty;
-var openAiUrl = builder.Configuration["OpenAiUrl"] ?? string.Empty;
-builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(openAiKey, openAiUrl));
-
+builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 
 // Message bus
@@ -95,7 +92,5 @@ app.MapControllers();
 app.Run();
 
 // For integration tests
-public partial class Program
-{
-
-}
+// ReSharper disable once ClassNeverInstantiated.Global
+public partial class Program { }

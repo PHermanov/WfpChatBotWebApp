@@ -103,9 +103,7 @@ public class BotReplyService(
     private void SetContextKey(Message answer, KeyValuePair<string, Guid> prevKey)
     {
         var key = $"{answer.Chat.Id}_{answer.MessageId}";
-
         contextKeysService.SetValue(key, prevKey.Value);
-        
         contextKeysService.RemoveValue(prevKey.Key);
     }
 }

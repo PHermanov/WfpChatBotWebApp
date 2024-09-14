@@ -13,16 +13,16 @@ public interface ITelegramBotService
 }
 
 public class TelegramBotService(
-    IMediator mediator, 
-    IGameRepository gameRepository, 
+    IMediator mediator,
+    IGameRepository gameRepository,
     IAutoReplyService autoReplyService,
     ITelegramBotClient botClient,
     IBotReplyService botReplyService,
     ITikTokService tikTokService,
-    ILogger<TelegramBotService> logger) 
+    IAudioTranscribeService audioTranscribeService,
+    ILogger<TelegramBotService> logger)
     : ITelegramBotService
 {
-    
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
         var message = update.Message;
@@ -32,7 +32,9 @@ public class TelegramBotService(
         if (message.From is { IsBot: true })
             return;
 
-        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text)) || message.Type == MessageType.Photo)
+        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text)) 
+            || message.Type == MessageType.Photo 
+            || message.Type == MessageType.Audio)
         {
             var userName = message.From?.Username;
             var text = message.Text ?? string.Empty;
@@ -55,8 +57,11 @@ public class TelegramBotService(
                 logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
                 return;
             }
-            
-            if (IsBotMentioned(message, bot.Username))
+            if (message is { Type: MessageType.Audio, Audio: not null })
+            {
+                await audioTranscribeService.Reply(message, cancellationToken);
+            }
+            else if (IsBotMentioned(message, bot.Username))
             {
                 await botReplyService.Reply(bot.Username, message, cancellationToken);
             }
@@ -69,21 +74,20 @@ public class TelegramBotService(
                     await mediator.Send(command, cancellationToken);
                 }
             }
-            else if(tikTokService.ContainsTikTokUrl(message))
+            else if (tikTokService.ContainsTikTokUrl(message))
             {
                 await tikTokService.TryDownloadVideo(message, cancellationToken);
             }
-            else if(!string.IsNullOrEmpty(text))
+            else if (!string.IsNullOrEmpty(text))
             {
                 await autoReplyService.AutoReplyAsync(message, cancellationToken);
                 await autoReplyService.AutoMentionAsync(message, cancellationToken);
             }
         }
     }
-    
+
     private static bool IsBotMentioned(Message message, string botUserName) =>
         (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
          && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
         || message.ReplyToMessage?.From?.Username == botUserName;
-
 }

@@ -34,7 +34,7 @@ public class TikTokService (ITelegramBotClient botClient, ILogger<TikTokService>
                 .Split(" ", StringSplitOptions.RemoveEmptyEntries)
                 .FirstOrDefault(p => p.Contains("tiktok.com"));
 
-            if(string.IsNullOrEmpty(url))
+            if (string.IsNullOrEmpty(url))
                 return;
             
             var videoUrl = await GetVideoUrl(url, cancellationToken);

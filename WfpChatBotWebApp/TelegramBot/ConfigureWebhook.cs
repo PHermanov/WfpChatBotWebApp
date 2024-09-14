@@ -17,7 +17,7 @@ public class ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration c
         var url = $"{hostAddress}telegrambot";
 
         await botClient.SetWebhookAsync(
-            url,
+            url: url,
             allowedUpdates: new[] { UpdateType.Message },
             secretToken: secretToken,
             cancellationToken: cancellationToken);
