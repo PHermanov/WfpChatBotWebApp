@@ -17,7 +17,9 @@ public class TelegramBotController(IConfiguration configuration, IMessageBus bus
     [Consumes(MediaTypeNames.Application.Json)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
