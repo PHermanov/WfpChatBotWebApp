@@ -16,6 +16,7 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
     {
         try
         {
+            audioStream.Position = 0;
             logger.LogInformation("ConvertAudio: Audio stream received, length: {len}", audioStream.Length);
             
             var inputFileName = Path.GetTempFileName();
