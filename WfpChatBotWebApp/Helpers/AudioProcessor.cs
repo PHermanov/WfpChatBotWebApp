@@ -27,7 +27,7 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
             var output = new MemoryStream();
             
             FFMpegArguments
-                .FromFileInput(inputFileName, true, options => options.WithCustomArgument("-v 48"))
+                .FromPipeInput(new StreamPipeSource(audioStream), options => options.WithCustomArgument("-v 48"))
                 .OutputToPipe(new StreamPipeSink(output), options => options.ForceFormat("mp3"))
                 .ProcessSynchronously(true, new FFOptions { BinaryFolder = "StaticFiles", TemporaryFilesFolder = "/tmp" });
 
