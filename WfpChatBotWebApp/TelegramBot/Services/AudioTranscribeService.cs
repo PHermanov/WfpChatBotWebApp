@@ -53,6 +53,7 @@ public class AudioTranscribeService(
             
             var convertedAudioStream = audioProcessor.ConvertAudio(audioStream);
             
+            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio converted to wav", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
             var transcript = await openAiService.ProcessAudio(convertedAudioStream, cancellationToken);
             if (string.IsNullOrWhiteSpace(transcript))
             {
