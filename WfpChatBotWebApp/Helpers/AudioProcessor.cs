@@ -16,15 +16,10 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
     {
         try
         {
-            audioStream.Position = 0;
             logger.LogInformation("ConvertAudio: Audio stream received, length: {len}", audioStream.Length);
             
-            var inputFileName = Path.GetTempFileName();
-            logger.LogInformation("ConvertAudio: tmp file created: {filename}", inputFileName);
+            audioStream.Position = 0;
             
-            using var fileStream = new FileStream(inputFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.DeleteOnClose);
-            audioStream.CopyTo(fileStream);
-
             var output = new MemoryStream();
             
             FFMpegArguments
