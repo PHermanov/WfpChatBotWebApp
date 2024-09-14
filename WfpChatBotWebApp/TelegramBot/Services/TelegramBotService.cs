@@ -28,7 +28,9 @@ public class TelegramBotService(
         var message = update.Message;
         if (message == null)
             return;
-
+        
+        logger.LogInformation("{Name} chat: {ChatId}, Received message {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
+        
         if (message.From is { IsBot: true })
             return;
 

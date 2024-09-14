@@ -46,10 +46,11 @@ public class AudioTranscribeService(
             }
 
             var audioStream = new MemoryStream();
-            await botClient.DownloadFileAsync(audioFile.FilePath ?? string.Empty, audioStream, cancellationToken);
+            await botClient.DownloadFileAsync(audioFile.FilePath, audioStream, cancellationToken);
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file downloaded", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
 
-            var transcript = await openAiService.ProcessAudio(audioStream, cancellationToken);
+            var fileName = Path.GetFileName(audioFile.FilePath);
+            var transcript = await openAiService.ProcessAudio(audioStream, fileName, cancellationToken);
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, transcript is empty", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
