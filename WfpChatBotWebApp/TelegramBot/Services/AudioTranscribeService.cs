@@ -39,7 +39,7 @@ public class AudioTranscribeService(
             }
 
             var audioFile = await botClient.GetFileAsync(message.Voice?.FileId ?? string.Empty, cancellationToken);
-            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file info loaded", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file info loaded, Mime {mime}", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id, message.Voice?.MimeType);
 
             if (audioFile.FilePath == null)
             {
