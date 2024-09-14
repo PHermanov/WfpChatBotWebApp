@@ -15,10 +15,18 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
     {
         try
         {
+            logger.LogInformation("ConvertAudio: Audio stream received, length: {len}", audioStream.Length);
+            
+            var inputFileName = Path.GetTempFileName();
+            logger.LogInformation("ConvertAudio: tmp file created: {filename}", inputFileName);
+            
+            using var fileStream = new FileStream(inputFileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.DeleteOnClose);
+            audioStream.CopyTo(fileStream);
+
             var output = new MemoryStream();
             
             FFMpegArguments
-                .FromPipeInput(new StreamPipeSource(audioStream))
+                .FromFileInput(inputFileName)
                 .OutputToPipe(new StreamPipeSink(output), options => 
                     options.ForceFormat("mp3"))
                 .ProcessSynchronously(true, new FFOptions { BinaryFolder = "StaticFiles", TemporaryFilesFolder = "/tmp" });
