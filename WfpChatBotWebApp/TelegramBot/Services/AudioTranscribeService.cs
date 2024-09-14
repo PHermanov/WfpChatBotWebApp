@@ -1,6 +1,7 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 
@@ -16,6 +17,7 @@ public class AudioTranscribeService(
     IOpenAiService openAiService,
     ITextMessageService messageService,
     IGameRepository repository,
+    IAudioProcessor audioProcessor,
     ILogger<AudioTranscribeService> logger)
     : IAudioTranscribeService
 {
@@ -48,9 +50,10 @@ public class AudioTranscribeService(
             var audioStream = new MemoryStream();
             await botClient.DownloadFileAsync(audioFile.FilePath, audioStream, cancellationToken);
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file downloaded", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
-
-            var fileName = Path.GetFileName(audioFile.FilePath);
-            var transcript = await openAiService.ProcessAudio(audioStream, fileName, cancellationToken);
+            
+            var convertedAudioStream = audioProcessor.ConvertAudio(audioStream);
+            
+            var transcript = await openAiService.ProcessAudio(convertedAudioStream, cancellationToken);
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, transcript is empty", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);

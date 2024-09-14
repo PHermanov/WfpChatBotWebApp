@@ -6,6 +6,7 @@ using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -60,6 +61,8 @@ builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
+
+builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
 
 builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();

@@ -14,7 +14,7 @@ public interface IOpenAiService
 {
     IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, CancellationToken cancellationToken);
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
-    Task<string> ProcessAudio(Stream audioStream, string fileName, CancellationToken cancellationToken);
+    Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken);
 }
 
 public class OpenAiService : IOpenAiService
@@ -85,11 +85,11 @@ public class OpenAiService : IOpenAiService
         }
     }
 
-    public async Task<string> ProcessAudio(Stream audioStream, string fileName,  CancellationToken cancellationToken)
+    public async Task<string> ProcessAudio(Stream audioStream,  CancellationToken cancellationToken)
     {
         var options = new AudioTranscriptionOptions { ResponseFormat = AudioTranscriptionFormat.Text };
         
-        var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, fileName, options, cancellationToken);
+        var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice.mp3", options, cancellationToken);
         return audioTranscriptionResult.Value.Text;
     }
 }
