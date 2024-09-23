@@ -7,7 +7,7 @@ public static class CommandParser
 {
     private static readonly char[] Separator = [' '];
 
-    public static IRequest? Parse(Message message)
+    public static CommandBase? Parse(Message message)
     {
         if (string.IsNullOrEmpty(message.Text))
             return null;

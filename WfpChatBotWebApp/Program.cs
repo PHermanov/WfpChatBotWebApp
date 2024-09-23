@@ -66,6 +66,7 @@ builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
 
 builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
+builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>

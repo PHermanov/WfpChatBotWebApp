@@ -10,7 +10,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class GoogleCommand(Message message) : CommandWithParam(message), IRequest;
+public class GoogleCommand(Message message) : CommandWithParam(message), IRequest
+{
+    public override string Name => "google";
+}
 
 public class GoogleCommandHandler(
     ITelegramBotClient botClient,

@@ -9,7 +9,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class TodayCommand(Message message) : CommandBase(message), IRequest;
+public class TodayCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "today";
+}
 
 public class TodayCommandHandler(
     ITelegramBotClient botClient,

@@ -8,7 +8,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class YearCommand(Message message) : CommandBase(message), IRequest;
+public class YearCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "year";
+}
 
 public class YearCommandHandler(
     ITelegramBotClient botClient,

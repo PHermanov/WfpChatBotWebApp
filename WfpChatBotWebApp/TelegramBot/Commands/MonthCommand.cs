@@ -8,7 +8,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class MonthCommand(Message message) : CommandBase(message), IRequest;
+public class MonthCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "month";
+}
 
 public class MonthCommandHandler(
     ITelegramBotClient botClient,

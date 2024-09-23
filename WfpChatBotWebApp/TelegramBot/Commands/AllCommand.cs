@@ -8,7 +8,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class AllCommand(Message message) : CommandBase(message), IRequest;
+public class AllCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "all";
+}
 
 public class AllCommandHandler(ITelegramBotClient botClient, 
     IGameRepository repository, 

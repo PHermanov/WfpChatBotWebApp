@@ -6,7 +6,10 @@ using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class PingCommand(Message message) : CommandBase(message), IRequest;
+public class PingCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "ping";
+}
 
 public class PingCommandHandler(ITelegramBotClient botClient, ILogger<PingCommandHandler> logger) 
     : IRequestHandler<PingCommand>

@@ -7,7 +7,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class EchoCommand(Message message) : CommandWithParam(message), IRequest;
+public class EchoCommand(Message message) : CommandWithParam(message), IRequest
+{
+    public override string Name => "echo";
+}
 
 public class EchoCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService)
     : IRequestHandler<EchoCommand>

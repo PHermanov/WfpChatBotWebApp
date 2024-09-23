@@ -7,7 +7,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class TomorrowCommand(Message message) : CommandBase(message), IRequest;
+public class TomorrowCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "tomorrow";
+}
 
 public class TomorrowCommandHandler(ITelegramBotClient botClient, ITextMessageService messageService)
     : IRequestHandler<TomorrowCommand>

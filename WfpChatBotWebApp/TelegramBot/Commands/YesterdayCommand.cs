@@ -9,7 +9,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class YesterdayCommand(Message message) : CommandBase(message), IRequest;
+public class YesterdayCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "yesterday";
+}
 
 public class YesterdayCommandHadler(ITelegramBotClient botClient, IGameRepository repository, ITextMessageService messageService) 
     : IRequestHandler<YesterdayCommand>

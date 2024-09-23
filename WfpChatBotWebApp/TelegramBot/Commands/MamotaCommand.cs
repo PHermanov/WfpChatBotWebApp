@@ -9,7 +9,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class MamotaCommand(Message message) : CommandBase(message), IRequest;
+public class MamotaCommand(Message message) : CommandBase(message), IRequest
+{
+    public override string Name => "mamota";
+}
 
 public class MamotaCommandHandler(
     ITelegramBotClient botClient,

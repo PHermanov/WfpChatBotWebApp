@@ -8,7 +8,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class DrawCommand(Message message) : CommandWithParam(message), IRequest;
+public class DrawCommand(Message message) : CommandWithParam(message), IRequest
+{
+    public override string Name => "draw";
+}
 
 public class DrawCommandHandler(
         ITelegramBotClient botClient,

@@ -20,6 +20,7 @@ public class TelegramBotService(
     IBotReplyService botReplyService,
     ITikTokService tikTokService,
     IAudioTranscribeService audioTranscribeService,
+    IThrottlingService throttlingService,
     ILogger<TelegramBotService> logger)
     : ITelegramBotService
 {
@@ -28,14 +29,14 @@ public class TelegramBotService(
         var message = update.Message;
         if (message == null)
             return;
-        
+
         logger.LogInformation("{Name} chat: {ChatId}, Received message {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
-        
+
         if (message.From is { IsBot: true })
             return;
 
-        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text)) 
-            || message.Type == MessageType.Photo 
+        if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text))
+            || message.Type == MessageType.Photo
             || message.Type == MessageType.Voice)
         {
             var userName = message.From?.Username;
@@ -59,6 +60,7 @@ public class TelegramBotService(
                 logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
                 return;
             }
+
             if (message is { Type: MessageType.Voice, Voice: not null })
             {
                 logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService), message.Chat.Id);
@@ -74,7 +76,9 @@ public class TelegramBotService(
                 var command = CommandParser.Parse(message);
                 if (command != null)
                 {
-                    await mediator.Send(command, cancellationToken);
+                    var allowed = await throttlingService.IsAllowed(message, command.Name, cancellationToken);
+                    if (allowed)
+                        await mediator.Send((IRequest)command, cancellationToken);
                 }
             }
             else if (tikTokService.ContainsTikTokUrl(message))

@@ -8,7 +8,10 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class MeCommand(Message message) : CommandWithParam(message), IRequest;
+public class MeCommand(Message message) : CommandWithParam(message), IRequest
+{
+    public override string Name => "me";
+}
 
 public class MeCommandHandler(
     ITelegramBotClient botClient,
