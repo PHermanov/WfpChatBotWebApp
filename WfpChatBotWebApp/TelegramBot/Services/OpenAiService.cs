@@ -26,7 +26,7 @@ public class OpenAiService : IOpenAiService
     
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
     
-    public OpenAiService(ConfigurationManager config)
+    public OpenAiService(IConfiguration config)
     {
         var openAiKey = config["OpenAiKey"] ?? string.Empty;
         var openAiUrl = config["OpenAiUrl"] ?? string.Empty;
