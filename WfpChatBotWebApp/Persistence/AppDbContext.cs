@@ -74,7 +74,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Inactive)
                 .IsRequired()
-                .HasDefaultValueSql("('0')");
+                .HasDefaultValue(false);
         });
 
         OnModelCreatingPartial(modelBuilder);
