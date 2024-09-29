@@ -56,6 +56,18 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<ITelegramBotClient>(_ => 
             new TelegramBotClient(hostBuilderContext.Configuration["BotToken"]));
         
+        serviceCollection.AddHttpClient("Google",
+            httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["GoogleSearchUri"] ?? string.Empty);
+            });
+
+        serviceCollection.AddHttpClient("Pictures",
+            httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["PicturesUri"] ?? string.Empty);
+            });
+        
         serviceCollection.AddMemoryCache();
         serviceCollection.AddMediatR(conf => 
             conf.RegisterServicesFromAssemblyContaining<ConfigureWebhook>());
