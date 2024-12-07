@@ -94,7 +94,3 @@ app.UseCors(corsPolicyBuilder =>
 app.MapControllers();
 
 app.Run();
-
-// For integration tests
-// ReSharper disable once ClassNeverInstantiated.Global
-public partial class Program { }

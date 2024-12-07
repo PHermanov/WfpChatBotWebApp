@@ -4,12 +4,11 @@ namespace WfpChatBotWebApp.Controllers;
 
 [ApiController]
 [Route("/")]
-public class PingController(ILogger<PingController> logger) : ControllerBase
+public class PingController : ControllerBase
 {
     [HttpGet]
     public IActionResult Get()
     {
-        logger.LogInformation("Ping received");
         return Ok();
     }
 }

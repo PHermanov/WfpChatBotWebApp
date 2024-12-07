@@ -112,6 +112,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Where(r => r.ChatId == chatId && r.PlayDate.Date.Year == year)
             .ApplyGrouping()
             .ToArrayAsync(cancellationToken);
+    
     #endregion
 
     #region Stickers

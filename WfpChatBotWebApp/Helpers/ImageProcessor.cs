@@ -63,4 +63,43 @@ public static class ImageProcessor
 
         return InputFile.FromStream(winnerImageStream);
     }
+
+    public static async Task<InputFile> GetWinnerImageYear(Stream bowlImageStream, MemoryStream avatarStream, int year)
+    {
+        avatarStream.Position = 0;
+        
+        var winnerImageStream = new MemoryStream();
+        var bowlImage = await Image.LoadAsync(bowlImageStream);
+        var avatarImage = await Image.LoadAsync(avatarStream);
+
+        var width = avatarImage.Width;
+        var height = avatarImage.Height;
+
+        using var bitmap = new Image<Rgba32>(width, height);
+
+        bitmap.Mutate(x => x.DrawImage(avatarImage, new Point(0, 0), 1f));
+
+        // add bowl image to avatar
+        var bowlRatio = bitmap.Height / 2.2 / bowlImage.Height;
+        var bowlWidth = (int)(bowlImage.Width * bowlRatio);
+        var bowlHeight = (int)(bowlImage.Height * bowlRatio);
+
+        bowlImage.Mutate(x => x.Resize(new Size(bowlWidth, bowlHeight)));
+        var bowlPoint = new Point(bitmap.Width - bowlWidth - 10, bitmap.Height - bowlHeight - 10);
+        bitmap.Mutate(x => x.DrawImage(bowlImage, bowlPoint, 1f));
+
+        // add year to avatar
+        var collection = new FontCollection();
+        var family = collection.Add("StaticFiles/impact.ttf");
+        var font = family.CreateFont(bowlHeight / 3.0f);
+        var yearPoint = new Point(20, height - bowlHeight / 2);
+
+        bitmap.Mutate(x => x.DrawText(year.ToString(), font, Brushes.Solid(Color.White),
+            Pens.Solid(Color.Black, 2), yearPoint));
+
+        await bitmap.SaveAsync(winnerImageStream, new PngEncoder());
+        winnerImageStream.Seek(0, SeekOrigin.Begin);
+
+        return InputFile.FromStream(winnerImageStream);
+    }
 }

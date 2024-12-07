@@ -22,6 +22,7 @@ public class JobController(IConfiguration configuration, IMediator mediator)
         {
             "daily" => new DailyWinnerJobRequest(),
             "monthly" => new MonthlyWinnerJobRequest(),
+            "yearly" => new YearlyWinnerJobRequest(),
             "wednesday" => new WednesdayJobRequest(),
             _ => null
         };

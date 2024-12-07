@@ -1,9 +1,9 @@
-﻿using LocalStart;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
-class Program
+namespace LocalStart;  
+
+public class Program
 {
-
     static Task Main(string[] args)
     {
         Console.WriteLine("Starting...");

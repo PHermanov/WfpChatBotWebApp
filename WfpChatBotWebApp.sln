@@ -11,8 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegrationTests", "IntegrationTests\IntegrationTests.csproj", "{D92E9B29-2933-44A8-972A-605BBAAED768}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalStart", "LocalStart\LocalStart.csproj", "{083F8C64-1BA8-4858-89DA-CF7069AC052B}"
 EndProject
 Global
@@ -25,10 +23,6 @@ Global
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4B0432E-A85E-4CA5-8A1C-84C9D9415BC6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D92E9B29-2933-44A8-972A-605BBAAED768}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D92E9B29-2933-44A8-972A-605BBAAED768}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D92E9B29-2933-44A8-972A-605BBAAED768}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D92E9B29-2933-44A8-972A-605BBAAED768}.Release|Any CPU.Build.0 = Release|Any CPU
 		{083F8C64-1BA8-4858-89DA-CF7069AC052B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{083F8C64-1BA8-4858-89DA-CF7069AC052B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{083F8C64-1BA8-4858-89DA-CF7069AC052B}.Release|Any CPU.ActiveCfg = Release|Any CPU
