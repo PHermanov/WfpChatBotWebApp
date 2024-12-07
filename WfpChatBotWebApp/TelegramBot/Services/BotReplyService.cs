@@ -2,6 +2,7 @@
 using System.Web;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
@@ -28,6 +29,7 @@ public class BotReplyService(
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
             text: "...",
+            parseMode: ParseMode.Markdown,
             replyToMessageId: message.MessageId,
             cancellationToken: cancellationToken);
 
@@ -52,6 +54,7 @@ public class BotReplyService(
                     await botClient.TryEditMessageTextAsync(
                         chatId: answerMessage.Chat.Id,
                         messageId: answerMessage.MessageId,
+                        parseMode: ParseMode.Markdown,
                         text: $"{responseBuffer}...",
                         cancellationToken: cancellationToken);
 
@@ -76,6 +79,7 @@ public class BotReplyService(
                 chatId: answerMessage.Chat.Id,
                 messageId: answerMessage.MessageId,
                 text: responseBuffer.ToString(),
+                parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
         }
     }
