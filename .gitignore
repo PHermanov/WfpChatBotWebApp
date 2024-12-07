@@ -448,3 +448,4 @@ testsettings.json
 local.settings.json
 *.png
 *.jpg
+appSettingsLocal.json
