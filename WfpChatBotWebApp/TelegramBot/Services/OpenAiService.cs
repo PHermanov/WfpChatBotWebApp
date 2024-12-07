@@ -12,35 +12,34 @@ namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface IOpenAiService
 {
-    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, CancellationToken cancellationToken);
+    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, BinaryData? image, CancellationToken cancellationToken);
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
     Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken);
 }
 
 public class OpenAiService : IOpenAiService
 {
-    
-    private readonly ChatClient _chatClient; 
-    private readonly ImageClient _imageClient; 
-    private readonly AudioClient _audioClient; 
-    
+    private readonly ChatClient _chatClient;
+    private readonly ImageClient _imageClient;
+    private readonly AudioClient _audioClient;
+
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
-    
+
     public OpenAiService(IConfiguration config)
     {
         var openAiKey = config["OpenAiKey"] ?? string.Empty;
         var openAiUrl = config["OpenAiUrl"] ?? string.Empty;
-        
+
         var azureClient = new AzureOpenAIClient(
             new Uri(openAiUrl),
             new AzureKeyCredential(openAiKey));
-        
+
         _chatClient = azureClient.GetChatClient(config["OpenAiChatModelName"]);
         _imageClient = azureClient.GetImageClient(config["OpenAiImageModelName"]);
         _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
     }
-    
-    public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, [EnumeratorCancellation] CancellationToken cancellationToken)
+
+    public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, BinaryData? image, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
@@ -48,14 +47,18 @@ public class OpenAiService : IOpenAiService
             _messageQueues.Add(contextKey, messagesQueue);
         }
 
-        messagesQueue.Enqueue(ChatMessage.CreateUserMessage(message));
+        var userChatMessage = new UserChatMessage(ChatMessageContentPart.CreateTextMessageContentPart(message));
+
+        if (image != null)
+            userChatMessage.Content.Add(ChatMessageContentPart.CreateImageMessageContentPart(image, "image/jpeg"));
+
+        messagesQueue.Enqueue(userChatMessage);
 
         var responseBuffer = new StringBuilder();
 
         var stream = _chatClient.CompleteChatStreamingAsync(
             messagesQueue.ToArray(),
-            new ChatCompletionOptions { Temperature = 0.5f, ResponseFormat = ChatResponseFormat.Text},
-            cancellationToken);
+            cancellationToken: cancellationToken);
 
         await foreach (var completion in stream)
         {
@@ -85,11 +88,11 @@ public class OpenAiService : IOpenAiService
         }
     }
 
-    public async Task<string> ProcessAudio(Stream audioStream,  CancellationToken cancellationToken)
+    public async Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken)
     {
         audioStream.Position = 0;
         var options = new AudioTranscriptionOptions { Language = "uk" };
-        
+
         var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice.wav", options, cancellationToken);
         return audioTranscriptionResult.Value.Text;
     }
@@ -111,7 +114,8 @@ public class ChatMessageQueue(int maxTokens)
         {
             while (_internalQueue.ToArray().Sum(cm => GPT3Tokenizer.Encode(cm.Content.FirstOrDefault()?.Text!).Count) > maxTokens
                    && _internalQueue.TryDequeue(out _))
-            { }
+            {
+            }
         }
     }
 

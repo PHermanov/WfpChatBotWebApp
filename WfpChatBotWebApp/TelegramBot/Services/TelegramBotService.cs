@@ -42,6 +42,9 @@ public class TelegramBotService(
             var userName = message.From?.Username;
             var text = message.Text ?? string.Empty;
 
+            if (message.Type == MessageType.Photo)
+                text = message.Caption ?? string.Empty;
+
             if (string.IsNullOrWhiteSpace(userName))
             {
                 userName = $"{message.From!.FirstName} {message.From.LastName}";
@@ -49,11 +52,6 @@ public class TelegramBotService(
 
             await gameRepository.CheckUserAsync(message.Chat.Id, message.From!.Id, userName, cancellationToken);
 
-            // if (message.Type == MessageType.Photo && message.Photo?.Length > 0)
-            // {
-            //     await _autoReplyService.AutoReplyImageAsync(message, cancellationToken);
-            // }
-            //else 
             var bot = await botClient.GetMeAsync(cancellationToken);
             if (string.IsNullOrEmpty(bot.Username))
             {
@@ -61,17 +59,25 @@ public class TelegramBotService(
                 return;
             }
 
+            var botMentioned = IsBotMentioned(message, bot.Username);
+            if (botMentioned)
+            {
+                await botReplyService.Reply(bot.Username, message, cancellationToken);
+                return;
+            }
+
+            if (message.Type == MessageType.Photo && !botMentioned)
+                return;
+
             if (message is { Type: MessageType.Voice, Voice: not null })
             {
                 logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService), message.Chat.Id);
                 await audioTranscribeService.Reply(message, cancellationToken);
+                return;
             }
-            else if (IsBotMentioned(message, bot.Username))
-            {
-                await botReplyService.Reply(bot.Username, message, cancellationToken);
-            }
+
             // command received
-            else if (text.StartsWith('/'))
+            if (text.StartsWith('/'))
             {
                 var command = CommandParser.Parse(message);
                 if (command != null)
@@ -93,8 +99,16 @@ public class TelegramBotService(
         }
     }
 
-    private static bool IsBotMentioned(Message message, string botUserName) =>
-        (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
-         && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
-        || message.ReplyToMessage?.From?.Username == botUserName;
+    // private static bool IsBotMentioned(Message message, string botUserName) =>
+    //     (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
+    //      && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
+    //     || message.ReplyToMessage?.From?.Username == botUserName;
+
+    private static bool IsBotMentioned(Message message, string botUserName) => message.Type switch
+    {
+        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null
+                             && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}")) || message.ReplyToMessage?.From?.Username == botUserName,
+        MessageType.Photo when !string.IsNullOrEmpty(message.Caption) => message.Caption.Contains($"@{botUserName}"),
+        _ => false
+    };
 }

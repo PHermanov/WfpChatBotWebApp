@@ -22,9 +22,19 @@ public class BotReplyService(
 {
     public async Task Reply(string mention, Message message, CancellationToken cancellationToken)
     {
+        var text = message.Type switch
+        {
+            MessageType.Text => message.Text,
+            MessageType.Photo => message.Caption,
+            _ => string.Empty
+        };
+        
+        if (string.IsNullOrWhiteSpace(text))
+            return; 
+        
         var request = !string.IsNullOrEmpty(mention)
-            ? message.Text!.Replace($"@{mention}", string.Empty).Trim()
-            : message.Text!.Trim();
+            ? text.Replace($"@{mention}", string.Empty).Trim()
+            : text.Trim();
 
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
@@ -43,9 +53,21 @@ public class BotReplyService(
         {
             var contextKey = GetContextKey(message);
 
-            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, request, cancellationToken))
+            BinaryData? imageBinary = null;
+            if (message.Photo != null)
             {
-                responseBuffer.Append(HttpUtility.HtmlEncode(part));
+                var imageFile = await botClient.GetFileAsync(message.Photo[^1].FileId, cancellationToken);
+                if (!string.IsNullOrEmpty(imageFile.FilePath))
+                {
+                    using var imageStream = new MemoryStream();
+                    await botClient.DownloadFileAsync(imageFile.FilePath, imageStream, cancellationToken);
+                    imageBinary = new BinaryData(imageStream.ToArray());
+                }
+            }
+            
+            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, request, imageBinary, cancellationToken))
+            {
+                responseBuffer.Append(part);
 
                 if (responseBuffer.Length - previousBufferLength >= 60)
                 {
@@ -66,7 +88,7 @@ public class BotReplyService(
         }
         catch (Exception e)
         {
-           logger.LogError("{Class} Exception: {e}", nameof(BotReplyService), e);
+            logger.LogError("{Class} Exception: {e}", nameof(BotReplyService), e);
 
             responseBuffer.Clear();
 
