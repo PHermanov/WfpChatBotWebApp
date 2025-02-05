@@ -56,11 +56,11 @@ public class BotReplyService(
             BinaryData? imageBinary = null;
             if (message.Photo != null)
             {
-                var imageFile = await botClient.GetFileAsync(message.Photo[^1].FileId, cancellationToken);
+                var imageFile = await botClient.GetFile(message.Photo[^1].FileId, cancellationToken);
                 if (!string.IsNullOrEmpty(imageFile.FilePath))
                 {
                     using var imageStream = new MemoryStream();
-                    await botClient.DownloadFileAsync(imageFile.FilePath, imageStream, cancellationToken);
+                    await botClient.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
                     imageBinary = new BinaryData(imageStream.ToArray());
                 }
             }

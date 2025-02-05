@@ -11,7 +11,6 @@ public static class TelegramBotClientExtensions
         ChatId chatId,
         string text,
         ParseMode parseMode = ParseMode.Html,
-        bool disableWebPagePreview = false,
         bool disableNotification = false,
         int replyToMessageId = 0,
         IReplyMarkup? replyMarkup = null,
@@ -19,13 +18,12 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            return await client.SendTextMessageAsync(
+            return await client.SendMessage(
                 chatId: chatId,
                 text: text,
                 parseMode: parseMode,
-                disableWebPagePreview: disableWebPagePreview,
                 disableNotification: disableNotification,
-                replyToMessageId: replyToMessageId,
+                replyParameters: replyToMessageId,
                 replyMarkup: replyMarkup,
                 cancellationToken: cancellationToken);
         }
@@ -33,7 +31,7 @@ public static class TelegramBotClientExtensions
         {
             Console.WriteLine(exception.GetType());
             Console.WriteLine(exception.Message);
-            return default;
+            return null;
         }
     }
 
@@ -41,21 +39,15 @@ public static class TelegramBotClientExtensions
         this ITelegramBotClient client,
         ChatId chatId,
         InputFile sticker,
-        bool disableNotification = false,
         int replyToMessageId = 0,
-        IReplyMarkup? replyMarkup = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            await client.SendStickerAsync(
+            await client.SendSticker(
                 chatId: chatId,
                 sticker: sticker,
-                disableNotification: disableNotification,
-                protectContent: null,
-                replyToMessageId: replyToMessageId,
-                allowSendingWithoutReply: null,
-                replyMarkup: replyMarkup,
+                replyParameters: replyToMessageId,
                 cancellationToken: cancellationToken);
         }
         catch (Exception exception)
@@ -80,13 +72,13 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            await client.SendPhotoAsync(
+            await client.SendPhoto(
                 chatId: chatId,
                 photo: photo,
                 caption: caption,
                 parseMode: parseMode,
                 disableNotification: disableNotification,
-                replyToMessageId: replyToMessageId,
+                replyParameters: replyToMessageId,
                 replyMarkup: replyMarkup,
                 cancellationToken: cancellationToken);
         }
@@ -106,13 +98,12 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            await client.EditMessageTextAsync(
+            await client.EditMessageText(
                 chatId: chatId,
                 messageId: messageId,
                 text: text,
                 parseMode: parseMode,
                 entities: null,
-                disableWebPagePreview: null,
                 replyMarkup: null,
                 cancellationToken: cancellationToken);
         }
@@ -127,37 +118,15 @@ public static class TelegramBotClientExtensions
         this ITelegramBotClient client,
         ChatId chatId,
         InputFile video,
-        int? duration = null,
-        int? width = null,
-        int? height = null,
-        string? caption = null,
-        ParseMode? parseMode = null,
-        IEnumerable<MessageEntity>? captionEntities = null,
-        bool? supportsStreaming = null,
-        bool? disableNotification = null,
-        bool? protectContent = null,
         int? replyToMessageId = null,
-        bool? allowSendingWithoutReply = null,
-        IReplyMarkup? replyMarkup = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            await client.SendVideoAsync(
+            await client.SendVideo(
                 chatId: chatId,
                 video: video,
-                duration: duration,
-                width: width,
-                height: height,
-                caption: caption,
-                parseMode: parseMode,
-                captionEntities: captionEntities,
-                supportsStreaming: supportsStreaming,
-                disableNotification: disableNotification,
-                protectContent: protectContent,
-                replyToMessageId: replyToMessageId,
-                allowSendingWithoutReply: allowSendingWithoutReply,
-                replyMarkup: replyMarkup,
+                replyParameters: replyToMessageId,
                 cancellationToken: cancellationToken);
         }
         catch (Exception exception)

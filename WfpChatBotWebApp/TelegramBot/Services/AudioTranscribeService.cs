@@ -38,7 +38,7 @@ public class AudioTranscribeService(
                 return;
             }
 
-            var audioFile = await botClient.GetFileAsync(message.Voice?.FileId ?? string.Empty, cancellationToken);
+            var audioFile = await botClient.GetFile(message.Voice?.FileId ?? string.Empty, cancellationToken);
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file info loaded, Mime {mime}", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id, message.Voice?.MimeType);
 
             if (audioFile.FilePath == null)
@@ -48,7 +48,7 @@ public class AudioTranscribeService(
             }
 
             var audioStream = new MemoryStream();
-            await botClient.DownloadFileAsync(audioFile.FilePath, audioStream, cancellationToken);
+            await botClient.DownloadFile(audioFile.FilePath, audioStream, cancellationToken);
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file downloaded", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
             
             var convertedAudioStream = audioProcessor.ConvertAudio(audioStream);

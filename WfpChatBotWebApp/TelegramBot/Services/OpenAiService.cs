@@ -47,10 +47,10 @@ public class OpenAiService : IOpenAiService
             _messageQueues.Add(contextKey, messagesQueue);
         }
 
-        var userChatMessage = new UserChatMessage(ChatMessageContentPart.CreateTextMessageContentPart(message));
+        var userChatMessage = new UserChatMessage(ChatMessageContentPart.CreateTextPart(message));
 
         if (image != null)
-            userChatMessage.Content.Add(ChatMessageContentPart.CreateImageMessageContentPart(image, "image/jpeg"));
+            userChatMessage.Content.Add(ChatMessageContentPart.CreateImagePart(image, "image/jpeg", ChatImageDetailLevel.High));
 
         messagesQueue.Enqueue(userChatMessage);
 
@@ -101,7 +101,7 @@ public class OpenAiService : IOpenAiService
 public class ChatMessageQueue(int maxTokens)
 {
     private readonly ConcurrentQueue<ChatMessage> _internalQueue = new();
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
 
     public void Enqueue(ChatMessage obj)
     {

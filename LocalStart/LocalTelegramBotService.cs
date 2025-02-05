@@ -50,7 +50,7 @@ public class LocalTelegramBotService : ILocalTelegramBotService
 
     public async Task Start()
     {
-        var me = await _telegramBotClient.GetMeAsync();
+        var me = await _telegramBotClient.GetMe();
         Console.WriteLine($"Bot started {me.Id} : {me.FirstName}");
 
         var cts = new CancellationTokenSource();

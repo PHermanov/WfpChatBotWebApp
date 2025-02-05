@@ -198,7 +198,7 @@ public class YearlyWinnerJobHandler(
         try
         {
             logger.LogInformation("{Name} for Chat: {ChatId}, User: {UserId} Loading user photos", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
-            userProfilePhotos = await botClient.GetUserProfilePhotosAsync(player.UserId, cancellationToken: cancellationToken);
+            userProfilePhotos = await botClient.GetUserProfilePhotos(player.UserId, cancellationToken: cancellationToken);
         }
         catch (Exception e)
         {
@@ -221,12 +221,12 @@ public class YearlyWinnerJobHandler(
             logger.LogInformation("{Name} for chat: {ChatId}, user {UserId} photo loaded", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
 
             var photoSize = userProfilePhotos.Photos[0].MaxBy(p => p.Height);
-            var photoFile = await botClient.GetFileAsync(photoSize?.FileId ?? string.Empty, cancellationToken);
+            var photoFile = await botClient.GetFile(photoSize?.FileId ?? string.Empty, cancellationToken);
 
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, photo file info loaded", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
 
             var avatarStream = new MemoryStream();
-            await botClient.DownloadFileAsync(photoFile.FilePath ?? string.Empty, avatarStream, cancellationToken);
+            await botClient.DownloadFile(photoFile.FilePath ?? string.Empty, avatarStream, cancellationToken);
 
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId} photo file downloaded", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
 
