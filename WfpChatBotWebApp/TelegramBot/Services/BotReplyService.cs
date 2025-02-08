@@ -22,16 +22,10 @@ public class BotReplyService(
 {
     public async Task Reply(string mention, Message message, CancellationToken cancellationToken)
     {
-        var text = message.Type switch
-        {
-            MessageType.Text => message.Text,
-            MessageType.Photo => message.Caption,
-            _ => string.Empty
-        };
-        
+        var text = GetMessageText(message);
         if (string.IsNullOrWhiteSpace(text))
-            return; 
-        
+            return;
+
         var request = !string.IsNullOrEmpty(mention)
             ? text.Replace($"@{mention}", string.Empty).Trim()
             : text.Trim();
@@ -52,21 +46,38 @@ public class BotReplyService(
 
         try
         {
-            var contextKey = GetContextKey(message);
+            var imagesBinary = new List<BinaryData>();
+            var requests = new List<string> { request };
 
-            BinaryData? imageBinary = null;
-            if (message.Photo != null)
+            var replyToMessage = message.ReplyToMessage;
+            if (replyToMessage != null)
             {
-                var imageFile = await botClient.GetFile(message.Photo[^1].FileId, cancellationToken);
-                if (!string.IsNullOrEmpty(imageFile.FilePath))
+                var replyMessageText = GetMessageText(replyToMessage);
+                if (string.IsNullOrWhiteSpace(replyMessageText) || !replyMessageText.StartsWith($"@{mention}"))
                 {
-                    using var imageStream = new MemoryStream();
-                    await botClient.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
-                    imageBinary = new BinaryData(imageStream.ToArray());
+                    logger.LogInformation("BotReplyService: Include reply message to context");
+
+                    if (!string.IsNullOrWhiteSpace(replyMessageText))
+                        requests.Add(replyMessageText);
+
+                    if (replyToMessage.Photo != null)
+                    {
+                        var photo = await GetPhotoFromMessage(replyToMessage, cancellationToken);
+                        if (photo != null)
+                            imagesBinary.Add(photo);
+                    }
                 }
             }
+
+            if (message.Photo != null)
+            {
+                var photo = await GetPhotoFromMessage(message, cancellationToken);
+                if (photo != null)
+                    imagesBinary.Add(photo);
+            }
             
-            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, request, imageBinary, cancellationToken))
+            var contextKey = GetContextKey(message);
+            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, requests, imagesBinary, cancellationToken))
             {
                 responseBuffer.Append(part);
 
@@ -81,7 +92,7 @@ public class BotReplyService(
                         text: $"{responseBuffer}...",
                         cancellationToken: cancellationToken);
 
-                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 }
             }
 
@@ -90,10 +101,10 @@ public class BotReplyService(
         catch (Exception e)
         {
             logger.LogError("{Class} Exception: {e}", nameof(BotReplyService), e);
-
             responseBuffer.Clear();
-
-            var offMessage = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
+            var offMessage =
+                await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff,
+                    cancellationToken);
             responseBuffer.Append(offMessage);
         }
         finally
@@ -120,9 +131,7 @@ public class BotReplyService(
         else
         {
             var newContextKey = Guid.NewGuid();
-
             contextKeysService.SetValue(key, newContextKey);
-
             return new KeyValuePair<string, Guid>(key, newContextKey);
         }
     }
@@ -132,5 +141,30 @@ public class BotReplyService(
         var key = $"{answer.Chat.Id}_{answer.MessageId}";
         contextKeysService.SetValue(key, prevKey.Value);
         contextKeysService.RemoveValue(prevKey.Key);
+    }
+
+    private static string? GetMessageText(Message message)
+        => message.Type switch
+        {
+            MessageType.Text => message.Text,
+            MessageType.Photo => message.Caption,
+            _ => string.Empty
+        };
+
+    private async Task<BinaryData?> GetPhotoFromMessage(Message message, CancellationToken cancellationToken)
+    {
+        var fileId = message.Photo?[^1].FileId;
+        if (fileId != null)
+        {
+            var imageFile = await botClient.GetFile(fileId, cancellationToken);
+            if (!string.IsNullOrEmpty(imageFile.FilePath))
+            {
+                using var imageStream = new MemoryStream();
+                await botClient.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
+                return new BinaryData(imageStream.ToArray());
+            }
+        }
+
+        return null;
     }
 }

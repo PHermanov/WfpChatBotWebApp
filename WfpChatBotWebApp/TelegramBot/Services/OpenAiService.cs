@@ -12,7 +12,7 @@ namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface IOpenAiService
 {
-    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, BinaryData? image, CancellationToken cancellationToken);
+    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, List<string> requests, List<BinaryData> images, CancellationToken cancellationToken);
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
     Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken);
 }
@@ -39,7 +39,7 @@ public class OpenAiService : IOpenAiService
         _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
     }
 
-    public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, string message, BinaryData? image, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, List<string> requests, List<BinaryData> images, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
@@ -47,10 +47,16 @@ public class OpenAiService : IOpenAiService
             _messageQueues.Add(contextKey, messagesQueue);
         }
 
-        var userChatMessage = new UserChatMessage(ChatMessageContentPart.CreateTextPart(message));
+        var userChatMessage = new UserChatMessage();
+        
+        foreach (var request in requests)
+            userChatMessage.Content.Add(ChatMessageContentPart.CreateTextPart(request));
 
-        if (image != null)
-            userChatMessage.Content.Add(ChatMessageContentPart.CreateImagePart(image, "image/jpeg", ChatImageDetailLevel.High));
+        if (images is { Count: > 0 })
+        {
+            foreach (var image in images)
+                userChatMessage.Content.Add(ChatMessageContentPart.CreateImagePart(image, "image/jpeg", ChatImageDetailLevel.High));
+        }
 
         messagesQueue.Enqueue(userChatMessage);
 

@@ -99,11 +99,6 @@ public class TelegramBotService(
         }
     }
 
-    // private static bool IsBotMentioned(Message message, string botUserName) =>
-    //     (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null or false
-    //      && (message.EntityValues ?? Array.Empty<string>()).Contains($"@{botUserName}"))
-    //     || message.ReplyToMessage?.From?.Username == botUserName;
-
     private static bool IsBotMentioned(Message message, string botUserName) => message.Type switch
     {
         MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null
