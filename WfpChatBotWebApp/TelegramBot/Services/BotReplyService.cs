@@ -41,6 +41,7 @@ public class BotReplyService(
             text: "...",
             parseMode: ParseMode.Markdown,
             replyToMessageId: message.MessageId,
+            logger: logger,
             cancellationToken: cancellationToken);
 
         if (answerMessage == null)

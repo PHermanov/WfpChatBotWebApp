@@ -43,6 +43,7 @@ public class ThrottlingService(
                             chatId: message.Chat.Id,
                             text: string.Format(text, user.GetUserMention()),
                             parseMode: ParseMode.Markdown,
+                            logger: logger,
                             cancellationToken: cancellationToken);
                     }
 

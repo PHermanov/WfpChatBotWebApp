@@ -1,10 +1,10 @@
 ﻿using Flurl.Http;
 using HtmlAgilityPack;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.TelegramBot.Extensions;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -90,15 +90,16 @@ public class TikTokService (ITelegramBotClient botClient, ILogger<TikTokService>
         if (downloadPageResponseStream == null)
             return string.Empty;
             
-        var downloadPageJson = (JObject)JsonConvert.DeserializeObject(downloadPageResponseStream)!;
+        
+        var downloadPageJson = JsonNode.Parse(downloadPageResponseStream);
 
-        if (downloadPageJson.TryGetValue("error", out var value) && value.Value<bool>())
+        if (downloadPageJson?["error"]?.GetValue<bool>() == true)
             return string.Empty;
-
+        
         htmlDoc = new HtmlDocument();
 
-        if (downloadPageJson.TryGetValue("html", out var html))
-            htmlDoc.LoadHtml(html.ToString());
+        if (downloadPageJson?["html"] != null)
+            htmlDoc.LoadHtml(downloadPageJson["html"]!.ToString());
         else
             return string.Empty;
         

@@ -17,7 +17,8 @@ public class TodayCommand(Message message) : CommandBase(message), IRequest
 public class TodayCommandHandler(
     ITelegramBotClient botClient,
     IGameRepository repository,
-    ITextMessageService textMessageService) : IRequestHandler<TodayCommand>
+    ITextMessageService textMessageService,
+    ILogger<TodayCommandHandler> logger) : IRequestHandler<TodayCommand>
 {
     public async Task Handle(TodayCommand request, CancellationToken cancellationToken)
     {
@@ -35,6 +36,7 @@ public class TodayCommandHandler(
                 chatId: request.ChatId,
                 text: string.Format(messageTemplateAlreadySet, todayWinner.GetUserMention()),
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
         else
@@ -43,6 +45,7 @@ public class TodayCommandHandler(
                 chatId: request.ChatId,
                 text: await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WinnerNotSetYet, cancellationToken),
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
 
             var yesterdayResult = await repository.GetYesterdayResultAsync(request.ChatId, cancellationToken);
@@ -58,6 +61,7 @@ public class TodayCommandHandler(
                     chatId:request.ChatId,
                     text: string.Format(messageTemplateYesterdayWinner, yesterdayWinner.GetUserMention()),
                     parseMode: ParseMode.Markdown,
+                    logger: logger,
                     cancellationToken: cancellationToken);
             }
         }

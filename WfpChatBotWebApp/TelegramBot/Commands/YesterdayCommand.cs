@@ -14,7 +14,11 @@ public class YesterdayCommand(Message message) : CommandBase(message), IRequest
     public override string Name => "yesterday";
 }
 
-public class YesterdayCommandHadler(ITelegramBotClient botClient, IGameRepository repository, ITextMessageService messageService) 
+public class YesterdayCommandHadler(
+    ITelegramBotClient botClient, 
+    IGameRepository repository, 
+    ITextMessageService messageService,
+    ILogger<YesterdayCommandHadler> logger) 
     : IRequestHandler<YesterdayCommand>
 {
     public async Task Handle(YesterdayCommand request, CancellationToken cancellationToken)
@@ -33,6 +37,7 @@ public class YesterdayCommandHadler(ITelegramBotClient botClient, IGameRepositor
                 chatId: request.ChatId,
                 text: string.Format(messageTemplate, yesterdayWinner.GetUserMention()),
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
     }

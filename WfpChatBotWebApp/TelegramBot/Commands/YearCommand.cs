@@ -16,7 +16,8 @@ public class YearCommand(Message message) : CommandBase(message), IRequest
 public class YearCommandHandler(
     ITelegramBotClient botClient,
     IGameRepository repository,
-    ITextMessageService messageService) : IRequestHandler<YearCommand>
+    ITextMessageService messageService,
+    ILogger<YearCommandHandler> logger) : IRequestHandler<YearCommand>
 {
     public async Task Handle(YearCommand request, CancellationToken cancellationToken)
     {
@@ -56,6 +57,7 @@ public class YearCommandHandler(
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
             text: msg,
+            logger: logger,
             cancellationToken: cancellationToken);
     }
 }

@@ -47,8 +47,8 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddHostedService<ConfigureWebhook>();
 
-// Newtonsoft needed for Telegram Bot SDK
-builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddControllers();
+builder.Services.ConfigureTelegramBotMvc();
 
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 

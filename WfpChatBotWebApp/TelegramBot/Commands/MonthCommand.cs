@@ -16,7 +16,8 @@ public class MonthCommand(Message message) : CommandBase(message), IRequest
 public class MonthCommandHandler(
     ITelegramBotClient botClient,
     IGameRepository repository,
-    ITextMessageService messageService)
+    ITextMessageService messageService,
+    ILogger<MonthCommandHandler> logger)
     : IRequestHandler<MonthCommand>
 {
     public async Task Handle(MonthCommand request, CancellationToken cancellationToken)
@@ -50,6 +51,7 @@ public class MonthCommandHandler(
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
                 text: $"{allMonthWinners}{Environment.NewLine}{string.Join(Environment.NewLine, winners.ToList())}",
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
         catch (Exception ex)

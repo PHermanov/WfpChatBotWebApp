@@ -38,6 +38,7 @@ public class DrawCommandHandler(
                     replyToMessageId: request.MessageId,
                     text: $"*{responsePhrase}*",
                     parseMode: ParseMode.Markdown,
+                    logger: logger,
                     cancellationToken: cancellationToken);
 
                 return;
@@ -64,6 +65,7 @@ public class DrawCommandHandler(
                 chatId: request.ChatId,
                 text: message,
                 replyToMessageId: request.MessageId,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
     }

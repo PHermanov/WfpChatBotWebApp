@@ -14,6 +14,7 @@ public static class TelegramBotClientExtensions
         bool disableNotification = false,
         int replyToMessageId = 0,
         IReplyMarkup? replyMarkup = null,
+        ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -29,8 +30,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.GetType());
-            Console.WriteLine(exception.Message);
+            logger?.LogError(exception, "Exception in {Name}", nameof(TrySendTextMessageAsync));
             return null;
         }
     }

@@ -18,7 +18,8 @@ public class MamotaCommandHandler(
     ITelegramBotClient botClient,
     IGameRepository repository,
     ITextMessageService messageService,
-    IStickerService stickerService)
+    IStickerService stickerService, 
+    ILogger<MamotaCommandHandler> logger)
     : IRequestHandler<MamotaCommand>
 {
     public async Task Handle(MamotaCommand request, CancellationToken cancellationToken)
@@ -38,6 +39,7 @@ public class MamotaCommandHandler(
                 chatId: request.ChatId,
                 text: string.Format(textTemplate, randomUser.GetUserMention()),
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
 
             var stickerUrl = await stickerService.GetRandomStickerFromSet(StickerService.StickerSet.Mamota, cancellationToken);

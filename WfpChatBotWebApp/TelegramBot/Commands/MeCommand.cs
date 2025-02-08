@@ -35,6 +35,7 @@ public class MeCommandHandler(
                 replyToMessageId: request.MessageId,
                 text: $"*{responsePhrase}*",
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
 
@@ -53,7 +54,8 @@ public class MeCommandHandler(
         await botClient.TrySendTextMessageAsync(
             request.ChatId, 
             text: reply, 
-            parseMode: ParseMode.Markdown, 
+            parseMode: ParseMode.Markdown,
+            logger: logger,
             cancellationToken: cancellationToken);
     }
 }

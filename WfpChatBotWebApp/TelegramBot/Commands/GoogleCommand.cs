@@ -39,6 +39,7 @@ public class GoogleCommandHandler(
                 chatId: request.ChatId,
                 replyToMessageId: request.MessageId,
                 text: $"*{responsePhrase}*",
+                logger: logger,
                 parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
 
@@ -91,7 +92,7 @@ public class GoogleCommandHandler(
         {
             var msg = $"{result.Title}{Environment.NewLine}{result.Link}";
 
-            await botClient.TrySendTextMessageAsync(request.ChatId, msg, cancellationToken: cancellationToken);
+            await botClient.TrySendTextMessageAsync(request.ChatId, msg, logger: logger, cancellationToken: cancellationToken);
         }
     }
 }

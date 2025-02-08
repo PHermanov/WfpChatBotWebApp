@@ -13,7 +13,7 @@ public class HelpCommand(Message message) : CommandWithParam(message), IRequest
     public override string Name => "help";
 }
 
-public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService)
+public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService, ILogger<HelpCommandHandler> logger)
     : IRequestHandler<HelpCommand>
 {
     public async Task Handle(HelpCommand request, CancellationToken cancellationToken)
@@ -27,6 +27,7 @@ public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageServic
             chatId: request.ChatId,
             replyToMessageId: request.MessageId,
             text: $"*{responsePhrase}*",
+            logger: logger,
             parseMode: ParseMode.Markdown,
             cancellationToken: cancellationToken);
     }

@@ -69,6 +69,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
             chatId: chatId,
             text: string.Format(messageTemplateNew, newWinner.GetUserMention()),
             parseMode: ParseMode.Markdown,
+            logger: logger,
             cancellationToken: cancellationToken);
 
         var stickerUrl = await stickerService.GetRandomStickerFromSet(StickerService.StickerSet.Yoba, cancellationToken);
@@ -93,6 +94,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
             chatId: chatId,
             text: string.Format(messageTemplateAlreadySet, todayWinner.GetUserMention()),
             parseMode: ParseMode.Markdown,
+            logger: logger,
             cancellationToken: cancellationToken);
     }
 
@@ -122,6 +124,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
                     chatId: chatId,
                     text: string.Format(template, $"{Environment.NewLine}{string.Join(Environment.NewLine, results)}"),
                     parseMode: ParseMode.Markdown,
+                    logger: logger,
                     cancellationToken: cancellationToken);
             }
         }

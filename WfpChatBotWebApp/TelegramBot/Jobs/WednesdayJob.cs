@@ -46,6 +46,7 @@ public class WednesdayJobHandler(
                     await botClient.TrySendTextMessageAsync(
                         chatId: allChatIds[i],
                         text: message,
+                        logger: logger,
                         cancellationToken: cancellationToken);
 
                     var stickerUrl = await stickerService.GetRandomStickerFromSet(StickerService.StickerSet.Frog, cancellationToken);

@@ -15,13 +15,13 @@ public class AllCommand(Message message) : CommandBase(message), IRequest
 
 public class AllCommandHandler(ITelegramBotClient botClient, 
     IGameRepository repository, 
-    ITextMessageService messageService) 
+    ITextMessageService messageService,
+    ILogger<AllCommandHandler> logger) 
     : IRequestHandler<AllCommand>
 {
     public async Task Handle(AllCommand request, CancellationToken cancellationToken)
     {
         var winners = await repository.GetAllWinnersAsync(request.ChatId, cancellationToken);
-
         if (winners.Length == 0)
             return;
 
@@ -50,6 +50,7 @@ public class AllCommandHandler(ITelegramBotClient botClient,
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
             text: msg,
-            cancellationToken: cancellationToken);
+            logger: logger,
+        cancellationToken: cancellationToken);
     }
 }

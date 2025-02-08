@@ -17,6 +17,6 @@ public class PingCommandHandler(ITelegramBotClient botClient, ILogger<PingComman
     public async Task Handle(PingCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation("{Name} executed", nameof(PingCommandHandler));
-        await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", logger: logger, cancellationToken: cancellationToken);
     }
 }

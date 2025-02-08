@@ -3,11 +3,12 @@ using Telegram.Bot.Types.Enums;
 
 namespace WfpChatBotWebApp.TelegramBot;
 
-public class ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration)
+public class ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration configuration, ILogger<ConfigureWebhook> logger)
     : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        logger.LogInformation("Starting webhook");
         using var scope = serviceProvider.CreateScope();
         var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
@@ -16,18 +17,21 @@ public class ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration c
 
         var url = $"{hostAddress}telegrambot";
 
-        await botClient.SetWebhookAsync(
+        logger.LogInformation("Configuring webhook: {url}, {secretToken}", url, secretToken);
+        
+        await botClient.SetWebhook(
             url: url,
-            allowedUpdates: new[] { UpdateType.Message },
+            allowedUpdates: [UpdateType.Message],
             secretToken: secretToken,
             cancellationToken: cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        logger.LogInformation("Webhook stopped");
         using var scope = serviceProvider.CreateScope();
         var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
 
-        await botClient.DeleteWebhookAsync(cancellationToken: cancellationToken);
+        await botClient.DeleteWebhook(cancellationToken: cancellationToken);
     }
 }

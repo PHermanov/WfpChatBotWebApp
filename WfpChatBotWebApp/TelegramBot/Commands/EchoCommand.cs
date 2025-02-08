@@ -12,7 +12,7 @@ public class EchoCommand(Message message) : CommandWithParam(message), IRequest
     public override string Name => "echo";
 }
 
-public class EchoCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService)
+public class EchoCommandHandler(ITelegramBotClient botClient, ITextMessageService textMessageService, ILogger<EchoCommandHandler> logger)
     : IRequestHandler<EchoCommand>
 {
     public async Task Handle(EchoCommand request, CancellationToken cancellationToken)
@@ -21,6 +21,6 @@ public class EchoCommandHandler(ITelegramBotClient botClient, ITextMessageServic
             ? await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken)
             : request.Param;
 
-        await botClient.TrySendTextMessageAsync(request.ChatId, text, cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(request.ChatId, text, logger: logger, cancellationToken: cancellationToken);
     }
 }

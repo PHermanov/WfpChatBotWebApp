@@ -16,7 +16,8 @@ public interface IAutoReplyService
 public partial class AutoReplyService(
     ITelegramBotClient botClient,
     IGameRepository repository,
-    IReplyMessagesService replyMessagesService)
+    IReplyMessagesService replyMessagesService,
+    ILogger<AutoReplyService> logger)
     : IAutoReplyService
 {
     [GeneratedRegex("[^а-яА-Яa-zA-ZіІїЇґҐєЄёЁ]")]
@@ -52,6 +53,7 @@ public partial class AutoReplyService(
                         text: answer,
                         parseMode: ParseMode.Markdown,
                         replyToMessageId: message.MessageId,
+                        logger: logger,
                         cancellationToken: cancellationToken);
                 }
             }
@@ -76,6 +78,7 @@ public partial class AutoReplyService(
                     text: $"\U0001F51D {users.GetUsersMention()}",
                     parseMode: ParseMode.Markdown,
                     replyToMessageId: message.MessageId,
+                    logger: logger,
                     cancellationToken: cancellationToken);
             }
         }
