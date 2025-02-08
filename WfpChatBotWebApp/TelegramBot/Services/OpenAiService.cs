@@ -43,7 +43,11 @@ public class OpenAiService : IOpenAiService
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
-            messagesQueue = new ChatMessageQueue(maxTokens: 150_000);
+            messagesQueue = new ChatMessageQueue(maxTokens: 300_000);
+
+            var systemMessage = ChatMessage.CreateSystemMessage("You are an AI assistant that helps people find information. You are included in a Telegram chat with friends. Format your replies in Markdown supported by Telegram Bot Api with parseMode: ParseMode.Markdown");
+            messagesQueue.Enqueue(systemMessage);
+            
             _messageQueues.Add(contextKey, messagesQueue);
         }
 
@@ -73,7 +77,7 @@ public class OpenAiService : IOpenAiService
                 yield return contentPart.Text;
             }
         }
-
+       
         messagesQueue.Enqueue(ChatMessage.CreateAssistantMessage(responseBuffer.ToString()));
     }
 
