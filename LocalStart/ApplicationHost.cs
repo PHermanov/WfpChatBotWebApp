@@ -13,7 +13,7 @@ namespace LocalStart;
 
 public static class ApplicationHost
 {
-    private static ILocalTelegramBotService _telegramBotService;
+    private static ILocalTelegramBotService? _telegramBotService;
 
     public static Task Run(string[] args)
     {
@@ -28,10 +28,10 @@ public static class ApplicationHost
             .Build();
 
         var hostApplicationLifetime = host.Services.GetService<IHostApplicationLifetime>();
-        hostApplicationLifetime.ApplicationStopping.Register(OnApplicationStopping);
+        hostApplicationLifetime?.ApplicationStopping.Register(OnApplicationStopping);
 
         _telegramBotService = host.Services.GetService<ILocalTelegramBotService>();
-        _telegramBotService.Start();
+        _telegramBotService?.Start();
 
         return host.RunAsync();
     }
@@ -53,7 +53,7 @@ public static class ApplicationHost
         });
         
         serviceCollection.AddSingleton<ITelegramBotClient>(_ => 
-            new TelegramBotClient(hostBuilderContext.Configuration["BotToken"]));
+            new TelegramBotClient(hostBuilderContext.Configuration["BotToken"]!) ?? throw new InvalidOperationException());
         
         serviceCollection.AddHttpClient("Google",
             httpClient =>
@@ -89,6 +89,6 @@ public static class ApplicationHost
 
     private static void OnApplicationStopping()
     {
-        _telegramBotService.Stop();
+        _telegramBotService?.Stop();
     }
 }

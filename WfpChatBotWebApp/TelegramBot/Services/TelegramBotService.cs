@@ -52,7 +52,7 @@ public class TelegramBotService(
 
             await gameRepository.CheckUserAsync(message.Chat.Id, message.From!.Id, userName, cancellationToken);
 
-            var bot = await botClient.GetMeAsync(cancellationToken);
+            var bot = await botClient.GetMe(cancellationToken);
             if (string.IsNullOrEmpty(bot.Username))
             {
                 logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));

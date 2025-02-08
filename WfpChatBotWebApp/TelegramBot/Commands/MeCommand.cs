@@ -43,7 +43,7 @@ public class MeCommandHandler(
 
         try
         {
-            await botClient.DeleteMessageAsync(request.ChatId, request.MessageId, cancellationToken);
+            await botClient.DeleteMessage(request.ChatId, request.MessageId, cancellationToken);
         }
         catch (Exception)
         {

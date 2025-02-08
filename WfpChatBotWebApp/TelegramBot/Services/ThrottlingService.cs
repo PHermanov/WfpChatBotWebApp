@@ -27,7 +27,7 @@ public class ThrottlingService(
         {
             try
             {
-                await botClient.DeleteMessageAsync(message.Chat.Id, message.MessageId, cancellationToken);
+                await botClient.DeleteMessage(message.Chat.Id, message.MessageId, cancellationToken);
 
                 if (showMessage)
                 {
