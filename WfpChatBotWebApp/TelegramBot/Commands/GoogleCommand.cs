@@ -54,7 +54,7 @@ public class GoogleCommandHandler(
             return;
         }
 
-        var split = googleKeys.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var split = googleKeys.Split([' '], StringSplitOptions.RemoveEmptyEntries);
 
         if (split.Length < 2 || string.IsNullOrEmpty(split[0]) || string.IsNullOrEmpty(split[1]))
         {
@@ -75,9 +75,7 @@ public class GoogleCommandHandler(
 
         await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
 
-        var searchResults =
-            await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream,
-                cancellationToken: cancellationToken);
+        var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
         if (searchResults == null)
         {
             logger.LogInformation("Parsed 0 results");

@@ -40,6 +40,12 @@ builder.Services.AddHttpClient("Pictures",
         httpClient.BaseAddress = new Uri(builder.Configuration["PicturesUri"] ?? string.Empty);
     });
 
+builder.Services.AddHttpClient("Random",
+    httpClient =>
+    {
+        httpClient.BaseAddress = new Uri(builder.Configuration["RandomOrgUri"] ?? string.Empty);
+    });
+
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
 
@@ -67,6 +73,9 @@ builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
 builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
+
+builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
+builder.Services.AddScoped<IRandomService, RandomService>();
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>

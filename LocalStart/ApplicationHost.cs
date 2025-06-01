@@ -67,6 +67,12 @@ public static class ApplicationHost
                 httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["PicturesUri"] ?? string.Empty);
             });
         
+        serviceCollection.AddHttpClient("Random",
+            httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["RandomOrgUri"] ?? string.Empty);
+            });
+        
         serviceCollection.AddMemoryCache();
         serviceCollection.AddMediatR(conf => 
             conf.RegisterServicesFromAssemblyContaining<ConfigureWebhook>());
@@ -85,6 +91,8 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
+        serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
+        serviceCollection.AddScoped<IRandomService, RandomService>();
     }
 
     private static void OnApplicationStopping()

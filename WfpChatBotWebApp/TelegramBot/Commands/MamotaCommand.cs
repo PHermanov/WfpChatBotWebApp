@@ -19,6 +19,7 @@ public class MamotaCommandHandler(
     IGameRepository repository,
     ITextMessageService messageService,
     IStickerService stickerService, 
+    IRandomService randomService,
     ILogger<MamotaCommandHandler> logger)
     : IRequestHandler<MamotaCommand>
 {
@@ -31,7 +32,8 @@ public class MamotaCommandHandler(
             if (users.Length == 0)
                 return;
 
-            var randomUser = users[new Random().Next(users.Length)];
+            var random = await randomService.GetRandomNumber(users.Length);
+            var randomUser = users[random];
 
             var textTemplate = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MamotaSays, cancellationToken);
 

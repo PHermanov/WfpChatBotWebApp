@@ -15,7 +15,8 @@ public class DailyWinnerJobRequest : IRequest;
 public class DailyWinnerJobHandler(ITelegramBotClient botClient,  
     ITextMessageService textMessageService, 
     IGameRepository repository, 
-    IStickerService stickerService, 
+    IStickerService stickerService,
+    IRandomService randomService,
     ILogger<DailyWinnerJobHandler> logger)
     : IRequestHandler<DailyWinnerJobRequest>
 {
@@ -132,7 +133,8 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
     private async Task<User> SelectWinnerForDate(long chatId, DateTime date, User[] users, CancellationToken cancellationToken)
     {
-        var newWinner = users[new Random().Next(users.Length)];
+        var random = await randomService.GetRandomNumber(users.Length);
+        var newWinner = users[random];
 
         var dayResult = new Result
         {
