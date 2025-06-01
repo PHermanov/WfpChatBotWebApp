@@ -36,7 +36,7 @@ public class MonthlyWinnerJobHandler(
         for (var i = 0; i < allChatIds.Length; i++)
         {
             await ProcessMonthlyWinnerForChat(allChatIds[i], cancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
         }
     }
 
@@ -120,7 +120,7 @@ public class MonthlyWinnerJobHandler(
                     }
                     catch (Exception e)
                     {
-                        logger.LogError("{Name} for char {ChatId}, user {UserId} Exception in GetWinnerImageMonth {e}", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId, e.Message);
+                        logger.LogError(e, "{Name} for char {ChatId}, user {UserId} Exception in GetWinnerImageMonth", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
 
                         await botClient.TrySendPhotoAsync(
                             logger: logger,
@@ -139,7 +139,7 @@ public class MonthlyWinnerJobHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(MonthlyWinnerJobHandler), chatId, e);
+            logger.LogError(e, "{Name} for {ChatId}, Exception", nameof(MonthlyWinnerJobHandler), chatId);
         }
     }
 }

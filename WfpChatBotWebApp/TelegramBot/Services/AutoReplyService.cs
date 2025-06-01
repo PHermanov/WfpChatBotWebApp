@@ -23,8 +23,6 @@ public partial class AutoReplyService(
     [GeneratedRegex("[^а-яА-Яa-zA-ZіІїЇґҐєЄёЁ]")]
     private static partial Regex MyRegex();
 
-    private static readonly char[] Separator = [' '];
-
     public async Task AutoReplyAsync(Message message, CancellationToken cancellationToken)
     {
         if (message.Text != null)
@@ -43,11 +41,11 @@ public partial class AutoReplyService(
                     // multiple answers, pick random
                     if (answer.Contains(';'))
                     {
-                        var answers = answer.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        var answers = answer.Split([';'], StringSplitOptions.RemoveEmptyEntries);
                         answer = answers[new Random().Next(answers.Length)];
                     }
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                     await botClient.TrySendTextMessageAsync(
                         chatId: message.Chat.Id,
                         text: answer,
@@ -62,7 +60,7 @@ public partial class AutoReplyService(
 
     public async Task AutoMentionAsync(Message message, CancellationToken cancellationToken)
     {
-        var splitText = message.Text!.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
+        var splitText = message.Text!.Split([' '], StringSplitOptions.RemoveEmptyEntries);
 
         if (splitText.Any(w => w.Equals("@all", StringComparison.OrdinalIgnoreCase)))
         {
@@ -72,7 +70,7 @@ public partial class AutoReplyService(
 
             if (users.Length > 0)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                 await botClient.TrySendTextMessageAsync(
                     chatId: message.Chat.Id,
                     text: $"\U0001F51D {users.GetUsersMention()}",

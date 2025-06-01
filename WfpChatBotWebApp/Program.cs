@@ -52,9 +52,7 @@ builder.Services.AddDbContext<AppDbContext>(
 builder.Services.AddMemoryCache();
 
 builder.Services.AddHostedService<ConfigureWebhook>();
-
 builder.Services.AddControllers();
-// builder.Services.ConfigureTelegramBotMvc();
 
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
@@ -67,13 +65,10 @@ builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
-
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
-
 builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
-
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddScoped<IRandomService, RandomService>();
 

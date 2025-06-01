@@ -51,6 +51,6 @@ public class AllCommandHandler(ITelegramBotClient botClient,
             chatId: request.ChatId,
             text: msg,
             logger: logger,
-        cancellationToken: cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

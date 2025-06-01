@@ -51,9 +51,6 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken)
         => await context.Users.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
     
-    public async Task<User[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken)
-        => await context.Users.Where(p => p.ChatId == chatId && p.Inactive == true).ToArrayAsync(cancellationToken);
-
     public async Task<User[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken)
         => await context.Users.Where(p => p.ChatId == chatId).ToArrayAsync(cancellationToken);
     

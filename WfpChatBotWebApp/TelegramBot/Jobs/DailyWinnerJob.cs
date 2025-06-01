@@ -58,7 +58,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         }
         catch (Exception e)
         {
-            logger.LogError("Exception in {ClassName}: {Message}", nameof(DailyWinnerJobHandler), e.Message);
+            logger.LogError(e, "Exception in {ClassName}", nameof(DailyWinnerJobHandler));
         }
     }
 
@@ -79,6 +79,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
             await botClient.TrySendStickerAsync(
                 chatId: chatId,
                 sticker: InputFile.FromUri(stickerUrl),
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
     }

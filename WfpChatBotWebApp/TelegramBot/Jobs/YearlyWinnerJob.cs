@@ -38,7 +38,7 @@ public class YearlyWinnerJobHandler(
         for (var i = 0; i < allChatIds.Length; i++)
         {
             await ProcessYearlyWinnerForChat(allChatIds[i], cancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
         }
     }
 
@@ -183,7 +183,7 @@ public class YearlyWinnerJobHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(YearlyWinnerJobHandler), chatId, e);
+            logger.LogError(e, "Exception in {Name} for {ChatId}", nameof(YearlyWinnerJobHandler), chatId);
         }
     }
 
@@ -194,7 +194,6 @@ public class YearlyWinnerJobHandler(
 
         logger.LogInformation("{Name} Downloaded GoldenCup.png image for {ChatId}", nameof(YearlyWinnerJobHandler), chatId);
 
-
         UserProfilePhotos? userProfilePhotos = null;
         try
         {
@@ -203,7 +202,7 @@ public class YearlyWinnerJobHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for {ChatId}, User: {UserId}, Loading user photos. Exception: {exception}", nameof(YearlyWinnerJobHandler), chatId, player.UserId, e.Message);
+            logger.LogError(e, "Exception in {Name} for {ChatId}, User: {UserId}, loading user photos", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
         }
 
         if (userProfilePhotos == null || userProfilePhotos.Photos.Length == 0)
@@ -246,7 +245,7 @@ public class YearlyWinnerJobHandler(
             }
             catch (Exception e)
             {
-                logger.LogError("{Name} for char {ChatId}, user {UserId} Exception in GetWinnerImageMonth {e}", nameof(YearlyWinnerJobHandler), chatId, player.UserId, e.Message);
+                logger.LogError(e, "Exception in {Name} for char {ChatId}, user {UserId}", nameof(YearlyWinnerJobHandler), chatId, player.UserId);
                 await botClient.TrySendPhotoAsync(
                     logger: logger,
                     chatId: chatId,

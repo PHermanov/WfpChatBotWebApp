@@ -50,11 +50,12 @@ public class TikTokService (ITelegramBotClient botClient, ILogger<TikTokService>
                 chatId: message.Chat.Id,
                 video: InputFile.FromStream(video),
                 replyToMessageId: message.MessageId,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
         catch (Exception e)
         {
-            logger.LogError("{Class} Exception: {e}", nameof(TikTokService), e);
+            logger.LogError(e, "Exception in {Class}", nameof(TryDownloadVideo));
         }
     }
     

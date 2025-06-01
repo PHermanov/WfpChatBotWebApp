@@ -27,14 +27,14 @@ public class AudioTranscribeService(
         {
             if (message.From == null)
             {
-                logger.LogInformation("{Name} chat: {ChatId}, message.From == null", nameof(AudioTranscribeService), message.Chat.Id);
+                logger.LogError("{Name} chat: {ChatId}, message.From == null", nameof(AudioTranscribeService), message.Chat.Id);
                 return;
             }
 
             var user = await repository.GetUserByUserIdAndChatIdAsync(message.Chat.Id, message.From.Id, cancellationToken);
             if (user == null)
             {
-                logger.LogInformation("{Name} chat: {ChatId}, user == null", nameof(AudioTranscribeService), message.Chat.Id);
+                logger.LogError("{Name} chat: {ChatId}, user == null", nameof(AudioTranscribeService), message.Chat.Id);
                 return;
             }
 
@@ -43,7 +43,7 @@ public class AudioTranscribeService(
 
             if (audioFile.FilePath == null)
             {
-                logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, FilePath == null", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+                logger.LogError("{Name} chat: {ChatId}, user {UserId}, FilePath == null", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
                 return;
             }
 
@@ -77,7 +77,7 @@ public class AudioTranscribeService(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for char {ChatId}, user {UserId} Exception in Reply {e}", nameof(AudioTranscribeService), message.Chat.Id, message.From?.Id, e.Message);
+            logger.LogError(e, "Exception in Reply, {Name} for char {ChatId}, user {UserId}", nameof(AudioTranscribeService), message.Chat.Id, message.From?.Id);
         }
     }
 }

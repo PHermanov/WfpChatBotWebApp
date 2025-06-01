@@ -21,7 +21,7 @@ public class TelegramBotController(IConfiguration configuration, IMessageBus bus
     public async Task<IActionResult> HandleUpdate([FromBody] Update update, CancellationToken cancellationToken)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
-        logger.LogInformation("Telegram cotroller received update of type {type}: ", update.Type);
+        logger.LogInformation("Telegram controller received update of type {type}: ", update.Type);
         if (!IsValidRequest(HttpContext.Request))
             return Unauthorized("\"X-Telegram-Bot-Api-Secret-Token\" is invalid");
 

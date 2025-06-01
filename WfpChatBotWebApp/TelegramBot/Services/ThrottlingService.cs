@@ -47,7 +47,7 @@ public class ThrottlingService(
                             cancellationToken: cancellationToken);
                     }
 
-                    memoryCache.Set(cacheKey, false, absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(2));
+                    memoryCache.Set(cacheKey, false, absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(1));
                 }
 
                 return false;
@@ -59,7 +59,7 @@ public class ThrottlingService(
             }
         }
 
-        memoryCache.Set(cacheKey, true, absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(2));
+        memoryCache.Set(cacheKey, true, absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(1));
         return true;
     }
 }

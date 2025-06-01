@@ -56,11 +56,12 @@ public class WednesdayJobHandler(
                     await botClient.TrySendStickerAsync(
                         chatId: allChatIds[i],
                         sticker: InputFile.FromUri(stickerUrl),
+                        logger: logger,
                         cancellationToken: cancellationToken);
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("{Name} for {ChatId}, Exception  {e}", nameof(WednesdayJobHandler), allChatIds[i], e);
+                    logger.LogError(e, "Exception  in {Name} for {ChatId}", nameof(WednesdayJobHandler), allChatIds[i]);
                 }
             }
         }

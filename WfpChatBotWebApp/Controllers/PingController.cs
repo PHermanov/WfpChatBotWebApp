@@ -7,8 +7,5 @@ namespace WfpChatBotWebApp.Controllers;
 public class PingController : ControllerBase
 {
     [HttpGet]
-    public IActionResult Get()
-    {
-        return Ok();
-    }
+    public IActionResult Get() => Ok();
 }

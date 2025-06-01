@@ -1,6 +1,6 @@
 ﻿namespace WfpChatBotWebApp.Persistence.Entities;
 
-public class Result
+public record Result
 {
     public int Id { get; set; }
     public long ChatId { get; set; }

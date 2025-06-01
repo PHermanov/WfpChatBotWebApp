@@ -9,10 +9,10 @@ public static class TelegramBotClientExtensions
     public static async Task<Message?> TrySendTextMessageAsync(this ITelegramBotClient client,
         ChatId chatId,
         string text,
+        ILogger logger,
         ParseMode parseMode = ParseMode.Html,
         bool disableNotification = false,
         int replyToMessageId = 0,
-        ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -27,7 +27,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            logger?.LogError(exception, "Exception in {Name}", nameof(TrySendTextMessageAsync));
+            logger.LogError(exception, "Exception in {Name}", nameof(TrySendTextMessageAsync));
             return null;
         }
     }
@@ -36,6 +36,7 @@ public static class TelegramBotClientExtensions
         this ITelegramBotClient client,
         ChatId chatId,
         InputFile sticker,
+        ILogger logger,
         int replyToMessageId = 0,
         CancellationToken cancellationToken = default)
     {
@@ -49,8 +50,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.GetType());
-            Console.WriteLine(exception.Message);
+           logger.LogError(exception, "Exception in {Name}", nameof(TrySendStickerAsync));
         }
     }
 
@@ -79,8 +79,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            logger.LogError(nameof(TrySendPhotoAsync) + ":" + exception.GetType());
-            logger.LogError(exception.Message);
+            logger.LogError(exception, "Exception in {Name}", nameof(TrySendPhotoAsync));
         }
     }
 
@@ -88,6 +87,7 @@ public static class TelegramBotClientExtensions
         ChatId chatId,
         int messageId,
         string text,
+        ILogger logger,
         ParseMode parseMode = ParseMode.Html,
         CancellationToken cancellationToken = default)
     {
@@ -104,8 +104,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.GetType());
-            Console.WriteLine(exception.Message);
+            logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageTextAsync));
         }
     }
 
@@ -113,6 +112,7 @@ public static class TelegramBotClientExtensions
         this ITelegramBotClient client,
         ChatId chatId,
         InputFile video,
+        ILogger logger,
         int? replyToMessageId = null,
         CancellationToken cancellationToken = default)
     {
@@ -126,8 +126,7 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception.GetType());
-            Console.WriteLine(exception.Message);
+           logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
         }
     }
 }

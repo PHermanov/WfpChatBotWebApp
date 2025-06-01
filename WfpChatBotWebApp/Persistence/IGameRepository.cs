@@ -7,7 +7,6 @@ public interface IGameRepository
 {
     Task CheckUserAsync(long chatId, long userId, string userName, CancellationToken cancellationToken);
     Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken);
-    Task<User[]> GetInactiveUsersAsync(long chatId, CancellationToken cancellationToken);
     Task<User[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken);
     Task<User?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken);
     Task<User?> GetUserByNameAsync(long chatId, string userName);

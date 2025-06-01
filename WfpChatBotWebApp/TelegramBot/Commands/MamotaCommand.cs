@@ -52,11 +52,12 @@ public class MamotaCommandHandler(
             await botClient.TrySendStickerAsync(
                 chatId: request.ChatId,
                 sticker: InputFile.FromUri(stickerUrl),
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            logger.LogError(e, "Mamota command failed");
         }
     }
 }

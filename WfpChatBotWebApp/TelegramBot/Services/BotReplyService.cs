@@ -90,9 +90,10 @@ public class BotReplyService(
                         messageId: answerMessage.MessageId,
                         parseMode: ParseMode.Markdown,
                         text: $"{responseBuffer}...",
+                        logger: logger,
                         cancellationToken: cancellationToken);
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                 }
             }
 
@@ -102,9 +103,7 @@ public class BotReplyService(
         {
             logger.LogError("{Class} Exception: {e}", nameof(BotReplyService), e);
             responseBuffer.Clear();
-            var offMessage =
-                await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff,
-                    cancellationToken);
+            var offMessage = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
             responseBuffer.Append(offMessage);
         }
         finally
@@ -114,6 +113,7 @@ public class BotReplyService(
                 messageId: answerMessage.MessageId,
                 text: responseBuffer.ToString(),
                 parseMode: ParseMode.Markdown,
+                logger: logger,
                 cancellationToken: cancellationToken);
         }
     }

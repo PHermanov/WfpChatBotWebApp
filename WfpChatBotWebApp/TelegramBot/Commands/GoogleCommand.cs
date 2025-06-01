@@ -95,14 +95,17 @@ public class GoogleCommandHandler(
     }
 }
 
-public class SearchResultModel
+public record SearchResultModel
 {
-    [JsonPropertyName("title")] public string Title { get; init; } = string.Empty;
+    [JsonPropertyName("title")] 
+    public string Title { get; init; } = string.Empty;
 
-    [JsonPropertyName("link")] public string Link { get; init; } = string.Empty;
+    [JsonPropertyName("link")] 
+    public string Link { get; init; } = string.Empty;
 }
 
-public class GoogleResponseModel
+public record GoogleResponseModel
 {
-    [JsonPropertyName("items")] public List<SearchResultModel> Items { get; set; } = new();
+    [JsonPropertyName("items")] 
+    public List<SearchResultModel> Items { get; set; } = new();
 }

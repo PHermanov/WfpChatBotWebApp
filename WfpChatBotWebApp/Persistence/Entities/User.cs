@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace WfpChatBotWebApp.Persistence.Entities;
 
-namespace WfpChatBotWebApp.Persistence.Entities;
-
-public class User
+public record User
 {
     public int Id { get; set; }
     public long ChatId { get; set; }
