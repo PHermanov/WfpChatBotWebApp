@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using OpenAI.Chat;
 using OpenAI.Images;
-using AI.Dev.OpenAI.GPT;
 using Azure;
 using Azure.AI.OpenAI;
 using OpenAI.Audio;
@@ -43,9 +42,11 @@ public class OpenAiService : IOpenAiService
     {
         if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
         {
-            messagesQueue = new ChatMessageQueue(maxTokens: 300_000);
+            messagesQueue = new ChatMessageQueue();
 
-            var systemMessage = ChatMessage.CreateSystemMessage("You are an AI assistant that helps people find information. You are included in a Telegram chat with friends. Format your replies in Markdown supported by Telegram Bot Api with parseMode: ParseMode.Markdown");
+            var systemMessage = ChatMessage.CreateSystemMessage("You are an AI assistant that helps people find information. " +
+                                                                "You are included in a Telegram chat with friends. " +
+                                                                "Format your replies in Markdown supported by Telegram Bot Api with parseMode: ParseMode.Markdown");
             messagesQueue.Enqueue(systemMessage);
             
             _messageQueues.Add(contextKey, messagesQueue);
@@ -74,6 +75,7 @@ public class OpenAiService : IOpenAiService
         {
             foreach (var contentPart in completion.ContentUpdate)
             {
+                responseBuffer.Append(contentPart.Text);
                 yield return contentPart.Text;
             }
         }
@@ -108,7 +110,7 @@ public class OpenAiService : IOpenAiService
     }
 }
 
-public class ChatMessageQueue(int maxTokens)
+public class ChatMessageQueue()
 {
     private readonly ConcurrentQueue<ChatMessage> _internalQueue = new();
     private readonly Lock _lockObject = new();
@@ -118,14 +120,6 @@ public class ChatMessageQueue(int maxTokens)
         lock (_lockObject)
         {
             _internalQueue.Enqueue(obj);
-        }
-
-        lock (_lockObject)
-        {
-            while (_internalQueue.ToArray().Sum(cm => GPT3Tokenizer.Encode(cm.Content.FirstOrDefault()?.Text!).Count) > maxTokens
-                   && _internalQueue.TryDequeue(out _))
-            {
-            }
         }
     }
 

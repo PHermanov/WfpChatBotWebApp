@@ -55,8 +55,6 @@ public class BotReplyService(
                 var replyMessageText = GetMessageText(replyToMessage);
                 if (string.IsNullOrWhiteSpace(replyMessageText) || !replyMessageText.StartsWith($"@{mention}"))
                 {
-                    logger.LogInformation("BotReplyService: Include reply message to context");
-
                     if (!string.IsNullOrWhiteSpace(replyMessageText))
                         requests.Add(replyMessageText);
 
@@ -101,7 +99,7 @@ public class BotReplyService(
         }
         catch (Exception e)
         {
-            logger.LogError("{Class} Exception: {e}", nameof(BotReplyService), e);
+            logger.LogError(e, "Exception at {Class}", nameof(BotReplyService));
             responseBuffer.Clear();
             var offMessage = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
             responseBuffer.Append(offMessage);
