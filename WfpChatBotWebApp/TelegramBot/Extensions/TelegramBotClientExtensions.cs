@@ -1,7 +1,6 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
@@ -13,7 +12,6 @@ public static class TelegramBotClientExtensions
         ParseMode parseMode = ParseMode.Html,
         bool disableNotification = false,
         int replyToMessageId = 0,
-        IReplyMarkup? replyMarkup = null,
         ILogger? logger = null,
         CancellationToken cancellationToken = default)
     {
@@ -25,7 +23,6 @@ public static class TelegramBotClientExtensions
                 parseMode: parseMode,
                 disableNotification: disableNotification,
                 replyParameters: replyToMessageId,
-                replyMarkup: replyMarkup,
                 cancellationToken: cancellationToken);
         }
         catch (Exception exception)
@@ -66,7 +63,6 @@ public static class TelegramBotClientExtensions
         ParseMode parseMode = ParseMode.Html,
         bool disableNotification = false,
         int replyToMessageId = 0,
-        IReplyMarkup? replyMarkup = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -79,7 +75,6 @@ public static class TelegramBotClientExtensions
                 parseMode: parseMode,
                 disableNotification: disableNotification,
                 replyParameters: replyToMessageId,
-                replyMarkup: replyMarkup,
                 cancellationToken: cancellationToken);
         }
         catch (Exception exception)

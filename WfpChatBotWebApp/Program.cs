@@ -54,7 +54,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHostedService<ConfigureWebhook>();
 
 builder.Services.AddControllers();
-builder.Services.ConfigureTelegramBotMvc();
+// builder.Services.ConfigureTelegramBotMvc();
 
 builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
