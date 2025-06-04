@@ -110,7 +110,7 @@ public class OpenAiService : IOpenAiService
     }
 }
 
-public class ChatMessageQueue()
+public class ChatMessageQueue
 {
     private readonly ConcurrentQueue<ChatMessage> _internalQueue = new();
     private readonly Lock _lockObject = new();

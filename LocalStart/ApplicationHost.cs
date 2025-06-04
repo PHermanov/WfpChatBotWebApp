@@ -54,7 +54,7 @@ public static class ApplicationHost
         
         serviceCollection.AddSingleton<ITelegramBotClient>(_ => 
             new TelegramBotClient(hostBuilderContext.Configuration["BotToken"]!) ?? throw new InvalidOperationException());
-        
+       
         serviceCollection.AddHttpClient("Google",
             httpClient =>
             {
@@ -71,6 +71,12 @@ public static class ApplicationHost
             httpClient =>
             {
                 httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["RandomOrgUri"] ?? string.Empty);
+            });
+        
+        serviceCollection.AddHttpClient("Sora",
+            httpClient =>
+            {
+                httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["SoraUrl"] ?? string.Empty);
             });
         
         serviceCollection.AddMemoryCache();
@@ -93,6 +99,7 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
         serviceCollection.AddScoped<IRandomService, RandomService>();
+        serviceCollection.AddScoped<ISoraService, SoraService>();
     }
 
     private static void OnApplicationStopping()

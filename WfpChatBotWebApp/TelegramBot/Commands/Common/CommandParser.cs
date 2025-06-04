@@ -30,6 +30,7 @@ public static class CommandParser
             "/mamota" => new MamotaCommand(message),
             "/year" => new YearCommand(message),
             "/draw" => new DrawCommand(message),
+            "/video" => new VideoCommand(message),
             _ => null
         };
     }

@@ -46,6 +46,12 @@ builder.Services.AddHttpClient("Random",
         httpClient.BaseAddress = new Uri(builder.Configuration["RandomOrgUri"] ?? string.Empty);
     });
 
+builder.Services.AddHttpClient("Sora",
+    httpClient =>
+    {
+        httpClient.BaseAddress = new Uri(builder.Configuration["SoraUrl"] ?? string.Empty);
+    });
+
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
 
@@ -71,6 +77,7 @@ builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddScoped<IRandomService, RandomService>();
+builder.Services.AddScoped<ISoraService, SoraService>();
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>
