@@ -129,4 +129,26 @@ public static class TelegramBotClientExtensions
            logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
         }
     }
+    
+    public static async Task TrySendAnimationAsync(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        InputFile video,
+        ILogger logger,
+        int? replyToMessageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.SendAnimation(
+                chatId: chatId,
+                animation: video,
+                replyParameters: replyToMessageId,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
+        }
+    }
 }
