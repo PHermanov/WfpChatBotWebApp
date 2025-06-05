@@ -31,8 +31,8 @@ public class SoraService(
             var body = new
             {
                 prompt = prompt.Trim(),
-                width = 720,
-                height = 720,
+                width = 480,
+                height = 480,
                 n_seconds = 10,
                 model = "sora"
             };
