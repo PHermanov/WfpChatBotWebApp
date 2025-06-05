@@ -45,7 +45,7 @@ public class VideoCommandHandler(
             }
             else
             {
-                var stream = await soraService.GetVideo(request.Param, cancellationToken);
+                var stream = await soraService.GetVideo(request.Param, 10, cancellationToken);
 
                 if (stream != null)
                 {

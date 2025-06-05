@@ -5,7 +5,7 @@ namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface ISoraService
 {
-    Task<Stream?> GetVideo(string prompt, CancellationToken cancellationToken);
+    Task<Stream?> GetVideo(string prompt, ushort duration, CancellationToken cancellationToken);
 }
 
 public class SoraService(
@@ -15,7 +15,7 @@ public class SoraService(
 {
     private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = true };
     
-    public async Task<Stream?> GetVideo(string prompt, CancellationToken cancellationToken)
+    public async Task<Stream?> GetVideo(string prompt, ushort duration, CancellationToken cancellationToken)
     {
         try
         {
@@ -33,7 +33,7 @@ public class SoraService(
                 prompt = prompt.Trim(),
                 width = 480,
                 height = 480,
-                n_seconds = 10,
+                n_seconds = duration,
                 model = "sora"
             };
 
