@@ -78,6 +78,15 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
                 logger: logger,
                 cancellationToken: cancellationToken);
         }
+        else
+        {
+            await botClient.TrySendTextMessageAsync(
+                chatId: chatId,
+                text: caption,
+                parseMode: ParseMode.Markdown,
+                logger: logger,
+                cancellationToken: cancellationToken);
+        }
     }
 
     private async Task SendTodayWinnerMessage(long chatId, Result todayResult, CancellationToken cancellationToken)
