@@ -136,6 +136,7 @@ public static class TelegramBotClientExtensions
         InputFile video,
         ILogger logger,
         int? replyToMessageId = null,
+        string? caption = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -143,6 +144,7 @@ public static class TelegramBotClientExtensions
             await client.SendAnimation(
                 chatId: chatId,
                 animation: video,
+                caption: caption,
                 replyParameters: replyToMessageId,
                 cancellationToken: cancellationToken);
         }

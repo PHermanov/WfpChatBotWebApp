@@ -15,10 +15,9 @@ public class DailyWinnerJobRequest : IRequest;
 public class DailyWinnerJobHandler(ITelegramBotClient botClient,  
     ITextMessageService textMessageService, 
     IGameRepository repository, 
-    IStickerService stickerService,
+    ISoraService soraService,
     IRandomService randomService,
-    ILogger<DailyWinnerJobHandler> logger)
-    : IRequestHandler<DailyWinnerJobRequest>
+    ILogger<DailyWinnerJobHandler> logger) : IRequestHandler<DailyWinnerJobRequest>
 {
     public async Task Handle(DailyWinnerJobRequest request, CancellationToken cancellationToken)
     {
@@ -65,20 +64,16 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
     private async Task SendNewWinnerMessage(long chatId, User newWinner, CancellationToken cancellationToken)
     {
         var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
-            
-        await botClient.TrySendTextMessageAsync(
-            chatId: chatId,
-            text: string.Format(messageTemplateNew, newWinner.GetUserMention()),
-            parseMode: ParseMode.Markdown,
-            logger: logger,
-            cancellationToken: cancellationToken);
+        var messageText = string.Format(messageTemplateNew, newWinner.GetUserMention());
 
-        var stickerUrl = await stickerService.GetRandomStickerFromSet(StickerService.StickerSet.Yoba, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(stickerUrl))
+        var stream = await soraService.GetVideo(messageText, 5, cancellationToken);
+
+        if (stream != null)
         {
-            await botClient.TrySendStickerAsync(
+            await botClient.TrySendAnimationAsync(
                 chatId: chatId,
-                sticker: InputFile.FromUri(stickerUrl),
+                video: InputFile.FromStream(stream, "file.mp4"),
+                caption: messageText,
                 logger: logger,
                 cancellationToken: cancellationToken);
         }
