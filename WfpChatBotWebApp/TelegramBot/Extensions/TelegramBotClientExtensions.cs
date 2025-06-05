@@ -144,8 +144,10 @@ public static class TelegramBotClientExtensions
             await client.SendAnimation(
                 chatId: chatId,
                 animation: video,
+                showCaptionAboveMedia: true,
                 caption: caption,
                 replyParameters: replyToMessageId,
+                parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken);
         }
         catch (Exception exception)
