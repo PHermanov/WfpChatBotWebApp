@@ -64,16 +64,17 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
     private async Task SendNewWinnerMessage(long chatId, User newWinner, CancellationToken cancellationToken)
     {
         var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
-        var messageText = string.Format(messageTemplateNew, newWinner.GetUserMention());
-
-        var stream = await soraService.GetVideo(messageText, 5, cancellationToken);
+        var caption = string.Format(messageTemplateNew, newWinner.GetUserMention());
+        var prompt = string.Format(messageTemplateNew, newWinner.UserName);
+        
+        var stream = await soraService.GetVideo(prompt, 5, cancellationToken);
 
         if (stream != null)
         {
             await botClient.TrySendAnimationAsync(
                 chatId: chatId,
                 video: InputFile.FromStream(stream, "file.mp4"),
-                caption: messageText,
+                caption: caption,
                 logger: logger,
                 cancellationToken: cancellationToken);
         }
