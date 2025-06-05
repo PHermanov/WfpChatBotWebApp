@@ -28,9 +28,9 @@ public class VideoCommandHandler(
             {
                 logger.LogInformation("Video request is empty");
 
-                var responsePhrase =
-                    await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted,
-                        cancellationToken);
+                var responsePhrase = await messageService.GetMessageByNameAsync(
+                    TextMessageService.TextMessageNames.WhatWanted, 
+                    cancellationToken);
 
                 if (string.IsNullOrEmpty(responsePhrase))
                     return;
@@ -42,26 +42,33 @@ public class VideoCommandHandler(
                     parseMode: ParseMode.Markdown,
                     logger: logger,
                     cancellationToken: cancellationToken);
-
-                return;
             }
             else
             {
                 var stream = await soraService.GetVideo(request.Param, cancellationToken);
-                
-                await botClient.TrySendVideoAsync(
-                    chatId:request.ChatId,
-                    replyToMessageId: request.MessageId,
-                    video: InputFile.FromStream(stream),
-                    logger:logger,
-                    cancellationToken: cancellationToken);
+
+                if (stream != null)
+                {
+                    await botClient.TrySendVideoAsync(
+                        chatId: request.ChatId,
+                        replyToMessageId: request.MessageId,
+                        video: InputFile.FromStream(stream),
+                        logger: logger,
+                        cancellationToken: cancellationToken);
+                }
             }
         }
         catch (Exception e)
         {
             logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(VideoCommandHandler), request.ChatId, e);
 
-            var message = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
+            var message = await messageService.GetMessageByNameAsync(
+                TextMessageService.TextMessageNames.FuckOff, 
+                cancellationToken);
+            
+            if (string.IsNullOrEmpty(message))
+                return;
+            
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
                 text: message,
