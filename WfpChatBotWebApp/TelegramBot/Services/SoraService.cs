@@ -1,10 +1,11 @@
 using System.Text.Json;
+using System.Text;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface ISoraService
 {
-    Task<Stream> GetVideo(string prompt, CancellationToken cancellationToken);
+    Task<Stream?> GetVideo(string prompt, CancellationToken cancellationToken);
 }
 
 public class SoraService(
@@ -14,13 +15,19 @@ public class SoraService(
 {
     private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNameCaseInsensitive = true };
     
-    public async Task<Stream> GetVideo(string prompt, CancellationToken cancellationToken)
+    public async Task<Stream?> GetVideo(string prompt, CancellationToken cancellationToken)
     {
         try
         {
             var endpoint = configuration["SoraUrl"];
             var key = configuration["SoraKey"];
 
+            if (string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(key))
+            {
+                logger.LogError("Sora parameters not set");
+                return null;
+            }
+            
             var body = new
             {
                 prompt = prompt.Trim(),
@@ -32,7 +39,7 @@ public class SoraService(
 
             var createRequest = new HttpRequestMessage(HttpMethod.Post, "/openai/v1/video/generations/jobs?api-version=preview");
             createRequest.Headers.Add("api-key", key);
-            createRequest.Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json");
+            createRequest.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
             var httpClient = httpClientFactory.CreateClient("Sora");
 
@@ -43,7 +50,10 @@ public class SoraService(
             var jobId = createResponseDoc.RootElement.GetProperty("id").GetString();
 
             logger.LogInformation("Received job ID: {JobId}", jobId);
-
+            
+            if (string.IsNullOrEmpty(jobId))
+                return null;
+            
             // 2. Poll for job status
             var statusUrl = $"{endpoint}/openai/v1/video/generations/jobs/{jobId}?api-version=preview";
 
@@ -88,11 +98,11 @@ public class SoraService(
         {
             logger.LogError(e, "Exception in {Name}", nameof(SoraService));
         }
-        return null!;
+        return null;
     }
-}
 
-public class Generation
-{
-    public required string Id { get; set; }
+    private class Generation
+    {
+        public required string Id { get; set; }
+    }
 }
