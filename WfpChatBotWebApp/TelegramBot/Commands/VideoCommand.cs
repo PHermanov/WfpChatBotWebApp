@@ -49,10 +49,10 @@ public class VideoCommandHandler(
 
                 if (stream != null)
                 {
-                    await botClient.TrySendVideoAsync(
+                    await botClient.TrySendAnimationAsync(
                         chatId: request.ChatId,
                         replyToMessageId: request.MessageId,
-                        video: InputFile.FromStream(stream),
+                        video: InputFile.FromStream(stream, "file.mp4"),
                         logger: logger,
                         cancellationToken: cancellationToken);
                 }
