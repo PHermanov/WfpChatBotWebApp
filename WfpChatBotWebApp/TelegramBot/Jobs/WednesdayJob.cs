@@ -13,6 +13,7 @@ public class WednesdayJobRequest : IRequest;
 public class WednesdayJobHandler(
     ITelegramBotClient botClient,
     IGameRepository repository,
+    IStickerService stickerService,
     ISoraService soraService,
     ITextMessageService messageService,
     ILogger<MonthlyWinnerJobRequest> logger)
@@ -73,6 +74,19 @@ public class WednesdayJobHandler(
                         chatId: chatId,
                         text: message,
                         parseMode: ParseMode.Markdown,
+                        logger: logger,
+                        cancellationToken: cancellationToken);
+                    
+                    var stickerUrl = await stickerService.GetRandomStickerFromSet(
+                        StickerService.StickerSet.Frog,
+                        cancellationToken);
+                    
+                    if (string.IsNullOrWhiteSpace(stickerUrl))
+                        continue;
+                    
+                    await botClient.TrySendStickerAsync(
+                        chatId: chatId,
+                        sticker: InputFile.FromUri(stickerUrl),
                         logger: logger,
                         cancellationToken: cancellationToken);
                 }
