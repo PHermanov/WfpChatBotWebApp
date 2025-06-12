@@ -8,7 +8,7 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class VideoCommand(Message message) : CommandWithParam(message), IRequest
+public class VideoCommand(Message message) : CommandWithPrompt(message), IRequest
 {
     public override string Name => "video";
 }
@@ -22,9 +22,20 @@ public class VideoCommandHandler(
 {
     public async Task Handle(VideoCommand request, CancellationToken cancellationToken)
     {
+        var answerMessage = await botClient.TrySendTextMessageAsync(
+            chatId: request.ChatId,
+            text: "...",
+            parseMode: ParseMode.Markdown,
+            replyToMessageId: request.MessageId,
+            logger: logger,
+            cancellationToken: cancellationToken);
+        
+        if (answerMessage == null)
+            return;
+        
         try
         {
-            if (string.IsNullOrEmpty(request.Param))
+            if (string.IsNullOrEmpty(request.Prompt))
             {
                 logger.LogInformation("Video request is empty");
 
@@ -34,25 +45,25 @@ public class VideoCommandHandler(
 
                 if (string.IsNullOrEmpty(responsePhrase))
                     return;
-
-                await botClient.TrySendTextMessageAsync(
-                    chatId: request.ChatId,
-                    replyToMessageId: request.MessageId,
-                    text: $"*{responsePhrase}*",
+                
+                await botClient.TryEditMessageTextAsync(
+                    chatId: answerMessage.Chat.Id,
+                    messageId: answerMessage.MessageId,
                     parseMode: ParseMode.Markdown,
+                    text: $"*{responsePhrase}*",
                     logger: logger,
                     cancellationToken: cancellationToken);
             }
             else
             {
-                var stream = await soraService.GetVideo(request.Param, 10, cancellationToken);
+                var stream = await soraService.GetVideo(request.Prompt, 10, cancellationToken);
 
                 if (stream != null)
                 {
-                    await botClient.TrySendAnimationAsync(
-                        chatId: request.ChatId,
-                        replyToMessageId: request.MessageId,
-                        video: InputFile.FromStream(stream, "file.mp4"),
+                    await botClient.TryEditMessageMedia(
+                        chatId: answerMessage.Chat.Id,
+                        messageId: answerMessage.MessageId,
+                        media: new InputMediaAnimation(InputFile.FromStream(stream, "file.mp4")),
                         logger: logger,
                         cancellationToken: cancellationToken);
                 }
@@ -69,10 +80,11 @@ public class VideoCommandHandler(
             if (string.IsNullOrEmpty(message))
                 return;
             
-            await botClient.TrySendTextMessageAsync(
-                chatId: request.ChatId,
+            await botClient.TryEditMessageTextAsync(
+                chatId: answerMessage.Chat.Id,
+                messageId: answerMessage.MessageId,
+                parseMode: ParseMode.Markdown,
                 text: message,
-                replyToMessageId: request.MessageId,
                 logger: logger,
                 cancellationToken: cancellationToken);
         }

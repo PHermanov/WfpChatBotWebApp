@@ -8,7 +8,7 @@ using WfpChatBotWebApp.TelegramBot.Services;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
-public class DrawCommand(Message message) : CommandWithParam(message), IRequest
+public class DrawCommand(Message message) : CommandWithPrompt(message), IRequest
 {
     public override string Name => "draw";
 }
@@ -24,7 +24,7 @@ public class DrawCommandHandler(
     {
         try
         {
-            if (string.IsNullOrEmpty(request.Param))
+            if (string.IsNullOrEmpty(request.Prompt))
             {
                 logger.LogInformation("Draw request is empty");
 
@@ -44,7 +44,7 @@ public class DrawCommandHandler(
                 return;
             }
 
-            var param = CutParameters(request.Param, out var imagesCount);
+            var param = CutParameters(request.Prompt, out var imagesCount);
 
             await foreach (var url in openAiService.CreateImage(param, imagesCount, cancellationToken))
             {
