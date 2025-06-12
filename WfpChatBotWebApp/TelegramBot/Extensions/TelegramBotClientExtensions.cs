@@ -152,7 +152,29 @@ public static class TelegramBotClientExtensions
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
+            logger.LogError(exception, "Exception in {Name}", nameof(TrySendAnimationAsync));
+        }
+    }
+    
+    public static async Task TryEditMessageMedia(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        int messageId,
+        InputMedia media,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.EditMessageMedia(
+                chatId: chatId,
+                messageId: messageId,
+                media: media,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageMedia));
         }
     }
 }

@@ -30,7 +30,8 @@ public class TelegramBotService(
         if (message == null)
             return;
 
-        logger.LogInformation("{Name} chat: {ChatId}, Received message {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
+        logger.LogInformation("{Name} chat: {ChatId}, Received message {MessageType}", nameof(TelegramBotService),
+            message.Chat.Id, message.Type);
 
         if (message.From is { IsBot: true })
             return;
@@ -71,7 +72,8 @@ public class TelegramBotService(
 
             if (message is { Type: MessageType.Voice, Voice: not null })
             {
-                logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService), message.Chat.Id);
+                logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService),
+                    message.Chat.Id);
                 await audioTranscribeService.Reply(message, cancellationToken);
                 return;
             }
@@ -101,9 +103,13 @@ public class TelegramBotService(
 
     private static bool IsBotMentioned(Message message, string botUserName) => message.Type switch
     {
-        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null
-                             && (message.EntityValues ?? []).Contains($"@{botUserName}")) || message.ReplyToMessage?.From?.Username == botUserName,
-        MessageType.Photo when !string.IsNullOrEmpty(message.Caption) => message.Caption.Contains($"@{botUserName}"),
+        MessageType.Text =>
+            message.Text?.StartsWith('/') is not true // workaround for commands with a reply message from bot
+            && ((message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null
+                 && (message.EntityValues ?? []).Contains($"@{botUserName}"))
+                || message.ReplyToMessage?.From?.Username == botUserName),
+        MessageType.Photo when !string.IsNullOrEmpty(message.Caption) =>
+            message.Caption.Contains($"@{botUserName}"),
         _ => false
     };
 }
