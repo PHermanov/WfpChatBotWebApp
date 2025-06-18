@@ -19,6 +19,25 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
     IRandomService randomService,
     ILogger<DailyWinnerJobHandler> logger) : IRequestHandler<DailyWinnerJobRequest>
 {
+    private const string PromptTemplate =
+        """
+        Display the following text in the video exactly as written, without any modifications, additions, or omissions.
+        Never alter or reduce the original words.
+        The text must appear in the foreground and be centered, remaining clear and unobstructed at all times:
+        
+        AND
+        THE PIDOR OF THE DAY IS
+        {0}!
+        
+        In the background, show a winning celebration.
+        {1} theme.
+        {2} style.
+        """;
+
+    private readonly string[] _themes = ["antique", "sport", "industrial", "traditional", "anime", "fantasy"];
+
+    private readonly string[] _styles = ["photorealistic", "cartoon", "news broadcast", "festive"];
+    
     public async Task Handle(DailyWinnerJobRequest request, CancellationToken cancellationToken)
     {
         logger.LogInformation("Executed {Name} at {Now}", nameof(DailyWinnerJobHandler), DateTime.UtcNow);
@@ -65,7 +84,12 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
     {
         var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
         var caption = string.Format(messageTemplateNew, newWinner.GetUserMention());
-        var prompt = string.Format(messageTemplateNew, newWinner.UserName);
+        
+        var prompt = string.Format(
+            PromptTemplate,
+            newWinner.UserName?.Replace("@", string.Empty),
+            _themes[new Random().Next(_themes.Length)],
+            _styles[new Random().Next(_styles.Length)]);
         
         var stream = await soraService.GetVideo(prompt, 5, cancellationToken);
 
