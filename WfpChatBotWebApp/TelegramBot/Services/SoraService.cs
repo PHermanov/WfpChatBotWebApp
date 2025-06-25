@@ -34,7 +34,7 @@ public class SoraService(
                 width = 480,
                 height = 480,
                 n_seconds = duration,
-                model = "sora"
+                model = "wfp-sora"
             };
 
             var createRequest = new HttpRequestMessage(HttpMethod.Post, "/openai/v1/video/generations/jobs?api-version=preview");
