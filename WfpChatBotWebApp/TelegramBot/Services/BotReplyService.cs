@@ -91,7 +91,7 @@ public class BotReplyService(
                         logger: logger,
                         cancellationToken: cancellationToken);
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                    await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
                 }
             }
 
