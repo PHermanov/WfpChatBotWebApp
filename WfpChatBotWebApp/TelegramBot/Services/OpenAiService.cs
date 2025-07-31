@@ -22,6 +22,8 @@ public class OpenAiService : IOpenAiService
     private readonly ImageClient _imageClient;
     private readonly AudioClient _audioClient;
 
+    private readonly string _systemPrompt;
+    
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
 
     public OpenAiService(IConfiguration config)
@@ -36,6 +38,8 @@ public class OpenAiService : IOpenAiService
         _chatClient = azureClient.GetChatClient(config["OpenAiChatModelName"]);
         _imageClient = azureClient.GetImageClient(config["OpenAiImageModelName"]);
         _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
+
+        _systemPrompt = config["SystemPrompt"] ?? string.Empty;
     }
 
     public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, List<string> requests, List<BinaryData> images, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -44,9 +48,7 @@ public class OpenAiService : IOpenAiService
         {
             messagesQueue = new ChatMessageQueue();
 
-            var systemMessage = ChatMessage.CreateSystemMessage("You are an AI assistant that helps people find information. " +
-                                                                "You are included in a Telegram chat with friends. " +
-                                                                "Format your replies in Markdown supported by Telegram Bot Api with parseMode: ParseMode.Markdown");
+            var systemMessage = ChatMessage.CreateSystemMessage(_systemPrompt);
             messagesQueue.Enqueue(systemMessage);
             
             _messageQueues.Add(contextKey, messagesQueue);
