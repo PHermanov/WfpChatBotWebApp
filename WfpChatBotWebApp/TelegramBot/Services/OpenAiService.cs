@@ -91,7 +91,7 @@ public class OpenAiService : IOpenAiService
         {
             Quality = GeneratedImageQuality.High,
             Size = GeneratedImageSize.W1024xH1024,
-            Style = GeneratedImageStyle.Vivid,
+            Style = GeneratedImageStyle.Natural,
             ResponseFormat = GeneratedImageFormat.Uri
         };
 
@@ -112,7 +112,7 @@ public class OpenAiService : IOpenAiService
     }
 }
 
-public class ChatMessageQueue()
+public class ChatMessageQueue
 {
     private readonly ConcurrentQueue<ChatMessage> _internalQueue = new();
     private readonly Lock _lockObject = new();
