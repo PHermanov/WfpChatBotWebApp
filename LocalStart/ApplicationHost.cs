@@ -74,9 +74,12 @@ public static class ApplicationHost
             });
         
         serviceCollection.AddMemoryCache();
-        serviceCollection.AddMediatR(conf => 
-            conf.RegisterServicesFromAssemblyContaining<ConfigureWebhook>());
-
+        serviceCollection.AddMediatR(conf =>
+        {
+            conf.RegisterServicesFromAssemblyContaining<ConfigureWebhook>();
+            conf.LicenseKey = hostBuilderContext.Configuration["MediatrLicense"];
+        });
+        
         serviceCollection.AddScoped<ITelegramBotService, TelegramBotService>();
         serviceCollection.AddScoped<ITextMessageService, TextMessageService>();
         serviceCollection.AddScoped<IReplyMessagesService, ReplyMessagesService>();
