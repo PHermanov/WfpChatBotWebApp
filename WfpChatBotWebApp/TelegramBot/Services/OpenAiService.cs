@@ -38,7 +38,6 @@ public class OpenAiService : IOpenAiService
         _chatClient = azureClient.GetChatClient(config["OpenAiChatModelName"]);
         _imageClient = azureClient.GetImageClient(config["OpenAiImageModelName"]);
         _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
-
         _systemPrompt = config["SystemPrompt"] ?? string.Empty;
     }
 
@@ -48,7 +47,7 @@ public class OpenAiService : IOpenAiService
         {
             messagesQueue = new ChatMessageQueue();
 
-            var systemMessage = ChatMessage.CreateSystemMessage(_systemPrompt);
+            var systemMessage = ChatMessage.CreateSystemMessage(string.Format(_systemPrompt, DateTime.Today));
             messagesQueue.Enqueue(systemMessage);
             
             _messageQueues.Add(contextKey, messagesQueue);

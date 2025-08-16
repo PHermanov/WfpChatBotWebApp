@@ -54,7 +54,11 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHostedService<ConfigureWebhook>();
 builder.Services.AddControllers();
 
-builder.Services.AddMediatR(conf => conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+builder.Services.AddMediatR(conf =>
+{
+    conf.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+    conf.LicenseKey = builder.Configuration["MediatrLicense"];
+});
 
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<ITelegramBotService, TelegramBotService>();

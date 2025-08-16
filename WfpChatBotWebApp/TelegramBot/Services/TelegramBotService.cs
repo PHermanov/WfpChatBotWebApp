@@ -101,9 +101,9 @@ public class TelegramBotService(
 
     private static bool IsBotMentioned(Message message, string botUserName) => message.Type switch
     {
-        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null
-                             && (message.EntityValues ?? []).Contains($"@{botUserName}")) || message.ReplyToMessage?.From?.Username == botUserName,
-        MessageType.Photo when !string.IsNullOrEmpty(message.Caption) => message.Caption.Contains($"@{botUserName}"),
+        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null && (message.EntityValues ?? []).Contains($"@{botUserName}")) 
+                            || message.ReplyToMessage?.From?.Username == botUserName,
+        MessageType.Photo when !string.IsNullOrEmpty(message.Caption) => message.Caption.Contains($"@{botUserName}") || message.ReplyToMessage?.From?.Username == botUserName,
         _ => false
     };
 }
