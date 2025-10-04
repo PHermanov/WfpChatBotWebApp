@@ -14,7 +14,29 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
     {
         try
         {
-            var users = await repository.GetAllChatsIdsAsync(cancellationToken);
+            var chats = await repository.GetAllChatsIdsAsync(cancellationToken);
+
+            if (chats.Length > 0)
+                return Ok(chats);
+            
+            return NotFound();
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Exception in {methodName}: {message}", nameof(GetAllChats), e.Message);
+            return Problem();
+        }
+    }
+    
+    [HttpGet("chats/{chatId}/users")]
+    public async Task<IActionResult> GetAllUsersForChat(
+        [FromQuery] string secret,
+        [FromRoute] long chatId, 
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var users = await repository.GetAllUsersForChat(chatId, cancellationToken);
 
             if (users.Length > 0)
                 return Ok(users);
@@ -23,7 +45,7 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
         }
         catch (Exception e)
         {
-            logger.LogError("Exception in {className}: {message}", nameof(DataController), e.Message);
+            logger.LogError("Exception in {methodName}: {message}", nameof(GetAllUsersForChat), e.Message);
             return Problem();
         }
     }
