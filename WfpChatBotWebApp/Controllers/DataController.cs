@@ -5,20 +5,23 @@ namespace WfpChatBotWebApp.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class DataController(IGameRepository repository, ILogger<DataController> logger) : ControllerBase
+public class DataController(IConfiguration configuration, IGameRepository repository, ILogger<DataController> logger) : ControllerBase
 {
     [HttpGet("chats")]
     public async Task<IActionResult> GetAllChats(
-        [FromQuery] string secret,
-        CancellationToken cancellationToken)
+    [FromQuery] string secret,
+    CancellationToken cancellationToken)
     {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
         try
         {
             var chats = await repository.GetAllChatsIdsAsync(cancellationToken);
 
             if (chats.Length > 0)
                 return Ok(chats);
-            
+
             return NotFound();
         }
         catch (Exception e)
@@ -27,20 +30,23 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
             return Problem();
         }
     }
-    
+
     [HttpGet("chats/{chatId}/users")]
     public async Task<IActionResult> GetAllUsersForChat(
         [FromQuery] string secret,
-        [FromRoute] long chatId, 
+        [FromRoute] long chatId,
         CancellationToken cancellationToken)
     {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
         try
         {
             var users = await repository.GetAllUsersForChat(chatId, cancellationToken);
 
             if (users.Length > 0)
                 return Ok(users);
-            
+
             return NotFound();
         }
         catch (Exception e)
@@ -56,6 +62,9 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
     [FromRoute] long chatId,
     CancellationToken cancellationToken)
     {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
         try
         {
             var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
@@ -78,6 +87,9 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
     [FromRoute] long chatId,
     CancellationToken cancellationToken)
     {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
         try
         {
             var users = await repository.GetAllWinnersAsync(chatId, cancellationToken);
@@ -101,6 +113,9 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
     [FromRoute] DateTime date,
     CancellationToken cancellationToken)
     {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
         try
         {
             var users = await repository.GetAllWinnersForMonthAsync(chatId, date, cancellationToken);
@@ -116,5 +131,4 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
             return Problem();
         }
     }
-
 }
