@@ -49,4 +49,26 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
             return Problem();
         }
     }
+
+    [HttpGet("chats/{chatId}/activeusers")]
+    public async Task<IActionResult> GetActiveUsersForChat(
+    [FromQuery] string secret,
+    [FromRoute] long chatId,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
+
+            if (users.Length > 0)
+                return Ok(users);
+
+            return NotFound();
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Exception in {methodName}: {message}", nameof(GetActiveUsersForChat), e.Message);
+            return Problem();
+        }
+    }
 }
