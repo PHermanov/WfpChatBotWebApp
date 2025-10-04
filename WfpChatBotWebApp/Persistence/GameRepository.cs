@@ -41,6 +41,16 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
         }
     }
 
+    public async Task SetUserInactiveFlag(long chatId, long userId, bool inactive, CancellationToken cancellationToken)
+    {
+        var userById = await GetUserByUserIdAndChatIdAsync(chatId, userId, cancellationToken);
+        if (userById != null)
+        {
+            userById.Inactive = inactive;
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+    
     public async Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken)
         => await context.Users
             .Where(p => p.ChatId < 0) // chats ids are negative
