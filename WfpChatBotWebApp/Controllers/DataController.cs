@@ -71,4 +71,26 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
             return Problem();
         }
     }
+
+    [HttpGet("chats/{chatId}/winners")]
+    public async Task<IActionResult> GetAllWinners(
+    [FromQuery] string secret,
+    [FromRoute] long chatId,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var users = await repository.GetAllWinnersAsync(chatId, cancellationToken);
+
+            if (users.Length > 0)
+                return Ok(users);
+
+            return NotFound();
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Exception in {methodName}: {message}", nameof(GetAllWinners), e.Message);
+            return Problem();
+        }
+    }
 }
