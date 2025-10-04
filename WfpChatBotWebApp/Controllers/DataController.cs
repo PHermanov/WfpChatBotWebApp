@@ -72,7 +72,7 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
         }
     }
 
-    [HttpGet("chats/{chatId}/winners")]
+    [HttpGet("chats/{chatId}/allwinners")]
     public async Task<IActionResult> GetAllWinners(
     [FromQuery] string secret,
     [FromRoute] long chatId,
@@ -93,4 +93,28 @@ public class DataController(IGameRepository repository, ILogger<DataController> 
             return Problem();
         }
     }
+
+    [HttpGet("chats/{chatId}/{date}/monthwinners")]
+    public async Task<IActionResult> GetAllWinnersForMonthAsync(
+    [FromQuery] string secret,
+    [FromRoute] long chatId,
+    [FromRoute] DateTime date,
+    CancellationToken cancellationToken)
+    {
+        try
+        {
+            var users = await repository.GetAllWinnersForMonthAsync(chatId, date, cancellationToken);
+
+            if (users.Length > 0)
+                return Ok(users);
+
+            return NotFound();
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Exception in {methodName}: {message}", nameof(GetAllWinnersForMonthAsync), e.Message);
+            return Problem();
+        }
+    }
+
 }
