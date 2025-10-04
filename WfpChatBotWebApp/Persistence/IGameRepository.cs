@@ -22,4 +22,5 @@ public interface IGameRepository
     Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken);
     Task<Sticker[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken);
     Task<Sticker?> GetImageByNameAsync(string name, CancellationToken cancellationToken);
+    Task SetUserInactiveFlag(long chatId, long userId, bool inactive, CancellationToken cancellationToken);
 }
