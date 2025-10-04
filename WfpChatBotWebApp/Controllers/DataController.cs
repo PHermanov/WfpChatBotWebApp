@@ -131,4 +131,27 @@ public class DataController(IConfiguration configuration, IGameRepository reposi
             return Problem();
         }
     }
+
+    [HttpPatch("chats/{chatId}/users/{userId}/inactive/{state}")]
+    public async Task<IActionResult> SetUserInactiveFlag(
+        [FromQuery] string secret,
+        [FromRoute] long chatId,
+        [FromRoute] long userId,
+        [FromRoute] bool state,
+        CancellationToken cancellationToken)
+    {
+        if (secret != configuration.GetValue<string>("FunctionsSecret"))
+            return Unauthorized();
+
+        try
+        {
+            await repository.SetUserInactiveFlag(chatId, userId, state, cancellationToken);
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Exception in {methodName}: {message}", nameof(SetUserInactiveFlag), e.Message);
+            return Problem();
+        }
+    }
 }
