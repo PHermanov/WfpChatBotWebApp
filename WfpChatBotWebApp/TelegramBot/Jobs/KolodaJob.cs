@@ -35,12 +35,6 @@ public class KolodaJobHandler(
             var httpClient = httpClientFactory.CreateClient("Pictures");
             var imageStream = await httpClient.GetStreamAsync("koloda.jpg" + configuration.GetValue<string>("StickerSas"), cancellationToken);
 
-            if (imageStream == null || imageStream.Length == 0)
-            {
-                logger.LogError("{Name}, image load failed", nameof(KolodaJobHandler));
-                return;
-            }
-
             for (var i = 0; i < allChatIds.Length; i++)
             {
                 try
@@ -62,7 +56,7 @@ public class KolodaJobHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name}, Exception  {e}", nameof(KolodaJobHandler), e);
+            logger.LogError("{Name}, Exception {e}", nameof(KolodaJobHandler), e);
             return;
         }
     }
