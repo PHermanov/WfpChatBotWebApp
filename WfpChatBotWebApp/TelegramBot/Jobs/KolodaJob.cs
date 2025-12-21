@@ -33,18 +33,18 @@ public class KolodaJobHandler(
             }
 
             var httpClient = httpClientFactory.CreateClient("Pictures");
-            var imageStream = await httpClient.GetStreamAsync("koloda.jpg" + configuration.GetValue<string>("StickerSas"), cancellationToken);
-            var inputFile = InputFile.FromStream(imageStream);
-
+           
             for (var i = 0; i < allChatIds.Length; i++)
             {
                 try
                 {
                     logger.LogInformation("{Name} for chat: {ChatId} ", nameof(KolodaJobHandler), allChatIds[i]);
+
+                    var imageStream = await httpClient.GetStreamAsync("koloda.jpg" + configuration.GetValue<string>("StickerSas"), cancellationToken);
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
                         chatId: allChatIds[i],
-                        photo: inputFile,
+                        photo: InputFile.FromStream(imageStream),
                         cancellationToken: cancellationToken);
                 }
                 catch (Exception e)
