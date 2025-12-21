@@ -24,7 +24,7 @@ public class KolodaJobHandler(
         try
         {
             var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
-            logger.LogInformation("{Name} For chats: {Chats} ", nameof(KolodaJobHandler), string.Join(',', allChatIds));
+            logger.LogInformation("{Name} for chats: {Chats} ", nameof(KolodaJobHandler), string.Join(',', allChatIds));
 
             if (allChatIds.Length == 0)
             {
@@ -40,12 +40,11 @@ public class KolodaJobHandler(
             {
                 try
                 {
+                    logger.LogInformation("{Name} for chat: {ChatId} ", nameof(KolodaJobHandler), allChatIds[i]);
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
                         chatId: allChatIds[i],
                         photo: inputFile,
-                        caption: string.Empty,
-                        parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
                 }
                 catch (Exception e)
