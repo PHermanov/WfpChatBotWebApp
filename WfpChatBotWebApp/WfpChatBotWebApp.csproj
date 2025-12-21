@@ -15,13 +15,13 @@
     <PackageReference Include="Flurl" Version="4.0.0" />
     <PackageReference Include="Flurl.Http" Version="4.0.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
-    <PackageReference Include="MediatR" Version="13.1.0" />
+    <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -30,13 +30,13 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
     <PackageReference Include="SlimMessageBus" Version="3.0.0" />
-    <PackageReference Include="SlimMessageBus.Host" Version="3.3.5" />
-    <PackageReference Include="SlimMessageBus.Host.AspNetCore" Version="3.3.5" />
+    <PackageReference Include="SlimMessageBus.Host" Version="3.3.6" />
+    <PackageReference Include="SlimMessageBus.Host.AspNetCore" Version="3.3.6" />
     <PackageReference Include="SlimMessageBus.Host.Configuration" Version="3.3.2" />
     <PackageReference Include="SlimMessageBus.Host.Interceptor" Version="3.0.0" />
-    <PackageReference Include="SlimMessageBus.Host.Memory" Version="3.3.5" />
+    <PackageReference Include="SlimMessageBus.Host.Memory" Version="3.3.6" />
     <PackageReference Include="SlimMessageBus.Host.Serialization" Version="3.3.0" />
-    <PackageReference Include="Telegram.Bot" Version="22.7.5" />
+    <PackageReference Include="Telegram.Bot" Version="22.7.6" />
   </ItemGroup>
 
   <ItemGroup>
