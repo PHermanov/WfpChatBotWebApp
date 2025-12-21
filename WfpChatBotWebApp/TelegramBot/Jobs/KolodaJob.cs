@@ -34,6 +34,7 @@ public class KolodaJobHandler(
 
             var httpClient = httpClientFactory.CreateClient("Pictures");
             var imageStream = await httpClient.GetStreamAsync("koloda.jpg" + configuration.GetValue<string>("StickerSas"), cancellationToken);
+            var inputFile = InputFile.FromStream(imageStream);
 
             for (var i = 0; i < allChatIds.Length; i++)
             {
@@ -42,7 +43,7 @@ public class KolodaJobHandler(
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
                         chatId: allChatIds[i],
-                        photo: InputFile.FromStream(imageStream),
+                        photo: inputFile,
                         caption: string.Empty,
                         parseMode: ParseMode.Markdown,
                         cancellationToken: cancellationToken);
