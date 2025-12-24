@@ -70,7 +70,10 @@ builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
-builder.Services.AddSingleton<IOpenAiService>(new OpenAiService(builder.Configuration));
+builder.Services.AddSingleton<IOpenAiService>(sp => new OpenAiService(
+    builder.Configuration,
+    sp.GetRequiredService<IGameRepository>(),
+    sp.GetRequiredService<ITelegramBotClient>()));
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
