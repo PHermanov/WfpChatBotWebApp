@@ -6,12 +6,16 @@ using OpenAI.Images;
 using Azure;
 using Azure.AI.OpenAI;
 using OpenAI.Audio;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using WfpChatBotWebApp.Persistence;
+using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface IOpenAiService
 {
-    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, List<string> requests, List<BinaryData> images, CancellationToken cancellationToken);
+    IAsyncEnumerable<string> ProcessMessage(Guid contextKey, Message message, List<string> requests, List<BinaryData> images, CancellationToken cancellationToken);
     IAsyncEnumerable<string> CreateImage(string message, int numOfImages, CancellationToken cancellationToken);
     Task<string> ProcessAudio(Stream audioStream, CancellationToken cancellationToken);
 }
@@ -21,12 +25,17 @@ public class OpenAiService : IOpenAiService
     private readonly ChatClient _chatClient;
     private readonly ImageClient _imageClient;
     private readonly AudioClient _audioClient;
+    private readonly IGameRepository _gameRepository;
+    private readonly ITelegramBotClient _botClient;
 
     private readonly string _systemPrompt;
     
     private readonly Dictionary<Guid, ChatMessageQueue> _messageQueues = new();
 
-    public OpenAiService(IConfiguration config)
+    public OpenAiService(
+        IConfiguration config,
+        IGameRepository gameRepository,
+        ITelegramBotClient botClient)
     {
         var openAiKey = config["OpenAiKey"] ?? string.Empty;
         var openAiUrl = config["OpenAiUrl"] ?? string.Empty;
@@ -38,22 +47,25 @@ public class OpenAiService : IOpenAiService
         _chatClient = azureClient.GetChatClient(config["OpenAiChatModelName"]);
         _imageClient = azureClient.GetImageClient(config["OpenAiImageModelName"]);
         _audioClient = azureClient.GetAudioClient(config["OpenAiAudioModelName"]);
+        _gameRepository = gameRepository;
+        _botClient = botClient;
+
         _systemPrompt = config["SystemPrompt"] ?? string.Empty;
     }
 
-    public async IAsyncEnumerable<string> ProcessMessage(Guid contextKey, List<string> requests, List<BinaryData> images, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<string> ProcessMessage(
+        Guid contextKey,
+        Message message,
+        List<string> requests,
+        List<BinaryData> images,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (!_messageQueues.TryGetValue(contextKey, out var messagesQueue))
+        var messagesQueue = await GetChatMessageQueue(contextKey, message.Chat.Id, cancellationToken);
+
+        var userChatMessage = new UserChatMessage()
         {
-            messagesQueue = new ChatMessageQueue();
-
-            var systemMessage = ChatMessage.CreateSystemMessage(string.Format(_systemPrompt, DateTime.Today));
-            messagesQueue.Enqueue(systemMessage);
-            
-            _messageQueues.Add(contextKey, messagesQueue);
-        }
-
-        var userChatMessage = new UserChatMessage();
+            ParticipantName = message.From?.Id.ToString()
+        };
         
         foreach (var request in requests)
             userChatMessage.Content.Add(ChatMessageContentPart.CreateTextPart(request));
@@ -108,6 +120,38 @@ public class OpenAiService : IOpenAiService
 
         var audioTranscriptionResult = await _audioClient.TranscribeAudioAsync(audioStream, "voice.wav", options, cancellationToken);
         return audioTranscriptionResult.Value.Text;
+    }
+
+    private async ValueTask<ChatMessageQueue> GetChatMessageQueue(Guid contextKey, long chatId, CancellationToken cancellationToken)
+    {
+        if (_messageQueues.TryGetValue(contextKey, out var messagesQueue))
+            return messagesQueue;
+        
+        var systemMessage = ChatMessage.CreateSystemMessage(await BuildInitialPrompt(chatId, cancellationToken));
+        
+        messagesQueue = new ChatMessageQueue();
+        messagesQueue.Enqueue(systemMessage);
+            
+        _messageQueues.Add(contextKey, messagesQueue);
+
+        return messagesQueue;
+    }
+
+    private async Task<string> BuildInitialPrompt(long chatId, CancellationToken cancellationToken)
+    {
+        var chatUsers = await _gameRepository.GetActiveUsersForChatAsync(chatId, cancellationToken);
+
+        var chatUserInfos = await Task.WhenAll(chatUsers
+            .Select(async (u, i) =>
+            {
+                var cm = await _botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
+
+                return $"{i}. UserId: {u.UserId}; UserName: {u.UserName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName}; UserMention: {u.GetUserMention()};";
+            }));
+        
+        var prompt = string.Format(_systemPrompt, DateTime.Today);
+
+        return $"{prompt}. Telegram chat participants are: {string.Join(" ", chatUserInfos)}";
     }
 }
 

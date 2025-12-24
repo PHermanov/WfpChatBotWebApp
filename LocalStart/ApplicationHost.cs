@@ -90,7 +90,10 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
         serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
         serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
-        serviceCollection.AddSingleton<IOpenAiService>(new OpenAiService(hostBuilderContext.Configuration));
+        serviceCollection.AddSingleton<IOpenAiService>(sp => new OpenAiService(
+            hostBuilderContext.Configuration,
+            sp.GetRequiredService<IGameRepository>(),
+            sp.GetRequiredService<ITelegramBotClient>()));
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();

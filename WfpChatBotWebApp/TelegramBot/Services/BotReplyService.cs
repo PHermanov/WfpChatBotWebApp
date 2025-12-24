@@ -74,7 +74,7 @@ public class BotReplyService(
             }
             
             var contextKey = GetContextKey(message);
-            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, requests, imagesBinary, cancellationToken))
+            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, message, requests, imagesBinary, cancellationToken))
             {
                 responseBuffer.Append(part);
 
