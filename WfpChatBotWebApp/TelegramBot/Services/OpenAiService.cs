@@ -9,7 +9,6 @@ using OpenAI.Audio;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
-using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
