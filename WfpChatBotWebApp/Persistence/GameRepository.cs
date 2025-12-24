@@ -16,9 +16,9 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
 
         if (userById != null)
         {
-            cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
+            cache.Set((chatId, userId), true, TimeSpan.FromHours(1));
 
-            if (userById.Inactive)
+            if (userById.Inactive || userById.UserName != userName)
             {
                 userById.Inactive = false;
                 userById.UserName = userName;
@@ -37,7 +37,7 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             await context.Users.AddAsync(newUser, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
 
-            cache.Set((chatId, userId), true, TimeSpan.FromDays(30));
+            cache.Set((chatId, userId), true, TimeSpan.FromHours(1));
         }
     }
 
