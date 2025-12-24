@@ -9,7 +9,6 @@ using OpenAI.Audio;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
-using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -146,7 +145,7 @@ public class OpenAiService : IOpenAiService
             {
                 var cm = await _botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
 
-                return $"{i}. UserId: {u.UserId}; UserName: {u.UserName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName}; UserMention: {u.GetUserMention()};";
+                return $"{i}. UserId: {u.UserId}; UserName: {u.UserName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName};";
             }));
         
         var prompt = string.Format(_systemPrompt, DateTime.Today);
