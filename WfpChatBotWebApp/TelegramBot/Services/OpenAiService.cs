@@ -145,7 +145,7 @@ public class OpenAiService : IOpenAiService
             {
                 var cm = await _botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
 
-                return $"{i}. UserId: {u.UserId}; UserName: {u.UserName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName};";
+                return $"{i}. UserId: {cm.User.Id}; UserName: {cm.User.Username}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName};";
             }));
         
         var prompt = string.Format(_systemPrompt, DateTime.Today);
