@@ -9,6 +9,7 @@ using OpenAI.Audio;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
+using WfpChatBotWebApp.TelegramBot.Extensions;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -126,7 +127,7 @@ public class OpenAiService : IOpenAiService
         if (_messageQueues.TryGetValue(contextKey, out var messagesQueue))
             return messagesQueue;
         
-        var systemMessage = ChatMessage.CreateSystemMessage(await BuildInitialPrompt(chatId, cancellationToken));
+        var systemMessage = ChatMessage.CreateSystemMessage(await BuildInstructionsPrompt(chatId, cancellationToken));
         
         messagesQueue = new ChatMessageQueue();
         messagesQueue.Enqueue(systemMessage);
@@ -136,7 +137,7 @@ public class OpenAiService : IOpenAiService
         return messagesQueue;
     }
 
-    private async Task<string> BuildInitialPrompt(long chatId, CancellationToken cancellationToken)
+    private async Task<string> BuildInstructionsPrompt(long chatId, CancellationToken cancellationToken)
     {
         var chatUsers = await _gameRepository.GetActiveUsersForChatAsync(chatId, cancellationToken);
 
@@ -145,12 +146,18 @@ public class OpenAiService : IOpenAiService
             {
                 var cm = await _botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
 
-                return $"{i}. UserId: {cm.User.Id}; UserName: {cm.User.Username}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName};";
+                var userName = (cm.User.Username ?? cm.User.FirstName).EscapeMarkdownString();
+                
+                return $"{i}. UserId: {cm.User.Id}; UserName: {userName}; FirstName: {cm.User.FirstName.EscapeMarkdownString()}; LastName: {cm.User.LastName?.EscapeMarkdownString()};";
             }));
         
         var prompt = string.Format(_systemPrompt, DateTime.Today);
 
-        return $"{prompt}. Telegram chat participants are: {string.Join(" ", chatUserInfos)}";
+        return $"""
+            {prompt}.
+            Telegram chat participants are:
+            {string.Join(Environment.NewLine, chatUserInfos)}
+            """;
     }
 }
 
