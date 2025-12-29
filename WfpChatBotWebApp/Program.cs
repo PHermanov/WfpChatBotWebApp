@@ -10,6 +10,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,14 +71,13 @@ builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
-builder.Services.AddSingleton<IOpenAiService>(sp => new OpenAiService(
-    builder.Configuration,
-    sp.GetRequiredService<IGameRepository>(),
-    sp.GetRequiredService<ITelegramBotClient>()));
+builder.Services.AddSingleton<IOpenAiService, OpenAiService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddScoped<IRandomService, RandomService>();
+
+builder.Services.Configure<OpenAiServiceOptions>(builder.Configuration);
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>

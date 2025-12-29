@@ -3,12 +3,13 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
 public interface IBotReplyService
 {
-    Task Reply(string mention, Message message, CancellationToken cancellationToken);
+    Task Reply(Message message, CancellationToken cancellationToken);
 }
 
 public class BotReplyService(
@@ -19,16 +20,8 @@ public class BotReplyService(
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
-    public async Task Reply(string mention, Message message, CancellationToken cancellationToken)
+    public async Task Reply(Message message, CancellationToken cancellationToken)
     {
-        var text = GetMessageText(message);
-        if (string.IsNullOrWhiteSpace(text))
-            return;
-
-        var request = !string.IsNullOrEmpty(mention)
-            ? text.Replace($"@{mention}", string.Empty).Trim()
-            : text.Trim();
-
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
             text: "...",
@@ -45,36 +38,22 @@ public class BotReplyService(
 
         try
         {
-            var imagesBinary = new List<BinaryData>();
-            var requests = new List<string> { request };
-
-            var replyToMessage = message.ReplyToMessage;
-            if (replyToMessage != null)
+            var requests = new List<OpenAiRequest>();
+            
+            if (message.ReplyToMessage != null)
             {
-                var replyMessageText = GetMessageText(replyToMessage);
-                if (string.IsNullOrWhiteSpace(replyMessageText) || !replyMessageText.StartsWith($"@{mention}"))
+                // Check if the reply message is not the last message in context
+                if (!contextKeysService.ContainsKey($"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"))
                 {
-                    if (!string.IsNullOrWhiteSpace(replyMessageText))
-                        requests.Add(replyMessageText);
-
-                    if (replyToMessage.Photo != null)
-                    {
-                        var photo = await GetPhotoFromMessage(replyToMessage, cancellationToken);
-                        if (photo != null)
-                            imagesBinary.Add(photo);
-                    }
+                    requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
                 }
             }
-
-            if (message.Photo != null)
-            {
-                var photo = await GetPhotoFromMessage(message, cancellationToken);
-                if (photo != null)
-                    imagesBinary.Add(photo);
-            }
+            
+            requests.Add(await CreateRequest(message, cancellationToken));
             
             var contextKey = GetContextKey(message);
-            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, message, requests, imagesBinary, cancellationToken))
+            
+            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
                 responseBuffer.Append(part);
 
@@ -115,6 +94,16 @@ public class BotReplyService(
         }
     }
 
+    private async ValueTask<OpenAiRequest> CreateRequest(
+        Message message,
+        CancellationToken cancellationToken) =>
+        new()
+        {
+            UserId = message.From?.Id,
+            MessageText = message.GetMessageText(),
+            Image = await botClient.GetPhotoFromMessage(message, cancellationToken)
+        };
+
     private KeyValuePair<string, Guid> GetContextKey(Message message)
     {
         var key = message.ReplyToMessage is not null
@@ -138,30 +127,5 @@ public class BotReplyService(
         var key = $"{answer.Chat.Id}_{answer.MessageId}";
         contextKeysService.SetValue(key, prevKey.Value);
         contextKeysService.RemoveValue(prevKey.Key);
-    }
-
-    private static string? GetMessageText(Message message)
-        => message.Type switch
-        {
-            MessageType.Text => message.Text,
-            MessageType.Photo => message.Caption,
-            _ => string.Empty
-        };
-
-    private async Task<BinaryData?> GetPhotoFromMessage(Message message, CancellationToken cancellationToken)
-    {
-        var fileId = message.Photo?[^1].FileId;
-        if (fileId != null)
-        {
-            var imageFile = await botClient.GetFile(fileId, cancellationToken);
-            if (!string.IsNullOrEmpty(imageFile.FilePath))
-            {
-                using var imageStream = new MemoryStream();
-                await botClient.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
-                return new BinaryData(imageStream.ToArray());
-            }
-        }
-
-        return null;
     }
 }

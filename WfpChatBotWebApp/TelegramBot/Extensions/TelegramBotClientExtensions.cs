@@ -129,4 +129,26 @@ public static class TelegramBotClientExtensions
            logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
         }
     }
+    
+    public static async ValueTask<BinaryData?> GetPhotoFromMessage(
+        this ITelegramBotClient client,
+        Message message,
+        CancellationToken cancellationToken)
+    {
+        var fileId = message.Photo?[^1].FileId;
+        
+        if (fileId != null)
+        {
+            var imageFile = await client.GetFile(fileId, cancellationToken);
+            
+            if (!string.IsNullOrEmpty(imageFile.FilePath))
+            {
+                using var imageStream = new MemoryStream();
+                await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
+                return new BinaryData(imageStream.ToArray());
+            }
+        }
+
+        return null;
+    }
 }

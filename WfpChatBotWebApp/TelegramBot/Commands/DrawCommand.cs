@@ -5,6 +5,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
