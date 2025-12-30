@@ -71,13 +71,18 @@ builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
-builder.Services.AddSingleton<IOpenAiService, OpenAiService>();
+builder.Services.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
+builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
+builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();
+builder.Services.AddSingleton<IOpenAiImageService, OpenAiImageService>();
+builder.Services.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddScoped<IRandomService, RandomService>();
 
-builder.Services.Configure<OpenAiServiceOptions>(builder.Configuration);
+builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
+builder.Services.Configure<OpenAiChatServiceOptions>(builder.Configuration);
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>

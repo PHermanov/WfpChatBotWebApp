@@ -1,4 +1,4 @@
-namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
+namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
 public class OpenAiRequest
 {
