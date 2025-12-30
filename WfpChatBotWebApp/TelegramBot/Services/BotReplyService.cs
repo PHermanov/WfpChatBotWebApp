@@ -4,6 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -14,7 +15,7 @@ public interface IBotReplyService
 
 public class BotReplyService(
     ITelegramBotClient botClient,
-    IOpenAiService openAiService,
+    IOpenAiChatService openAiChatService,
     ITextMessageService messageService,
     IContextKeysService contextKeysService,
     ILogger<BotReplyService> logger)
@@ -53,19 +54,33 @@ public class BotReplyService(
             
             var contextKey = GetContextKey(message);
             
-            await foreach (var part in openAiService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
+            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
-                responseBuffer.Append(part);
-
-                if (responseBuffer.Length - previousBufferLength >= 60)
+                if (response.ContentType is OpenAiContentType.Text)
                 {
-                    previousBufferLength = responseBuffer.Length;
+                    responseBuffer.Append(response.Content);
 
-                    await botClient.TryEditMessageTextAsync(
+                    if (responseBuffer.Length - previousBufferLength >= 60)
+                    {
+                        previousBufferLength = responseBuffer.Length;
+
+                        await botClient.TryEditMessageTextAsync(
+                            chatId: answerMessage.Chat.Id,
+                            messageId: answerMessage.MessageId,
+                            parseMode: ParseMode.Markdown,
+                            text: $"{responseBuffer}...",
+                            logger: logger,
+                            cancellationToken: cancellationToken);
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                    }
+                }
+                else if (response.ContentType is OpenAiContentType.ImageUrl)
+                {
+                    await botClient.TryEditMessageMediaAsync(
                         chatId: answerMessage.Chat.Id,
                         messageId: answerMessage.MessageId,
-                        parseMode: ParseMode.Markdown,
-                        text: $"{responseBuffer}...",
+                        media: new InputMediaPhoto(InputFile.FromUri(response.Content)),
                         logger: logger,
                         cancellationToken: cancellationToken);
 
@@ -84,13 +99,16 @@ public class BotReplyService(
         }
         finally
         {
-            await botClient.TryEditMessageTextAsync(
-                chatId: answerMessage.Chat.Id,
-                messageId: answerMessage.MessageId,
-                text: responseBuffer.ToString(),
-                parseMode: ParseMode.Markdown,
-                logger: logger,
-                cancellationToken: cancellationToken);
+            if (responseBuffer.Length != 0)
+            {
+                await botClient.TryEditMessageTextAsync(
+                    chatId: answerMessage.Chat.Id,
+                    messageId: answerMessage.MessageId,
+                    text: responseBuffer.ToString(),
+                    parseMode: ParseMode.Markdown,
+                    logger: logger,
+                    cancellationToken: cancellationToken);
+            }
         }
     }
 
