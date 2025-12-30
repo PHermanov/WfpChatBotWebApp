@@ -3,6 +3,12 @@ using OpenAI.Chat;
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi.Builders;
 
+/// <summary>
+/// Copied from examples repo
+/// <see href="https://github.com/openai/openai-dotnet/blob/31c2ba63c625b1b4fc2640ddf378a97e89b89167/examples/Chat/Example04_FunctionCallingStreaming.cs#L18-L70" />
+/// Probably will be a part of OpenAI package in future versions
+/// </summary>
+[Obsolete("Check presence in latest OpenAI package.")]
 internal class StreamingChatToolCallsBuilder
 {
     private readonly Dictionary<int, string> _indexToToolCallId = [];
