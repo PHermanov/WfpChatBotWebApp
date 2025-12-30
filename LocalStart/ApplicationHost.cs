@@ -8,6 +8,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace LocalStart;
 
@@ -90,15 +91,14 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
         serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
         serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
-        serviceCollection.AddSingleton<IOpenAiService>(sp => new OpenAiService(
-            hostBuilderContext.Configuration,
-            sp.GetRequiredService<IGameRepository>(),
-            sp.GetRequiredService<ITelegramBotClient>()));
+        serviceCollection.AddSingleton<IOpenAiService, OpenAiService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
         serviceCollection.AddScoped<IRandomService, RandomService>();
+
+        serviceCollection.Configure<OpenAiServiceOptions>(hostBuilderContext.Configuration);
     }
 
     private static void OnApplicationStopping()

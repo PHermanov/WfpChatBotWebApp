@@ -62,7 +62,7 @@ public class TelegramBotService(
             var botMentioned = IsBotMentioned(message, bot.Username);
             if (botMentioned)
             {
-                await botReplyService.Reply(bot.Username, message, cancellationToken);
+                await botReplyService.Reply(message, cancellationToken);
                 return;
             }
 
