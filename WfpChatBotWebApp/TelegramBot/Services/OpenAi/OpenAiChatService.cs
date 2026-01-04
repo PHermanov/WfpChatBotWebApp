@@ -154,7 +154,7 @@ public class OpenAiChatService(
         
         var botUser = await GetMe(cancellationToken);
         
-        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Today);
+        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F"));
 
         return ChatMessage.CreateSystemMessage( 
             content: $"""
