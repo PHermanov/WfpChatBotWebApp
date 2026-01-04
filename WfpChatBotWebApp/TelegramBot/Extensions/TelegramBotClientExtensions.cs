@@ -107,6 +107,30 @@ public static class TelegramBotClientExtensions
             logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageTextAsync));
         }
     }
+    
+    public static async Task TryEditMessageMediaAsync(this ITelegramBotClient client,
+        ChatId chatId,
+        int messageId,
+        InputMedia media,
+        ILogger logger,
+        ParseMode parseMode = ParseMode.Html,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.EditMessageMedia(
+                chatId: chatId,
+                messageId: messageId,
+                media: media,
+                replyMarkup: null,
+                businessConnectionId: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageMediaAsync));
+        }
+    }
 
     public static async Task TrySendVideoAsync(
         this ITelegramBotClient client,
@@ -128,5 +152,27 @@ public static class TelegramBotClientExtensions
         {
            logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
         }
+    }
+    
+    public static async ValueTask<BinaryData?> GetPhotoFromMessage(
+        this ITelegramBotClient client,
+        Message message,
+        CancellationToken cancellationToken)
+    {
+        var fileId = message.Photo?[^1].FileId;
+        
+        if (fileId != null)
+        {
+            var imageFile = await client.GetFile(fileId, cancellationToken);
+            
+            if (!string.IsNullOrEmpty(imageFile.FilePath))
+            {
+                using var imageStream = new MemoryStream();
+                await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
+                return new BinaryData(imageStream.ToArray());
+            }
+        }
+
+        return null;
     }
 }

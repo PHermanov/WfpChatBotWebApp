@@ -4,6 +4,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -14,7 +15,7 @@ public interface IAudioTranscribeService
 
 public class AudioTranscribeService(
     ITelegramBotClient botClient,
-    IOpenAiService openAiService,
+    IOpenAiAudioService openAiAudioService,
     ITextMessageService messageService,
     IGameRepository repository,
     IAudioProcessor audioProcessor,
@@ -54,7 +55,7 @@ public class AudioTranscribeService(
             var convertedAudioStream = audioProcessor.ConvertAudio(audioStream);
             logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio converted to wav", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
 
-            var transcript = await openAiService.ProcessAudio(convertedAudioStream, cancellationToken);
+            var transcript = await openAiAudioService.ProcessAudio(convertedAudioStream, cancellationToken);
             if (string.IsNullOrWhiteSpace(transcript))
             {
                 logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, transcript is empty", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);

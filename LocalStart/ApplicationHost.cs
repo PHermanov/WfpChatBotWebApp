@@ -8,6 +8,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace LocalStart;
 
@@ -90,12 +91,19 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
         serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
         serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
-        serviceCollection.AddSingleton<IOpenAiService>(new OpenAiService(hostBuilderContext.Configuration));
+        serviceCollection.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
+        serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
+        serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
+        serviceCollection.AddSingleton<IOpenAiImageService, OpenAiImageService>();
+        serviceCollection.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
         serviceCollection.AddScoped<IRandomService, RandomService>();
+
+        serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
+        serviceCollection.Configure<OpenAiChatServiceOptions>(hostBuilderContext.Configuration);
     }
 
     private static void OnApplicationStopping()
