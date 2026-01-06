@@ -17,7 +17,7 @@ public interface IOpenAiChatService
     IAsyncEnumerable<OpenAiResponse> ProcessMessage(
         Guid contextKey,
         long chatId,
-        List<OpenAiRequest> requests,
+        OpenAiRequest[] requests,
         CancellationToken cancellationToken);
 }
 
@@ -34,7 +34,7 @@ public class OpenAiChatService(
     public async IAsyncEnumerable<OpenAiResponse> ProcessMessage(
         Guid contextKey,
         long chatId,
-        List<OpenAiRequest> requests,
+        OpenAiRequest[] requests,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var messagesQueue = await GetChatMessageQueue(contextKey, chatId, cancellationToken);
@@ -63,10 +63,12 @@ public class OpenAiChatService(
             foreach (var contentPart in completion.ContentUpdate)
             {
                 contentBuilder.Append(contentPart.Text);
+                
                 yield return new OpenAiResponse
                 {
                     ContentType = OpenAiContentType.Text,
-                    Content = contentPart.Text
+                    Content = contentBuilder.ToString(),
+                    ContentComplete = false
                 };
             }
 
@@ -75,7 +77,17 @@ public class OpenAiChatService(
                 toolCallsBuilder.Append(toolCallUpdate);
             }
         }
-        
+
+        if (contentBuilder.Length != 0)
+        {
+            yield return new OpenAiResponse
+            {
+                ContentType = OpenAiContentType.Text,
+                Content = contentBuilder.ToString(),
+                ContentComplete = true
+            };
+        }
+
         var toolCalls = toolCallsBuilder.Build();
 
         if (toolCalls.Count != 0)
@@ -90,9 +102,13 @@ public class OpenAiChatService(
 
             foreach (var toolCall in toolCalls)
             {
+                var tcm = new ToolChatMessage(toolCall.Id, string.Empty);
+                messagesQueue.Enqueue(tcm);
+                
                 await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken))
                 {
-                    messagesQueue.Enqueue(new ToolChatMessage(toolCall.Id, toolOutput.Content));
+                    tcm.Content.Add(toolOutput.Content);
+                    
                     yield return toolOutput;
                 }
             }

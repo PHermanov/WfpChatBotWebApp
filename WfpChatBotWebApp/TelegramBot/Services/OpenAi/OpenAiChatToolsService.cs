@@ -57,7 +57,8 @@ public class OpenAiChatToolsService(
                     yield return new OpenAiResponse
                     {
                         ContentType = OpenAiContentType.ImageUrl,
-                        Content = imageUrl
+                        Content = imageUrl,
+                        ContentComplete = true
                     };
                 }
             }
