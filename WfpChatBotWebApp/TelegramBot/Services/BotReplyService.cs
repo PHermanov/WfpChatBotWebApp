@@ -20,13 +20,13 @@ public class BotReplyService(
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
-    private const string NonCompleteMessgePostfix = "...";
+    private const string NonCompleteMessagePostfix = "...";
     
     public async Task Reply(Message message, CancellationToken cancellationToken)
     {
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
-            text: NonCompleteMessgePostfix,
+            text: NonCompleteMessagePostfix,
             parseMode: ParseMode.Markdown,
             replyToMessageId: message.MessageId,
             logger: logger,
@@ -34,13 +34,13 @@ public class BotReplyService(
 
         if (answerMessage is null)
             return;
-
+        
+        var requests = await CreateRequestsQueue(message, cancellationToken);
+        
         var contextKey = GetContextKey(message);
         
         try
         {
-            var requests = await CreateRequestsQueue(message, cancellationToken);
-
             var previousContentLength = 0;
 
             await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
@@ -127,7 +127,7 @@ public class BotReplyService(
                 var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
                 {
                     ShowCaptionAboveMedia = true,
-                    Caption = caption == NonCompleteMessgePostfix
+                    Caption = caption == NonCompleteMessagePostfix
                         ? null
                         : caption
                 };
@@ -178,7 +178,7 @@ public class BotReplyService(
         static string GetText(OpenAiResponse response) =>
             response.ContentComplete
                 ? response.Content
-                : $"{response.Content} {NonCompleteMessgePostfix}";
+                : $"{response.Content} {NonCompleteMessagePostfix}";
     }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)
