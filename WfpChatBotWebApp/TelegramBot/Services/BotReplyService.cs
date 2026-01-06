@@ -43,8 +43,7 @@ public class BotReplyService(
 
             var previousContentLength = 0;
 
-            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests,
-                               cancellationToken))
+            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
                 if (response.ContentType is OpenAiContentType.Text && !response.ContentComplete)
                 {
