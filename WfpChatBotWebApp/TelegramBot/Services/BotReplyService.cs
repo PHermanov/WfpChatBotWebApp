@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
@@ -21,98 +20,88 @@ public class BotReplyService(
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
+    private const string NonCompleteMessgePostfix = "...";
+    
     public async Task Reply(Message message, CancellationToken cancellationToken)
     {
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
-            text: "...",
+            text: NonCompleteMessgePostfix,
             parseMode: ParseMode.Markdown,
             replyToMessageId: message.MessageId,
             logger: logger,
             cancellationToken: cancellationToken);
 
-        if (answerMessage == null)
+        if (answerMessage is null)
             return;
 
-        var responseBuffer = new StringBuilder();
-        var previousBufferLength = 0;
-
+        var contextKey = GetContextKey(message);
+        
         try
         {
-            var requests = new List<OpenAiRequest>();
-            
-            if (message.ReplyToMessage != null)
-            {
-                // Check if the reply message is not the last message in context
-                if (!contextKeysService.ContainsKey($"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"))
-                {
-                    requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
-                }
-            }
-            
-            requests.Add(await CreateRequest(message, cancellationToken));
-            
-            var contextKey = GetContextKey(message);
-            
+            var requests = await CreateRequestsQueue(message, cancellationToken);
+
+            var previousContentLength = 0;
+
             await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
-                if (response.ContentType is OpenAiContentType.Text)
+                if (response.ContentType is OpenAiContentType.Text && !response.ContentComplete)
                 {
-                    responseBuffer.Append(response.Content);
+                    if (response.Content.Length - previousContentLength < 60)
+                        continue;
 
-                    if (responseBuffer.Length - previousBufferLength >= 60)
-                    {
-                        previousBufferLength = responseBuffer.Length;
-
-                        await botClient.TryEditMessageTextAsync(
-                            chatId: answerMessage.Chat.Id,
-                            messageId: answerMessage.MessageId,
-                            parseMode: ParseMode.Markdown,
-                            text: $"{responseBuffer}...",
-                            logger: logger,
-                            cancellationToken: cancellationToken);
-
-                        await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
-                    }
+                    previousContentLength = response.Content.Length;
                 }
-                else if (response.ContentType is OpenAiContentType.ImageUrl)
-                {
-                    await botClient.TryEditMessageMediaAsync(
-                        chatId: answerMessage.Chat.Id,
-                        messageId: answerMessage.MessageId,
-                        media: new InputMediaPhoto(InputFile.FromUri(response.Content)),
-                        logger: logger,
-                        cancellationToken: cancellationToken);
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
-                }
+                answerMessage = await EditMessage(
+                    answerMessage,
+                    response,
+                    cancellationToken);
+
+                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
             }
-
-            SetContextKey(answerMessage, contextKey);
         }
         catch (Exception e)
         {
             logger.LogError(e, "Exception at {Class}", nameof(BotReplyService));
-            responseBuffer.Clear();
-            var offMessage = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
-            responseBuffer.Append(offMessage);
+
+            var response = new OpenAiResponse
+            {
+                ContentType = OpenAiContentType.Text,
+                Content = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken),
+                ContentComplete = true
+            };
+
+            await EditMessage(
+                answerMessage,
+                response,
+                cancellationToken);
         }
         finally
         {
-            if (responseBuffer.Length != 0)
-            {
-                await botClient.TryEditMessageTextAsync(
-                    chatId: answerMessage.Chat.Id,
-                    messageId: answerMessage.MessageId,
-                    text: responseBuffer.ToString(),
-                    parseMode: ParseMode.Markdown,
-                    logger: logger,
-                    cancellationToken: cancellationToken);
-            }
+            SetContextKey(answerMessage, contextKey);
         }
     }
 
-    private async ValueTask<OpenAiRequest> CreateRequest(
+    private async Task<OpenAiRequest[]> CreateRequestsQueue(Message message, CancellationToken cancellationToken)
+    {
+        var requests = new List<OpenAiRequest>();
+            
+        if (message.ReplyToMessage != null)
+        {
+            // Check if the reply message is not the last message in context
+            if (!contextKeysService.ContainsKey($"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"))
+            {
+                requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
+            }
+        }
+            
+        requests.Add(await CreateRequest(message, cancellationToken));
+        
+        return requests.ToArray();
+    }
+    
+    private async Task<OpenAiRequest> CreateRequest(
         Message message,
         CancellationToken cancellationToken) =>
         new()
@@ -121,6 +110,76 @@ public class BotReplyService(
             MessageText = message.GetMessageText(),
             Image = await botClient.GetPhotoFromMessage(message, cancellationToken)
         };
+
+    private async Task<Message> EditMessage(
+        Message message,
+        OpenAiResponse response,
+        CancellationToken cancellationToken)
+    {
+        Message? updatedMessage;
+        
+        switch (response.ContentType)
+        {
+            case OpenAiContentType.ImageUrl:
+            {
+                var caption = message.GetMessageText();
+                
+                var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
+                {
+                    ShowCaptionAboveMedia = true,
+                    Caption = caption == NonCompleteMessgePostfix
+                        ? null
+                        : caption
+                };
+
+                updatedMessage = message.Type switch
+                {
+                    MessageType.Photo => await botClient.TrySendPhotoAsync(
+                        logger,
+                        message.Chat.Id,
+                        inputMediaPhoto.Media,
+                        replyToMessageId: message.MessageId,
+                        cancellationToken: cancellationToken),
+                    _ => await botClient.TryEditMessageMediaAsync(
+                        message: message,
+                        media: inputMediaPhoto,
+                        logger: logger,
+                        cancellationToken: cancellationToken)
+                };
+                
+                break;
+            }
+            default:
+            {
+                updatedMessage = message.Type switch
+                {
+                    // Need to figure out how to combine several images into a media group to show all generated images in one message
+                    MessageType.Photo => await botClient.TryEditMessageCaptionAsync(
+                        message: message,
+                        parseMode: ParseMode.Markdown,
+                        caption: GetText(response),
+                        logger: logger,
+                        showCaptionAboveMedia: true,
+                        cancellationToken: cancellationToken),
+                    _ => await botClient.TryEditMessageTextAsync(
+                        message: message,
+                        parseMode: ParseMode.Markdown,
+                        text: GetText(response),
+                        logger: logger,
+                        cancellationToken: cancellationToken)
+                };
+                
+                break;
+            }
+        }
+        
+        return updatedMessage ?? message;
+
+        static string GetText(OpenAiResponse response) =>
+            response.ContentComplete
+                ? response.Content
+                : $"{response.Content} {NonCompleteMessgePostfix}";
+    }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)
     {

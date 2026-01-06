@@ -54,7 +54,7 @@ public static class TelegramBotClientExtensions
         }
     }
 
-    public static async Task TrySendPhotoAsync(
+    public static async Task<Message?> TrySendPhotoAsync(
         this ITelegramBotClient client,
         ILogger logger,
         ChatId chatId,
@@ -68,7 +68,7 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            await client.SendPhoto(
+            return await client.SendPhoto(
                 chatId: chatId,
                 photo: photo,
                 caption: caption,
@@ -80,10 +80,26 @@ public static class TelegramBotClientExtensions
         catch (Exception exception)
         {
             logger.LogError(exception, "Exception in {Name}", nameof(TrySendPhotoAsync));
+
+            return null;
         }
     }
 
-    public static async Task TryEditMessageTextAsync(this ITelegramBotClient client,
+    public static Task<Message?> TryEditMessageTextAsync(this ITelegramBotClient client,
+        Message message,
+        string text,
+        ILogger logger,
+        ParseMode parseMode = ParseMode.Html,
+        CancellationToken cancellationToken = default) =>
+        client.TryEditMessageTextAsync(
+            chatId: message.Chat.Id,
+            messageId: message.MessageId,
+            text: text,
+            logger: logger,
+            parseMode: parseMode,
+            cancellationToken: cancellationToken);
+
+    public static async Task<Message?> TryEditMessageTextAsync(this ITelegramBotClient client,
         ChatId chatId,
         int messageId,
         string text,
@@ -93,7 +109,7 @@ public static class TelegramBotClientExtensions
     {
         try
         {
-            await client.EditMessageText(
+            return await client.EditMessageText(
                 chatId: chatId,
                 messageId: messageId,
                 text: text,
@@ -105,20 +121,79 @@ public static class TelegramBotClientExtensions
         catch (Exception exception)
         {
             logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageTextAsync));
+
+            return null;
         }
     }
-    
-    public static async Task TryEditMessageMediaAsync(this ITelegramBotClient client,
+
+    public static Task<Message?> TryEditMessageCaptionAsync(this ITelegramBotClient client,
+        Message message,
+        string? caption,
+        ILogger logger,
+        bool showCaptionAboveMedia = false,
+        ParseMode parseMode = ParseMode.Html,
+        CancellationToken cancellationToken = default) =>
+        client.TryEditMessageCaptionAsync(
+            chatId: message.Chat.Id,
+            messageId: message.MessageId,
+            caption: caption,
+            logger: logger,
+            showCaptionAboveMedia: showCaptionAboveMedia,
+            parseMode: parseMode,
+            cancellationToken: cancellationToken);
+
+    public static async Task<Message?> TryEditMessageCaptionAsync(this ITelegramBotClient client,
         ChatId chatId,
         int messageId,
-        InputMedia media,
+        string? caption,
         ILogger logger,
+        bool showCaptionAboveMedia = false,
         ParseMode parseMode = ParseMode.Html,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            await client.EditMessageMedia(
+            return await client.EditMessageCaption(
+                chatId: chatId,
+                messageId: messageId,
+                caption: caption,
+                replyMarkup: null,
+                parseMode: parseMode,
+                captionEntities: null,
+                showCaptionAboveMedia: showCaptionAboveMedia,
+                businessConnectionId: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageCaptionAsync));
+
+            return null;
+        }
+    }
+    
+    public static Task<Message?> TryEditMessageMediaAsync(this ITelegramBotClient client,
+        Message message,
+        InputMedia media,
+        ILogger logger,
+        CancellationToken cancellationToken = default) =>
+        client.TryEditMessageMediaAsync(
+            chatId: message.Chat.Id,
+            messageId: message.MessageId,
+            media: media,
+            logger: logger,
+            cancellationToken: cancellationToken);
+
+    public static async Task<Message?> TryEditMessageMediaAsync(this ITelegramBotClient client,
+        ChatId chatId,
+        int messageId,
+        InputMedia media,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await client.EditMessageMedia(
                 chatId: chatId,
                 messageId: messageId,
                 media: media,
@@ -129,6 +204,8 @@ public static class TelegramBotClientExtensions
         catch (Exception exception)
         {
             logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageMediaAsync));
+
+            return null;
         }
     }
 

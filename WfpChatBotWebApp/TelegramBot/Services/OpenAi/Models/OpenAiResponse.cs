@@ -2,8 +2,9 @@ namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
 public class OpenAiResponse
 {
-    public OpenAiContentType ContentType { get; set; } = OpenAiContentType.Text;
-    public string Content { get; set; } = string.Empty;
+    public OpenAiContentType ContentType { get; init; } = OpenAiContentType.Text;
+    public string Content { get; init; } = string.Empty;
+    public bool ContentComplete { get; init; }
 }
 
 public enum OpenAiContentType
