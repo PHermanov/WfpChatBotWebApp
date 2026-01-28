@@ -20,7 +20,7 @@ builder.Configuration.AddAzureKeyVault(
     new DefaultAzureCredential(),
     new AzureKeyVaultConfigurationOptions { ReloadInterval = TimeSpan.FromMinutes(10) });
 
-// builder.Logging.AddConsole();
+builder.Logging.ClearProviders();
 
 builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
     options.ConnectionString = builder.Configuration["TelemetryKey"] ?? string.Empty
