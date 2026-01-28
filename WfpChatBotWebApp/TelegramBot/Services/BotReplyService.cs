@@ -58,7 +58,7 @@ public class BotReplyService(
                     response,
                     cancellationToken);
 
-                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+                await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
         }
         catch (Exception e)
