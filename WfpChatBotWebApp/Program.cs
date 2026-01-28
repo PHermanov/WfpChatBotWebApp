@@ -1,9 +1,10 @@
-using Azure.Identity;
-using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Microsoft.EntityFrameworkCore;
 using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
+using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Helpers;
@@ -19,8 +20,11 @@ builder.Configuration.AddAzureKeyVault(
     new DefaultAzureCredential(),
     new AzureKeyVaultConfigurationOptions { ReloadInterval = TimeSpan.FromMinutes(10) });
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+// builder.Logging.AddConsole();
+
+builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
+    options.ConnectionString = builder.Configuration["TelemetryKey"] ?? string.Empty
+);
 
 builder.Services.AddHttpClient("telegram_bot_client")
     .AddTypedClient<ITelegramBotClient>(httpClient =>
