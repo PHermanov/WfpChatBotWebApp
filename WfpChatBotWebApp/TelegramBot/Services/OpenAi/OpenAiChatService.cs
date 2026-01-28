@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
@@ -170,7 +171,7 @@ public class OpenAiChatService(
         
         var botUser = await GetMe(cancellationToken);
         
-        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F"));
+        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F", CultureInfo.In));
 
         return ChatMessage.CreateSystemMessage( 
             content: $"""
