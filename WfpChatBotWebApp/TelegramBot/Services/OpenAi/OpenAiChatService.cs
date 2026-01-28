@@ -171,7 +171,7 @@ public class OpenAiChatService(
         
         var botUser = await GetMe(cancellationToken);
         
-        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F", CultureInfo.In));
+        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F", CultureInfo.InvariantCulture));
 
         return ChatMessage.CreateSystemMessage( 
             content: $"""
