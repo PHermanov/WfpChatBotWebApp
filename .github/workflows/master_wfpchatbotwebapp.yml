@@ -67,8 +67,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
-        run: |
-          az webapp deploy \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --name "WfpChatBotWebApp" \
-            --src-path ./net-app
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "WfpChatBotWebApp"
+          package: ./net-app
