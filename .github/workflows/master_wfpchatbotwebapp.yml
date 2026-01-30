@@ -71,4 +71,4 @@ jobs:
           az webapp deploy \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --name "WfpChatBotWebApp" \
-            --src-path ./myapp
+            --src-path ./net-app
