@@ -71,7 +71,6 @@ builder.Services.AddScoped<ITextMessageService, TextMessageService>();
 builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
-builder.Services.AddScoped<ITikTokService, TikTokService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();

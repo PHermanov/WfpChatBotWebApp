@@ -18,7 +18,6 @@ public class TelegramBotService(
     IAutoReplyService autoReplyService,
     ITelegramBotClient botClient,
     IBotReplyService botReplyService,
-    ITikTokService tikTokService,
     IAudioTranscribeService audioTranscribeService,
     IThrottlingService throttlingService,
     ILogger<TelegramBotService> logger)
@@ -86,10 +85,6 @@ public class TelegramBotService(
                     if (allowed)
                         await mediator.Send((IRequest)command, cancellationToken);
                 }
-            }
-            else if (tikTokService.ContainsTikTokUrl(message))
-            {
-                await tikTokService.TryDownloadVideo(message, cancellationToken);
             }
             else if (!string.IsNullOrEmpty(text))
             {
