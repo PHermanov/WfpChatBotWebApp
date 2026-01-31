@@ -199,7 +199,7 @@ public static class TelegramBotClientExtensions
         CancellationToken cancellationToken)
     {
         var fileId = message.Photo?[^1].FileId;
-
+        
         if (fileId != null)
         {
             var imageFile = await client.GetFile(fileId, cancellationToken);
@@ -212,6 +212,29 @@ public static class TelegramBotClientExtensions
             }
         }
 
+        return null;
+    }
+
+    public static async ValueTask<BinaryData?> GetStickerFromMessage(
+        this ITelegramBotClient client,
+        Message message,
+        CancellationToken cancellationToken)
+    {
+        if (message.Sticker?.IsAnimated == true)
+            return null;
+
+        var fileId = message.Sticker?.FileId;
+
+        if (fileId != null)
+        {
+            var stickerFile = await client.GetFile(fileId, cancellationToken);
+            if (!string.IsNullOrEmpty(stickerFile.FilePath))
+            {
+                using var stickerStream = new MemoryStream();
+                await client.DownloadFile(stickerFile.FilePath, stickerStream, cancellationToken);
+                return new BinaryData(stickerStream.ToArray());
+            }
+        }
         return null;
     }
 }

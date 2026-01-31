@@ -108,7 +108,7 @@ public class BotReplyService(
         {
             UserId = message.From?.Id,
             MessageText = message.GetMessageText(),
-            Image = await botClient.GetPhotoFromMessage(message, cancellationToken)
+            Image = await botClient.GetPhotoFromMessage(message, cancellationToken) ?? await botClient.GetStickerFromMessage(message, cancellationToken)
         };
 
     private async Task<Message> EditMessage(

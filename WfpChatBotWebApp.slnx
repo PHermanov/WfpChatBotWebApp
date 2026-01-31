@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/master_wfpchatbotwebapp.yml" />
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
