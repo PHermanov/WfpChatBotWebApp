@@ -5,11 +5,14 @@ namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
 public static class MessageExtensions
 {
-    public static string? GetMessageText(this Message message)
-        => message.Type switch
-        {
-            MessageType.Text => message.Text,
-            MessageType.Photo => message.Caption,
-            _ => string.Empty
-        };
+    extension(Message message)
+    {
+        public string? GetMessageText()
+            => message.Type switch
+            {
+                MessageType.Text => message.Text,
+                MessageType.Photo => message.Caption,
+                _ => string.Empty
+            };
+    }
 }

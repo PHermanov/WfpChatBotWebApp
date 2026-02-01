@@ -87,7 +87,6 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IGameRepository, GameRepository>();
         serviceCollection.AddScoped<IStickerService, StickerService>();
         serviceCollection.AddScoped<IAutoReplyService, AutoReplyService>();
-        serviceCollection.AddScoped<ITikTokService, TikTokService>();
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
         serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
         serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
