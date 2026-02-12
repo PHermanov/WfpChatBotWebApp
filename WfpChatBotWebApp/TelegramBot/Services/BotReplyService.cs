@@ -42,7 +42,6 @@ public class BotReplyService(
         try
         {
             var previousContentLength = 0;
-            var invalidMarkdownBuffer = string.Empty;
 
             await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
@@ -54,28 +53,18 @@ public class BotReplyService(
                     previousContentLength = response.Content.Length;
                 }
 
-                // Append buffered content and validate
-                var contentToUpdate = invalidMarkdownBuffer + response.Content;
-
-                if (!response.ContentComplete && !MarkdownExtensions.IsValidMarkdown(contentToUpdate))
+                // Validate markdown. Skip invalid incomplete markdown, send valid or complete markdown
+                if (!response.ContentComplete && !MarkdownExtensions.IsValidMarkdown(response.Content))
                 {
-                    // Buffer incomplete/invalid markdown
-                    invalidMarkdownBuffer = contentToUpdate;
+                    // Skip this update - wait for more content to complete valid markdown
                     continue;
                 }
 
-                // Clear buffer and update message
-                invalidMarkdownBuffer = string.Empty;
+                answerMessage = await EditMessage(
+                    answerMessage,
+                    response,
+                    cancellationToken);
 
-                // Create new response with combined content
-                var validResponse = new OpenAiResponse
-                {
-                    ContentType = response.ContentType,
-                    Content = contentToUpdate,
-                    ContentComplete = response.ContentComplete
-                };
-
-                answerMessage = await EditMessage(answerMessage, validResponse, cancellationToken);
                 await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
         }
