@@ -20,13 +20,13 @@ public class BotReplyService(
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
-    private const string NonCompleteMessagePostfix = "...";
-    
+
+
     public async Task Reply(Message message, CancellationToken cancellationToken)
     {
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
-            text: NonCompleteMessagePostfix,
+            text: MarkdownExtensions.NonCompleteMessagePostfix,
             parseMode: ParseMode.Markdown,
             replyToMessageId: message.MessageId,
             logger: logger,
@@ -34,14 +34,15 @@ public class BotReplyService(
 
         if (answerMessage is null)
             return;
-        
+
         var requests = await CreateRequestsQueue(message, cancellationToken);
-        
+
         var contextKey = GetContextKey(message);
-        
+
         try
         {
             var previousContentLength = 0;
+            var invalidMarkdownBuffer = string.Empty;
 
             await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
             {
@@ -53,11 +54,28 @@ public class BotReplyService(
                     previousContentLength = response.Content.Length;
                 }
 
-                answerMessage = await EditMessage(
-                    answerMessage,
-                    response,
-                    cancellationToken);
+                // Append buffered content and validate
+                var contentToUpdate = invalidMarkdownBuffer + response.Content;
 
+                if (!response.ContentComplete && !MarkdownExtensions.IsValidMarkdown(contentToUpdate))
+                {
+                    // Buffer incomplete/invalid markdown
+                    invalidMarkdownBuffer = contentToUpdate;
+                    continue;
+                }
+
+                // Clear buffer and update message
+                invalidMarkdownBuffer = string.Empty;
+
+                // Create new response with combined content
+                var validResponse = new OpenAiResponse
+                {
+                    ContentType = response.ContentType,
+                    Content = contentToUpdate,
+                    ContentComplete = response.ContentComplete
+                };
+
+                answerMessage = await EditMessage(answerMessage, validResponse, cancellationToken);
                 await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
         }
@@ -86,7 +104,7 @@ public class BotReplyService(
     private async Task<OpenAiRequest[]> CreateRequestsQueue(Message message, CancellationToken cancellationToken)
     {
         var requests = new List<OpenAiRequest>();
-            
+
         if (message.ReplyToMessage != null)
         {
             // Check if the reply message is not the last message in context
@@ -95,12 +113,12 @@ public class BotReplyService(
                 requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
             }
         }
-            
+
         requests.Add(await CreateRequest(message, cancellationToken));
-        
+
         return requests.ToArray();
     }
-    
+
     private async Task<OpenAiRequest> CreateRequest(
         Message message,
         CancellationToken cancellationToken) =>
@@ -117,68 +135,68 @@ public class BotReplyService(
         CancellationToken cancellationToken)
     {
         Message? updatedMessage;
-        
+
         switch (response.ContentType)
         {
             case OpenAiContentType.ImageUrl:
-            {
-                var caption = message.GetMessageText();
-                
-                var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
                 {
-                    ShowCaptionAboveMedia = true,
-                    Caption = caption == NonCompleteMessagePostfix
-                        ? null
-                        : caption
-                };
+                    var caption = message.GetMessageText();
 
-                updatedMessage = message.Type switch
-                {
-                    MessageType.Photo => await botClient.TrySendPhotoAsync(
-                        logger,
-                        message.Chat.Id,
-                        inputMediaPhoto.Media,
-                        replyToMessageId: message.MessageId,
-                        cancellationToken: cancellationToken),
-                    _ => await botClient.TryEditMessageMediaAsync(
-                        message: message,
-                        media: inputMediaPhoto,
-                        logger: logger,
-                        cancellationToken: cancellationToken)
-                };
-                
-                break;
-            }
+                    var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
+                    {
+                        ShowCaptionAboveMedia = true,
+                        Caption = caption == MarkdownExtensions.NonCompleteMessagePostfix
+                            ? null
+                            : caption
+                    };
+
+                    updatedMessage = message.Type switch
+                    {
+                        MessageType.Photo => await botClient.TrySendPhotoAsync(
+                            logger,
+                            message.Chat.Id,
+                            inputMediaPhoto.Media,
+                            replyToMessageId: message.MessageId,
+                            cancellationToken: cancellationToken),
+                        _ => await botClient.TryEditMessageMediaAsync(
+                            message: message,
+                            media: inputMediaPhoto,
+                            logger: logger,
+                            cancellationToken: cancellationToken)
+                    };
+
+                    break;
+                }
             default:
-            {
-                updatedMessage = message.Type switch
                 {
-                    // Need to figure out how to combine several images into a media group to show all generated images in one message
-                    MessageType.Photo => await botClient.TryEditMessageCaptionAsync(
-                        message: message,
-                        parseMode: ParseMode.Markdown,
-                        caption: GetText(response),
-                        logger: logger,
-                        showCaptionAboveMedia: true,
-                        cancellationToken: cancellationToken),
-                    _ => await botClient.TryEditMessageTextAsync(
-                        message: message,
-                        parseMode: ParseMode.Markdown,
-                        text: GetText(response),
-                        logger: logger,
-                        cancellationToken: cancellationToken)
-                };
-                
-                break;
-            }
+                    updatedMessage = message.Type switch
+                    {
+                        // Need to figure out how to combine several images into a media group to show all generated images in one message
+                        MessageType.Photo => await botClient.TryEditMessageCaptionAsync(
+                            message: message,
+                            parseMode: ParseMode.Markdown,
+                            caption: GetText(response),
+                            logger: logger,
+                            showCaptionAboveMedia: true,
+                            cancellationToken: cancellationToken),
+                        _ => await botClient.TryEditMessageTextAsync(
+                            message: message,
+                            parseMode: ParseMode.Markdown,
+                            text: GetText(response),
+                            logger: logger,
+                            cancellationToken: cancellationToken)
+                    };
+
+                    break;
+                }
         }
-        
+
         return updatedMessage ?? message;
 
         static string GetText(OpenAiResponse response) =>
             response.ContentComplete
                 ? response.Content
-                : $"{response.Content} {NonCompleteMessagePostfix}";
+                : $"{response.Content} {MarkdownExtensions.NonCompleteMessagePostfix}";
     }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)
