@@ -205,7 +205,7 @@ public class OpenAiChatService(
             {
                 var cm = await botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
 
-                var userName = (cm.User.Username ?? cm.User.FirstName);
+                var userName = cm.User.Username ?? cm.User.FirstName;
 
                 return $"{i}. UserId: {cm.User.Id}; UserName: {userName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName ?? string.Empty};";
             }));

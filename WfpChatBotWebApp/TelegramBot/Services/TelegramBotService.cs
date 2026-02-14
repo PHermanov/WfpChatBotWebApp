@@ -29,7 +29,7 @@ public class TelegramBotService(
         if (message == null)
             return;
 
-        logger.LogInformation("{Name} chat: {ChatId}, Received message {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
+        logger.LogInformation("{Name} chat: {ChatId}, Received message of type {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
 
         if (message.From is { IsBot: true })
             return;

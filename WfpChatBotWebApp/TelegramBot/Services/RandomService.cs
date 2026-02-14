@@ -38,7 +38,7 @@ public class RandomService(IHttpClientFactory httpClientFactory,
             @params = new
             {
                 apiKey = configuration["RandomOrgKey"],
-                n = 100,
+                n = 10,
                 min = 0,
                 max = max-1,
                 replacement = true
