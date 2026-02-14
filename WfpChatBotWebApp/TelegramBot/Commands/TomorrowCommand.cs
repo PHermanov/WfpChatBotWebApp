@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -20,6 +21,7 @@ public class TomorrowCommandHandler(ITelegramBotClient botClient, ITextMessageSe
         await botClient.TrySendTextMessageAsync(
             chatId: request.ChatId,
             logger: logger,
+            parseMode: ParseMode.Html,
             text: await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.Tomorrow, cancellationToken),
             cancellationToken: cancellationToken);
     }

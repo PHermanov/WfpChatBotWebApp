@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
@@ -51,6 +52,7 @@ public class AllCommandHandler(ITelegramBotClient botClient,
             chatId: request.ChatId,
             text: msg,
             logger: logger,
+            parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
     }
 }

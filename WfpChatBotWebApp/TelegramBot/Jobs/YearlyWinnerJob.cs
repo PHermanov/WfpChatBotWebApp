@@ -82,7 +82,7 @@ public class YearlyWinnerJobHandler(
                     }
 
                     var yearWinnerByCountMessage = string.Format(yearWinnerByCountMessageTemplate, user.UserName);
-                    await botClient.TrySendTextMessageAsync(chatId, yearWinnerByCountMessage, logger: logger, cancellationToken: cancellationToken);
+                    await botClient.TrySendTextMessageAsync(chatId, yearWinnerByCountMessage, logger: logger, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                 }
                 else
                 {
@@ -137,9 +137,9 @@ public class YearlyWinnerJobHandler(
                     if (!string.IsNullOrEmpty(yearAllMonthWinnersMsg) && monthStrRes.Length > 0)
                     {
                         await Task.Delay(500, cancellationToken);
-                        await botClient.TrySendTextMessageAsync(chatId, yearAllMonthWinnersMsg, logger: logger, cancellationToken: cancellationToken);
+                        await botClient.TrySendTextMessageAsync(chatId, yearAllMonthWinnersMsg, logger: logger, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         await Task.Delay(500, cancellationToken);
-                        await botClient.TrySendTextMessageAsync(chatId, monthStrRes.ToString(), logger: logger, cancellationToken: cancellationToken);
+                        await botClient.TrySendTextMessageAsync(chatId, monthStrRes.ToString(), logger: logger, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                     }
 
                     // check if there are more players with the same win count as leader
@@ -170,7 +170,7 @@ public class YearlyWinnerJobHandler(
                                 .ToArray();
                             
                             var msg = string.Format(mainYearWinnerMultiple, string.Join(", ", anotherWinnersNames));
-                            await botClient.TrySendTextMessageAsync(chatId, msg, logger: logger, cancellationToken: cancellationToken);
+                            await botClient.TrySendTextMessageAsync(chatId, msg, logger: logger, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
                         }
 
                         foreach (var player in anotherWinners.DistinctBy(w => w.UserId))

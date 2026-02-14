@@ -20,14 +20,14 @@ public class BotReplyService(
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
-
+    const string NonCompleteMessagePostfix = "...";
 
     public async Task Reply(Message message, CancellationToken cancellationToken)
     {
         var answerMessage = await botClient.TrySendTextMessageAsync(
             chatId: message.Chat.Id,
-            text: MarkdownExtensions.NonCompleteMessagePostfix,
-            parseMode: ParseMode.Markdown,
+            text: NonCompleteMessagePostfix,
+            parseMode: ParseMode.Html,
             replyToMessageId: message.MessageId,
             logger: logger,
             cancellationToken: cancellationToken);
@@ -51,13 +51,6 @@ public class BotReplyService(
                         continue;
 
                     previousContentLength = response.Content.Length;
-                }
-
-                // Validate markdown. Skip invalid incomplete markdown, send valid or complete markdown
-                if (!response.ContentComplete && !MarkdownExtensions.IsValidMarkdown(response.Content))
-                {
-                    // Skip this update - wait for more content to complete valid markdown
-                    continue;
                 }
 
                 answerMessage = await EditMessage(
@@ -134,7 +127,7 @@ public class BotReplyService(
                     var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
                     {
                         ShowCaptionAboveMedia = true,
-                        Caption = caption == MarkdownExtensions.NonCompleteMessagePostfix
+                        Caption = caption == NonCompleteMessagePostfix
                             ? null
                             : caption
                     };
@@ -146,6 +139,7 @@ public class BotReplyService(
                             message.Chat.Id,
                             inputMediaPhoto.Media,
                             replyToMessageId: message.MessageId,
+                            parseMode: ParseMode.Html,
                             cancellationToken: cancellationToken),
                         _ => await botClient.TryEditMessageMediaAsync(
                             message: message,
@@ -163,14 +157,14 @@ public class BotReplyService(
                         // Need to figure out how to combine several images into a media group to show all generated images in one message
                         MessageType.Photo => await botClient.TryEditMessageCaptionAsync(
                             message: message,
-                            parseMode: ParseMode.Markdown,
+                            parseMode: ParseMode.Html,
                             caption: GetText(response),
                             logger: logger,
                             showCaptionAboveMedia: true,
                             cancellationToken: cancellationToken),
                         _ => await botClient.TryEditMessageTextAsync(
                             message: message,
-                            parseMode: ParseMode.Markdown,
+                            parseMode: ParseMode.Html,
                             text: GetText(response),
                             logger: logger,
                             cancellationToken: cancellationToken)
@@ -185,7 +179,7 @@ public class BotReplyService(
         static string GetText(OpenAiResponse response) =>
             response.ContentComplete
                 ? response.Content
-                : $"{response.Content} {MarkdownExtensions.NonCompleteMessagePostfix}";
+                : $"{response.Content} {NonCompleteMessagePostfix}";
     }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)

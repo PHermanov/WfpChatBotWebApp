@@ -53,6 +53,7 @@ public class DrawCommandHandler(
                     chatId: request.ChatId,
                     logger: logger,
                     photo: InputFile.FromUri(url),
+                    parseMode: ParseMode.Html,
                     replyToMessageId: request.MessageId,
                     cancellationToken: cancellationToken);
             }
@@ -65,6 +66,7 @@ public class DrawCommandHandler(
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
                 text: message,
+                parseMode: ParseMode.Html,
                 replyToMessageId: request.MessageId,
                 logger: logger,
                 cancellationToken: cancellationToken);

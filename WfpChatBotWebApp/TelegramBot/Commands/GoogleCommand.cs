@@ -90,7 +90,7 @@ public class GoogleCommandHandler(
         {
             var msg = $"{result.Title}{Environment.NewLine}{result.Link}";
 
-            await botClient.TrySendTextMessageAsync(request.ChatId, msg, logger: logger, cancellationToken: cancellationToken);
+            await botClient.TrySendTextMessageAsync(request.ChatId, msg, parseMode: ParseMode.Html, logger: logger, cancellationToken: cancellationToken);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -46,6 +47,7 @@ public class WednesdayJobHandler(
                     await botClient.TrySendTextMessageAsync(
                         chatId: allChatIds[i],
                         text: message,
+                        parseMode: ParseMode.Html,
                         logger: logger,
                         cancellationToken: cancellationToken);
 

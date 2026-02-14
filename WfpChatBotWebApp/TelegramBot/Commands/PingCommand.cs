@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 
@@ -17,6 +18,6 @@ public class PingCommandHandler(ITelegramBotClient botClient, ILogger<PingComman
     public async Task Handle(PingCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation("{Name} executed", nameof(PingCommandHandler));
-        await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", logger: logger, cancellationToken: cancellationToken);
+        await botClient.TrySendTextMessageAsync(request.ChatId, "Pong", logger: logger, parseMode: ParseMode.Html, cancellationToken: cancellationToken);
     }
 }

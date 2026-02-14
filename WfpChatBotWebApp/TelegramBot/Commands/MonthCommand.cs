@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
@@ -52,6 +53,7 @@ public class MonthCommandHandler(
                 chatId: request.ChatId,
                 text: $"{allMonthWinners}{Environment.NewLine}{string.Join(Environment.NewLine, winners.ToList())}",
                 logger: logger,
+                parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
         }
         catch (Exception ex)

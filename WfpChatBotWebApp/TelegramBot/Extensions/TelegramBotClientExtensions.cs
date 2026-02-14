@@ -12,7 +12,7 @@ public static class TelegramBotClientExtensions
             ChatId chatId,
             string text,
             ILogger logger,
-            ParseMode parseMode = ParseMode.Html,
+            ParseMode parseMode,
             bool disableNotification = false,
             int replyToMessageId = 0,
             CancellationToken cancellationToken = default)
@@ -59,8 +59,8 @@ public static class TelegramBotClientExtensions
             ILogger logger,
             ChatId chatId,
             InputFile photo,
+            ParseMode parseMode,
             string? caption = null,
-            ParseMode parseMode = ParseMode.Html,
             bool disableNotification = false,
             int replyToMessageId = 0,
             CancellationToken cancellationToken = default)
@@ -88,7 +88,7 @@ public static class TelegramBotClientExtensions
             Message message,
             string text,
             ILogger logger,
-            ParseMode parseMode = ParseMode.Html,
+            ParseMode parseMode,
             CancellationToken cancellationToken = default)
         {
             try
@@ -117,8 +117,8 @@ public static class TelegramBotClientExtensions
             Message message,
             string? caption,
             ILogger logger,
+            ParseMode parseMode,
             bool showCaptionAboveMedia = false,
-            ParseMode parseMode = ParseMode.Html,
             CancellationToken cancellationToken = default)
         {
             try

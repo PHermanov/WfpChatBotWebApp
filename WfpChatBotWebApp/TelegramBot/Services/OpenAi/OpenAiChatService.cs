@@ -206,9 +206,9 @@ public class OpenAiChatService(
             {
                 var cm = await botClient.GetChatMember(new ChatId(chatId), u.UserId, cancellationToken);
 
-                var userName = (cm.User.Username ?? cm.User.FirstName).EscapeMarkdownString();
+                var userName = (cm.User.Username ?? cm.User.FirstName);
 
-                return $"{i}. UserId: {cm.User.Id}; UserName: {userName}; FirstName: {cm.User.FirstName.EscapeMarkdownString()}; LastName: {cm.User.LastName?.EscapeMarkdownString()};";
+                return $"{i}. UserId: {cm.User.Id}; UserName: {userName}; FirstName: {cm.User.FirstName}; LastName: {cm.User.LastName ?? string.Empty};";
             }));
 
         var botUser = await GetMe(cancellationToken);
@@ -222,7 +222,7 @@ public class OpenAiChatService(
             Telegram chat participants are:
             {string.Join(Environment.NewLine, chatUserInfos)}
             
-            Your identifiers are: UserId: {botUser.Id}; UserName: {botUser.Username?.EscapeMarkdownString()}; FirstName: {botUser.FirstName.EscapeMarkdownString()}; LastName: {botUser.LastName?.EscapeMarkdownString()};
+            Your identifiers are: UserId: {botUser.Id}; UserName: {botUser.Username ?? string.Empty}; FirstName: {botUser.FirstName}; LastName: {botUser.LastName ?? string.Empty};
             """);
     }
 }
