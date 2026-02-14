@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using System.Xml;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
@@ -49,6 +50,13 @@ public class BotReplyService(
                 {
                     if (response.Content.Length - previousContentLength < 60)
                         continue;
+
+                    // Validate HTML before updating
+                    if (!IsValidHtml(response.Content))
+                    {
+                        logger.LogDebug("Skipping update due to invalid HTML in incomplete message");
+                        continue;
+                    }
 
                     previousContentLength = response.Content.Length;
                 }
@@ -180,6 +188,34 @@ public class BotReplyService(
             response.ContentComplete
                 ? response.Content.Replace("<br/>", "\n")
                 : $"{response.Content.Replace("<br/>", "\n")} {NonCompleteMessagePostfix}";
+    }
+
+    private static bool IsValidHtml(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return true;
+
+        try
+        {
+            var wrappedContent = $"<root>{content}</root>";
+            using var reader = new StringReader(wrappedContent);
+            using var xmlReader = XmlReader.Create(reader, new XmlReaderSettings
+            {
+                ConformanceLevel = ConformanceLevel.Fragment,
+                CheckCharacters = true
+            });
+
+            while (xmlReader.Read())
+            {
+                // Just read through to validate
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)
