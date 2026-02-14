@@ -178,8 +178,8 @@ public class BotReplyService(
 
         static string GetText(OpenAiResponse response) =>
             response.ContentComplete
-                ? response.Content
-                : $"{response.Content} {NonCompleteMessagePostfix}";
+                ? response.Content.Replace("<br/>", "\n")
+                : $"{response.Content.Replace("<br/>", "\n")} {NonCompleteMessagePostfix}";
     }
 
     private KeyValuePair<string, Guid> GetContextKey(Message message)

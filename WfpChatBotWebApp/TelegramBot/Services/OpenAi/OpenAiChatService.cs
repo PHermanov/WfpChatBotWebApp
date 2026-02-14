@@ -6,7 +6,6 @@ using OpenAI.Chat;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
-using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Builders;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
