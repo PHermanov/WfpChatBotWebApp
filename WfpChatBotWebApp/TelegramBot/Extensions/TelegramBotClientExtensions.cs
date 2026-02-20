@@ -1,4 +1,5 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -27,7 +28,7 @@ public static class TelegramBotClientExtensions
                     replyParameters: replyToMessageId,
                     cancellationToken: cancellationToken);
             }
-            catch (Telegram.Bot.Exceptions.ApiRequestException) when (text.Contains("bot was kicked from the group chat"))
+            catch (ApiRequestException exeption) when (exeption.Message.Contains("bot was kicked from the group chat"))
             {
                 logger.LogWarning("Bot was kicked from the group chat with id {ChatId}", chatId);
                 return null;
