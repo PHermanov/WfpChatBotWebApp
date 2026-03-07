@@ -5,6 +5,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -20,23 +21,23 @@ public class WednesdayJobHandler(
 {
     public async Task Handle(WednesdayJobRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("{Name} at {Now}", nameof(WednesdayJobHandler), DateTime.UtcNow);
+        logger.LogInformation("WednesdayJobHandler: at {Now}", DateTime.UtcNow);
 
         try
         {
             var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
-            logger.LogInformation("{Name} For chats: {Chats} ", nameof(WednesdayJobHandler), string.Join(',', allChatIds));
+            logger.LogInformation("WednesdayJobHandler: For chats: {Chats} ", string.Join(',', allChatIds));
 
             if (allChatIds.Length == 0)
             {
-                logger.LogError("{Name}, no chats found", nameof(WednesdayJobHandler));
+                logger.LogError("WednesdayJobHandler: no chats found");
                 return;
             }
 
-            var message = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WednesdayMyDudes, cancellationToken);
+            var message = await messageService.GetMessageByNameAsync(Messages.WednesdayMyDudes, cancellationToken);
             if (string.IsNullOrWhiteSpace(message))
             {
-                logger.LogError("{Name}, message template not found", nameof(WednesdayJobHandler));
+                logger.LogError("WednesdayJobHandler: message template not found");
                 return;
             }
 
@@ -63,13 +64,13 @@ public class WednesdayJobHandler(
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Exception  in {Name} for {ChatId}", nameof(WednesdayJobHandler), allChatIds[i]);
+                    logger.LogError(e, "Exception  in WednesdayJobHandler for {ChatId}", allChatIds[i]);
                 }
             }
         }
         catch (Exception e)
         {
-            logger.LogError("{Name}, Exception  {e}", nameof(WednesdayJobHandler), e);
+            logger.LogError("WednesdayJobHandler: Exception {e}", e);
         }
     }
 }

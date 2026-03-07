@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -62,8 +63,8 @@ public class MonthlyWinnerJobHandler(
                     .FirstOrDefault(u => u.UserId == monthWinner.UserId)!
                     .GetUserMention();
 
-                var monthWinnerMessage = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MonthWinner, cancellationToken);
-                var congratsMessage = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.Congrats, cancellationToken);
+                var monthWinnerMessage = await textMessageService.GetMessageByNameAsync(Messages.MonthWinner, cancellationToken);
+                var congratsMessage = await textMessageService.GetMessageByNameAsync(Messages.Congrats, cancellationToken);
 
                 var message = $"{monthWinnerMessage}{Environment.NewLine}\u269C {mention} \u269C{Environment.NewLine}{congratsMessage}";
 

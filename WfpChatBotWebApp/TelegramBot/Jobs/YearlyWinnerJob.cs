@@ -8,6 +8,7 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Models;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -52,7 +53,7 @@ public class YearlyWinnerJobHandler(
             var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
 
             // welcome message
-            var yearSummarizeMsg = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YearSummarizeMsg, cancellationToken);
+            var yearSummarizeMsg = await messageService.GetMessageByNameAsync(Messages.YearSummarizeMsg, cancellationToken);
             if (!string.IsNullOrEmpty(yearSummarizeMsg))
             {
                 logger.LogInformation("{Name} for {ChatId} sending welcome message", nameof(YearlyWinnerJobRequest), chatId);
@@ -66,7 +67,7 @@ public class YearlyWinnerJobHandler(
 
             // year winner by total count
             var yearWinnerByCount = await repository.GetYearWinnerByCountAsync(chatId, year, cancellationToken);
-            var yearWinnerByCountMessageTemplate = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YearByCountWinnerMsg, cancellationToken);
+            var yearWinnerByCountMessageTemplate = await messageService.GetMessageByNameAsync(Messages.YearByCountWinnerMsg, cancellationToken);
 
             if (yearWinnerByCount != null && !string.IsNullOrEmpty(yearWinnerByCountMessageTemplate))
             {
@@ -77,7 +78,7 @@ public class YearlyWinnerJobHandler(
                 {
                     if (user.Inactive)
                     {
-                        var userMissing = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.UserMissing, cancellationToken);
+                        var userMissing = await messageService.GetMessageByNameAsync(Messages.UserMissing, cancellationToken);
                         yearWinnerByCount.UserName += userMissing;
                     }
 
@@ -133,7 +134,7 @@ public class YearlyWinnerJobHandler(
                         monthStrRes.AppendLine($"<i>{monthDisplay}</i>: <b>{monthWinnerUserName}</b>");
                     }
 
-                    var yearAllMonthWinnersMsg = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YearAllMonthWinnersMsg, cancellationToken);
+                    var yearAllMonthWinnersMsg = await messageService.GetMessageByNameAsync(Messages.YearAllMonthWinnersMsg, cancellationToken);
                     if (!string.IsNullOrEmpty(yearAllMonthWinnersMsg) && monthStrRes.Length > 0)
                     {
                         await Task.Delay(500, cancellationToken);
@@ -151,7 +152,7 @@ public class YearlyWinnerJobHandler(
                     if (anotherWinners.Count == 1)
                     {
                         await Task.Delay(500, cancellationToken);
-                        var mainYearWinnerSingle = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MainYearWinnerSingle, cancellationToken);
+                        var mainYearWinnerSingle = await messageService.GetMessageByNameAsync(Messages.MainYearWinnerSingle, cancellationToken);
                         var msg = string.Format(mainYearWinnerSingle, yearWinnerUser.UserName);
 
                         await SendPicture(chatId, yearWinner, msg, cancellationToken);
@@ -159,7 +160,7 @@ public class YearlyWinnerJobHandler(
                     else
                     {
                         await Task.Delay(500, cancellationToken);
-                        var mainYearWinnerMultiple = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MainYearWinnerMultiple, cancellationToken);
+                        var mainYearWinnerMultiple = await messageService.GetMessageByNameAsync(Messages.MainYearWinnerMultiple, cancellationToken);
 
                         if (!string.IsNullOrEmpty(mainYearWinnerMultiple))
                         {
@@ -261,18 +262,18 @@ public class YearlyWinnerJobHandler(
     {
         var messageName = number switch
         {
-            1 => TextMessageService.TextMessageNames.Month1,
-            2 => TextMessageService.TextMessageNames.Month2,
-            3 => TextMessageService.TextMessageNames.Month3,
-            4 => TextMessageService.TextMessageNames.Month4,
-            5 => TextMessageService.TextMessageNames.Month5,
-            6 => TextMessageService.TextMessageNames.Month6,
-            7 => TextMessageService.TextMessageNames.Month7,
-            8 => TextMessageService.TextMessageNames.Month8,
-            9 => TextMessageService.TextMessageNames.Month9,
-            10 => TextMessageService.TextMessageNames.Month10,
-            11 => TextMessageService.TextMessageNames.Month11,
-            12 => TextMessageService.TextMessageNames.Month12,
+            1 => Messages.Month1,
+            2 => Messages.Month2,
+            3 => Messages.Month3,
+            4 => Messages.Month4,
+            5 => Messages.Month5,
+            6 => Messages.Month6,
+            7 => Messages.Month7,
+            8 => Messages.Month8,
+            9 => Messages.Month9,
+            10 => Messages.Month10,
+            11 => Messages.Month11,
+            12 => Messages.Month12,
             _ => string.Empty
         };
 

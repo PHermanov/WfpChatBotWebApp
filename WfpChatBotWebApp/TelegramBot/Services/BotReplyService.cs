@@ -5,6 +5,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -76,7 +77,7 @@ public class BotReplyService(
             var response = new OpenAiResponse
             {
                 ContentType = OpenAiContentType.Text,
-                Content = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken),
+                Content = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken),
                 ContentComplete = true
             };
 

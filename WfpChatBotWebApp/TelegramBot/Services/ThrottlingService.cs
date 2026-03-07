@@ -4,6 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -35,7 +36,7 @@ public class ThrottlingService(
                     if (user == null)
                         return false;
 
-                    var text = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.TakeRest, cancellationToken);
+                    var text = await textMessageService.GetMessageByNameAsync(Messages.TakeRest, cancellationToken);
 
                     if (!string.IsNullOrWhiteSpace(text))
                     {

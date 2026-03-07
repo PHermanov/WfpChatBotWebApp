@@ -7,6 +7,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -30,7 +31,7 @@ public class GoogleCommandHandler(
         {
             logger.LogInformation("Search query is empty");
 
-            var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+            var responsePhrase = await textMessageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
             if (string.IsNullOrEmpty(responsePhrase))
                 return;

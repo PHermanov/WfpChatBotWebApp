@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -31,7 +32,7 @@ public class YesterdayCommandHadler(
             if (yesterdayWinner == null)
                 return;
 
-            var messageTemplate = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YesterdayWinner, cancellationToken);
+            var messageTemplate = await messageService.GetMessageByNameAsync(Messages.YesterdayWinner, cancellationToken);
             
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,

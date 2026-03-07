@@ -6,6 +6,7 @@ using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -29,7 +30,7 @@ public class DrawCommandHandler(
             {
                 logger.LogInformation("Draw request is empty");
 
-                var responsePhrase = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+                var responsePhrase = await messageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
                 if (string.IsNullOrEmpty(responsePhrase))
                     return;
@@ -62,7 +63,7 @@ public class DrawCommandHandler(
         {
             logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(DrawCommandHandler), request.ChatId, e);
 
-            var message = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.FuckOff, cancellationToken);
+            var message = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken);
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
                 text: message,

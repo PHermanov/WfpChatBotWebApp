@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -41,13 +42,13 @@ public class MonthCommandHandler(
 
                     if (user.Inactive)
                     {
-                        var userMissing = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.UserMissing, cancellationToken);
+                        var userMissing = await messageService.GetMessageByNameAsync(Messages.UserMissing, cancellationToken);
                         winners[i].UserName += $" : {userMissing}";
                     }
                 }
             }
 
-            var allMonthWinners = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.AllMonthWinners, cancellationToken);
+            var allMonthWinners = await messageService.GetMessageByNameAsync(Messages.AllMonthWinners, cancellationToken);
 
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,

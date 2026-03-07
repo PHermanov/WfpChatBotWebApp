@@ -5,6 +5,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -62,7 +63,7 @@ public class AudioTranscribeService(
                 return;
             }
             
-            var template = await messageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.AudioTranscriptTestTemplate, cancellationToken);
+            var template = await messageService.GetMessageByNameAsync(Messages.AudioTranscriptTestTemplate, cancellationToken);
 
             var messageText = string.IsNullOrWhiteSpace(template)
                 ? transcript

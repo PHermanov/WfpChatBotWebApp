@@ -6,6 +6,7 @@ using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -30,7 +31,7 @@ public class TodayCommandHandler(
             if (todayWinner == null)
                 return;
 
-            var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.TodayWinnerAlreadySet, cancellationToken);
+            var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(Messages.TodayWinnerAlreadySet, cancellationToken);
 
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
@@ -43,7 +44,7 @@ public class TodayCommandHandler(
         {
             await botClient.TrySendTextMessageAsync(
                 chatId: request.ChatId,
-                text: await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WinnerNotSetYet, cancellationToken),
+                text: await textMessageService.GetMessageByNameAsync(Messages.WinnerNotSetYet, cancellationToken),
                 parseMode: ParseMode.Markdown,
                 logger: logger,
                 cancellationToken: cancellationToken);
@@ -56,7 +57,7 @@ public class TodayCommandHandler(
                 if (yesterdayWinner == null)
                     return;
 
-                var messageTemplateYesterdayWinner = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.YesterdayWinner, cancellationToken);
+                var messageTemplateYesterdayWinner = await textMessageService.GetMessageByNameAsync(Messages.YesterdayWinner, cancellationToken);
                 await botClient.TrySendTextMessageAsync(
                     chatId:request.ChatId,
                     text: string.Format(messageTemplateYesterdayWinner, yesterdayWinner.GetUserMention()),

@@ -5,6 +5,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
 
@@ -18,7 +19,7 @@ public class HelpCommandHandler(ITelegramBotClient botClient, ITextMessageServic
 {
     public async Task Handle(HelpCommand request, CancellationToken cancellationToken)
     {
-        var responsePhrase = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.WhatWanted, cancellationToken);
+        var responsePhrase = await textMessageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
         if (string.IsNullOrEmpty(responsePhrase))
             return;
