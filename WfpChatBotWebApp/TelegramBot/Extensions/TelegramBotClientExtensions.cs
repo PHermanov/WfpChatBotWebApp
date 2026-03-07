@@ -16,6 +16,7 @@ public static class TelegramBotClientExtensions
             ParseMode parseMode,
             bool disableNotification = false,
             int replyToMessageId = 0,
+            string? messageEffectId = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -26,6 +27,7 @@ public static class TelegramBotClientExtensions
                     parseMode: parseMode,
                     disableNotification: disableNotification,
                     replyParameters: replyToMessageId,
+                    messageEffectId: messageEffectId,
                     cancellationToken: cancellationToken);
             }
             catch (ApiRequestException exeption) when (exeption.Message.Contains("bot was kicked from the group chat"))

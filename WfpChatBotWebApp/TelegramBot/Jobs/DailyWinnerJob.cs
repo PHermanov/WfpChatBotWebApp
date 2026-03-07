@@ -7,6 +7,7 @@ using WfpChatBotWebApp.Persistence.Entities;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
 using User = WfpChatBotWebApp.Persistence.Entities.User;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Jobs;
 
@@ -64,12 +65,13 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
     private async Task SendNewWinnerMessage(long chatId, User newWinner, CancellationToken cancellationToken)
     {
-        var messageTemplateNew = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.NewWinner, cancellationToken);
+        var messageTemplateNew = await textMessageService.GetMessageByNameAsync(Messages.NewWinner, cancellationToken);
             
         await botClient.TrySendTextMessageAsync(
             chatId: chatId,
             text: string.Format(messageTemplateNew, newWinner.GetUserMention()),
             parseMode: ParseMode.Markdown,
+            messageEffectId: "confetti",
             logger: logger,
             cancellationToken: cancellationToken);
 
@@ -90,7 +92,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         if (todayWinner == null)
             return;
                 
-        var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.TodayWinnerAlreadySet, cancellationToken);     
+        var messageTemplateAlreadySet = await textMessageService.GetMessageByNameAsync(Messages.TodayWinnerAlreadySet, cancellationToken);     
                 
         await botClient.TrySendTextMessageAsync(
             chatId: chatId,
@@ -120,7 +122,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
             if (results.Count != 0)
             {
-                var template = await textMessageService.GetMessageByNameAsync(TextMessageService.TextMessageNames.MissedGames, cancellationToken);
+                var template = await textMessageService.GetMessageByNameAsync(Messages.MissedGames, cancellationToken);
 
                 await botClient.TrySendTextMessageAsync(
                     chatId: chatId,
