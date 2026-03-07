@@ -26,11 +26,8 @@ public class GoogleCommandHandler(
 {
     public async Task Handle(GoogleCommand request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Inside Google command");
         if (string.IsNullOrEmpty(request.Param))
         {
-            logger.LogInformation("Search query is empty");
-
             var responsePhrase = await textMessageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
             if (string.IsNullOrEmpty(responsePhrase))
@@ -59,7 +56,7 @@ public class GoogleCommandHandler(
 
         if (split.Length < 2 || string.IsNullOrEmpty(split[0]) || string.IsNullOrEmpty(split[1]))
         {
-            logger.LogError("GoogleApiKey corrupted");
+            logger.LogError("GoogleCommand: GoogleApiKey corrupted");
             return;
         }
 
@@ -70,7 +67,7 @@ public class GoogleCommandHandler(
 
         if (!httpResponseMessage.IsSuccessStatusCode)
         {
-            logger.LogInformation("Google returned not success status");
+            logger.LogInformation("GoogleCommand: Google returned not success status");
             return;
         }
 
@@ -79,11 +76,11 @@ public class GoogleCommandHandler(
         var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
         if (searchResults == null)
         {
-            logger.LogInformation("Parsed 0 results");
+            logger.LogInformation("GoogleCommand: Parsed 0 results");
             return;
         }
 
-        logger.LogInformation("Parsed {searchResultsCount} results", searchResults.Items.Count);
+        logger.LogInformation("GoogleCommand: Parsed {searchResultsCount} results", searchResults.Items.Count);
 
         var resultItems = searchResults.Items.Take(3).ToArray();
 

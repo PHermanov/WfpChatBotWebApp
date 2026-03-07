@@ -23,11 +23,9 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 {
     public async Task Handle(DailyWinnerJobRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Executed {Name} at {Now}", nameof(DailyWinnerJobHandler), DateTime.UtcNow);
-        
         var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
 
-        logger.LogInformation("Got {Chats} chats", string.Join(',', allChatIds));
+        logger.LogInformation("DailyWinnerJobHandler: Got chats: {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
         
         for (var i = 0; i < allChatIds.Length; i++)
         {
@@ -37,8 +35,6 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
     private async Task ProcessDailyWinnerForChat(long chatId, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Executed {Name} for {ChatId}", nameof(ProcessDailyWinnerForChat), chatId);
-
         try
         {
             var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
@@ -59,7 +55,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Exception in {ClassName}", nameof(DailyWinnerJobHandler));
+            logger.LogError(e, "Exception in DailyWinnerJobHandler for chat: {ChatId}", chatId);
         }
     }
 

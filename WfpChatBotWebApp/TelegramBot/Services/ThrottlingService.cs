@@ -55,7 +55,7 @@ public class ThrottlingService(
             }
             catch
             {
-                logger.LogError("Can not delete message");
+                logger.LogError("TrottlingService: Can not delete message");
                 return false;
             }
         }

@@ -30,14 +30,14 @@ public static class TelegramBotClientExtensions
                     messageEffectId: messageEffectId,
                     cancellationToken: cancellationToken);
             }
-            catch (ApiRequestException exeption) when (exeption.Message.Contains("bot was kicked from the group chat"))
+            catch (ApiRequestException exeption) when (exeption.Message.Contains("was kicked from the group chat"))
             {
                 logger.LogWarning("Bot was kicked from the group chat with id {ChatId}", chatId);
                 return null;
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TrySendTextMessageAsync));
+                logger.LogError(exception, "Exception in TrySendTextMessageAsync");
                 return null;
             }
         }
@@ -59,7 +59,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TrySendStickerAsync));
+                logger.LogError(exception, "Exception in TrySendStickerAsync");
             }
         }
 
@@ -86,7 +86,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TrySendPhotoAsync));
+                logger.LogError(exception, "Exception in TrySendPhotoAsync");
 
                 return null;
             }
@@ -115,7 +115,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageTextAsync));
+                logger.LogError(exception, "Exception in TryEditMessageTextAsync");
 
                 return null;
             }
@@ -144,7 +144,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageCaptionAsync));
+                logger.LogError(exception, "Exception in TryEditMessageCaptionAsync");
 
                 return null;
             }
@@ -168,7 +168,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TryEditMessageMediaAsync));
+                logger.LogError(exception, "Exception in TryEditMessageMediaAsync");
 
                 return null;
             }
@@ -191,7 +191,7 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Exception in {Name}", nameof(TrySendVideoAsync));
+                logger.LogError(exception, "Exception in TrySendVideoAsync");
             }
         }
 

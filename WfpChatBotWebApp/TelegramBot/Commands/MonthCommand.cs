@@ -57,9 +57,9 @@ public class MonthCommandHandler(
                 parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Console.WriteLine(ex.Message);
+            logger.LogError(e, "MonthCommand Exception for chat {ChatId}", request.ChatId);
         }
     }
 }

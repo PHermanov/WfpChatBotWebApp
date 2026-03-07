@@ -15,7 +15,7 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
     {
         try
         {
-            logger.LogInformation("ConvertAudio: Audio stream received, length: {len}", audioStream.Length);
+            logger.LogInformation("ConvertAudio: Audio stream received, length: {Len}", audioStream.Length);
             
             audioStream.Position = 0;
             
@@ -30,7 +30,7 @@ public class AudioProcessor(ILogger<AudioProcessor> logger)
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} Exception {e}", nameof(AudioProcessor), e.Message);
+            logger.LogError(e, "AudioProcessor: Exception");
             throw;
         }
     }

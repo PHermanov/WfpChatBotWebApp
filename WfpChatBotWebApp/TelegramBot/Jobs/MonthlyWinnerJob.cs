@@ -23,16 +23,11 @@ public class MonthlyWinnerJobHandler(
 {
     public async Task Handle(MonthlyWinnerJobRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("{Name} at {Now}", nameof(MonthlyWinnerJobHandler), DateTime.UtcNow);
-
         var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
-        logger.LogInformation("{Name} For chats: {Chats} ", nameof(MonthlyWinnerJobHandler), string.Join(',', allChatIds));
+        logger.LogInformation("MonthlyWinnerJobHandler for {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
         if (allChatIds.Length == 0)
-        {
-            logger.LogError("{Name}, no chats found", nameof(MonthlyWinnerJobHandler));
             return;
-        }
         
         for (var i = 0; i < allChatIds.Length; i++)
         {
@@ -43,18 +38,16 @@ public class MonthlyWinnerJobHandler(
 
     private async Task ProcessMonthlyWinnerForChat(long chatId, CancellationToken cancellationToken)
     {
-        logger.LogInformation("{Name} for {ChatId}", nameof(MonthlyWinnerJobHandler), chatId);
-
         var httpClient = httpClientFactory.CreateClient("Pictures");
         var bowlImageStream = await httpClient.GetStreamAsync("bowl.png" + configuration.GetValue<string>("StickerSas"), cancellationToken);
-        
-        logger.LogInformation("{Name} Downloaded bowl image for {ChatId}", nameof(MonthlyWinnerJobHandler), chatId);
+
+        logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : Downloaded bowl image ", chatId);
         
         try
         {
             var monthWinner = await repository.GetWinnerForMonthAsync(chatId, DateTime.Now, cancellationToken);
 
-            logger.LogInformation("{Name} for {ChatId}, Month winner {winner}", nameof(MonthlyWinnerJobHandler), chatId, monthWinner?.UserId);
+            logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : Month winner {winner}", chatId, monthWinner?.UserId);
 
             if (monthWinner != null)
             {
@@ -71,17 +64,17 @@ public class MonthlyWinnerJobHandler(
                 UserProfilePhotos? userProfilePhotos = null;
                 try
                 {
-                    logger.LogInformation("{Name} for Chat: {ChatId}, User: {UserId} Loading user photos", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+                    logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : User: {UserId}, Loading user photos", chatId, monthWinner.UserId);
                     userProfilePhotos = await botClient.GetUserProfilePhotos(monthWinner.UserId, cancellationToken: cancellationToken);
                 }
                 catch (Exception e)
                 {
-                    logger.LogError("{Name} for {ChatId}, User: {UserId}, Loading user photos. Exception: {exception}", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId, e.Message);
+                    logger.LogError(e, "MonthlyWinnerJobHandler for {ChatId} : User: {UserId}, Loading user photos. Exception", chatId, monthWinner.UserId);
                 }
 
                 if (userProfilePhotos == null || userProfilePhotos.Photos.Length == 0)
                 {
-                    logger.LogInformation("{Name} for {ChatId}, photos not loaded", nameof(MonthlyWinnerJobHandler), chatId);
+                    logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : photos not loaded", chatId);
 
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
@@ -93,23 +86,23 @@ public class MonthlyWinnerJobHandler(
                 }
                 else
                 {
-                    logger.LogInformation("{Name} for chat: {ChatId}, user {UserId} photo loaded", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+                    logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : User {UserId} photo loaded", chatId, monthWinner.UserId);
 
                     var photoSize = userProfilePhotos.Photos[0].MaxBy(p => p.Height);
                     var photoFile = await botClient.GetFile(photoSize?.FileId ?? string.Empty, cancellationToken);
 
-                    logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, photo file info loaded", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+                    logger.LogInformation("MonthlyWinnerJobHandler chat: {ChatId}, User {UserId}, photo file info loaded", chatId, monthWinner.UserId);
 
                     var avatarStream = new MemoryStream();
                     await botClient.DownloadFile(photoFile.FilePath ?? string.Empty, avatarStream, cancellationToken);
 
-                    logger.LogInformation("{Name} chat: {ChatId}, user {UserId} photo file downloaded", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+                    logger.LogInformation("MonthlyWinnerJobHandler chat: {ChatId}, User {UserId} photo file downloaded", chatId, monthWinner.UserId);
 
                     try
                     {
                         var winnerImage = await ImageProcessor.GetWinnerImageMonth(bowlImageStream, avatarStream, DateTime.Today);
-                        
-                        logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, winner image created. Sending", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+
+                        logger.LogInformation("MonthlyWinnerJobHandler for {ChatId} : User {UserId}, winner image created. Sending", chatId, monthWinner.UserId);
 
                         await botClient.TrySendPhotoAsync(
                             logger: logger,
@@ -121,7 +114,7 @@ public class MonthlyWinnerJobHandler(
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(e, "{Name} for char {ChatId}, user {UserId} Exception in GetWinnerImageMonth", nameof(MonthlyWinnerJobHandler), chatId, monthWinner.UserId);
+                        logger.LogError(e, "MonthlyWinnerJobHandler for {ChatId} : User {UserId} Exception in GetWinnerImageMonth", chatId, monthWinner.UserId);
 
                         await botClient.TrySendPhotoAsync(
                             logger: logger,
@@ -135,12 +128,12 @@ public class MonthlyWinnerJobHandler(
             }
             else
             {
-                logger.LogError("{Name} for {ChatId}, Winner not selected", nameof(MonthlyWinnerJobHandler), chatId);
+                logger.LogError("MonthlyWinnerJobHandler for {ChatId}, Winner not selected", chatId);
             }
         }
         catch (Exception e)
         {
-            logger.LogError(e, "{Name} for {ChatId}, Exception", nameof(MonthlyWinnerJobHandler), chatId);
+            logger.LogError(e, "MonthlyWinnerJobHandler for {ChatId}, Exception", chatId);
         }
     }
 }

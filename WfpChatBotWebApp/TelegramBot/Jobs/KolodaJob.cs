@@ -19,18 +19,13 @@ public class KolodaJobHandler(
 {
     public async Task Handle(KolodaJobRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("{Name} at {Now}", nameof(KolodaJobHandler), DateTime.UtcNow);
-
         try
         {
             var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
-            logger.LogInformation("{Name} for chats: {Chats} ", nameof(KolodaJobHandler), string.Join(',', allChatIds));
+            logger.LogInformation("KolodaJobHandler for chats: {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
             if (allChatIds.Length == 0)
-            {
-                logger.LogError("{Name}, no chats found", nameof(KolodaJobHandler));
                 return;
-            }
 
             var httpClient = httpClientFactory.CreateClient("Pictures");
            
@@ -38,8 +33,6 @@ public class KolodaJobHandler(
             {
                 try
                 {
-                    logger.LogInformation("{Name} for chat: {ChatId} ", nameof(KolodaJobHandler), allChatIds[i]);
-
                     var imageStream = await httpClient.GetStreamAsync("koloda.jpg" + configuration.GetValue<string>("StickerSas"), cancellationToken);
                     await botClient.TrySendPhotoAsync(
                         logger: logger,
@@ -50,14 +43,14 @@ public class KolodaJobHandler(
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Exception  in {Name} for {ChatId}", nameof(KolodaJobHandler), allChatIds[i]);
+                    logger.LogError(e, "Exception in KolodaJobHandler for {ChatId}", allChatIds[i]);
                     continue;
                 }
             }
         }
         catch (Exception e)
         {
-            logger.LogError("{Name}, Exception {e}", nameof(KolodaJobHandler), e);
+            logger.LogError(e, "KolodaJobHandler Exception");
             return;
         }
     }

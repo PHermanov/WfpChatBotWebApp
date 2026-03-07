@@ -58,7 +58,7 @@ public class MamotaCommandHandler(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Mamota command failed");
+            logger.LogError(e, "MamotaCommand Exception");
         }
     }
 }

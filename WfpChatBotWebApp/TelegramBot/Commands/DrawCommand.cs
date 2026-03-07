@@ -28,8 +28,6 @@ public class DrawCommandHandler(
         {
             if (string.IsNullOrEmpty(request.Param))
             {
-                logger.LogInformation("Draw request is empty");
-
                 var responsePhrase = await messageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
                 if (string.IsNullOrEmpty(responsePhrase))
@@ -61,7 +59,7 @@ public class DrawCommandHandler(
         }
         catch (Exception e)
         {
-            logger.LogError("{Name} for {ChatId}, Exception: {e}", nameof(DrawCommandHandler), request.ChatId, e);
+            logger.LogError(e, "DrawCommandHandler for {ChatId}", request.ChatId);
 
             var message = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken);
             await botClient.TrySendTextMessageAsync(

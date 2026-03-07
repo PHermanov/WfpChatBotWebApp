@@ -21,16 +21,13 @@ public class WednesdayJobHandler(
 {
     public async Task Handle(WednesdayJobRequest request, CancellationToken cancellationToken)
     {
-        logger.LogInformation("WednesdayJobHandler: at {Now}", DateTime.UtcNow);
-
         try
         {
             var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
-            logger.LogInformation("WednesdayJobHandler: For chats: {Chats} ", string.Join(',', allChatIds));
+            logger.LogInformation("WednesdayJobHandler: for {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
             if (allChatIds.Length == 0)
             {
-                logger.LogError("WednesdayJobHandler: no chats found");
                 return;
             }
 
@@ -64,13 +61,14 @@ public class WednesdayJobHandler(
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Exception  in WednesdayJobHandler for {ChatId}", allChatIds[i]);
+                    logger.LogError(e, "Exception in WednesdayJobHandler for {ChatId}", allChatIds[i]);
+                    continue;
                 }
             }
         }
         catch (Exception e)
         {
-            logger.LogError("WednesdayJobHandler: Exception {e}", e);
+            logger.LogError(e, "WednesdayJobHandler: Exception");
         }
     }
 }

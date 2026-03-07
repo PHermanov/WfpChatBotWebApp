@@ -26,7 +26,7 @@ public class DataController(IConfiguration configuration, IGameRepository reposi
         }
         catch (Exception e)
         {
-            logger.LogError("Exception in {methodName}: {message}", nameof(GetAllChats), e.Message);
+            logger.LogError(e, "Exception in GetAllChats");
             return Problem();
         }
     }

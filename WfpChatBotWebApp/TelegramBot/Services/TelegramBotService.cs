@@ -29,7 +29,7 @@ public class TelegramBotService(
         if (message == null)
             return;
 
-        logger.LogInformation("{Name} chat: {ChatId}, Received message of type {MessageType}", nameof(TelegramBotService), message.Chat.Id, message.Type);
+        logger.LogInformation("TelegramBotService: Received message of type {MessageType} in chat: {ChatId},", message.Type, message.Chat.Id);
 
         if (message.From is { IsBot: true })
             return;
@@ -54,7 +54,7 @@ public class TelegramBotService(
             var bot = await botClient.GetMe(cancellationToken);
             if (string.IsNullOrEmpty(bot.Username))
             {
-                logger.LogError("{Class} bot username is empty", nameof(TelegramBotService));
+                logger.LogError("TelegramBotService: bot username is empty");
                 return;
             }
 
@@ -70,7 +70,7 @@ public class TelegramBotService(
 
             if (message is { Type: MessageType.Voice, Voice: not null })
             {
-                logger.LogInformation("{Name} chat: {ChatId}, Received voice message", nameof(TelegramBotService), message.Chat.Id);
+                logger.LogInformation("TelegramBotService chat: {ChatId}, Received voice message", message.Chat.Id);
                 await audioTranscribeService.Reply(message, cancellationToken);
                 return;
             }
@@ -96,7 +96,7 @@ public class TelegramBotService(
 
     private static bool IsBotMentioned(Message message, string botUserName) => message.Type switch
     {
-        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null && (message.EntityValues ?? []).Contains($"@{botUserName}")) 
+        MessageType.Text => (message.Entities?.Any(e => e.Type is MessageEntityType.Mention) is not null && (message.EntityValues ?? []).Contains($"@{botUserName}"))
                             || message.ReplyToMessage?.From?.Username == botUserName,
         MessageType.Photo when !string.IsNullOrEmpty(message.Caption) => message.Caption.Contains($"@{botUserName}") || message.ReplyToMessage?.From?.Username == botUserName,
         _ => false

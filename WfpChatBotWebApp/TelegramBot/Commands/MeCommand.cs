@@ -24,8 +24,6 @@ public class MeCommandHandler(
     {
         if (string.IsNullOrWhiteSpace(request.Param))
         {
-            logger.LogInformation("Param is empty");
-            
             var responsePhrase = await textMessageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
             if (string.IsNullOrEmpty(responsePhrase))
@@ -46,9 +44,9 @@ public class MeCommandHandler(
         {
             await botClient.DeleteMessage(request.ChatId, request.MessageId, cancellationToken);
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            logger.LogError("Can not delete message");
+            logger.LogError(e, "MeCommand: Can not delete message");
             return;
         }
 

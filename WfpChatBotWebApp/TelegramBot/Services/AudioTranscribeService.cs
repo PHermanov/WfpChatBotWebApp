@@ -29,37 +29,37 @@ public class AudioTranscribeService(
         {
             if (message.From == null)
             {
-                logger.LogError("{Name} chat: {ChatId}, message.From == null", nameof(AudioTranscribeService), message.Chat.Id);
+                logger.LogError("AudioTranscribeService for {ChatId} : message.From is null", message.Chat.Id);
                 return;
             }
 
             var user = await repository.GetUserByUserIdAndChatIdAsync(message.Chat.Id, message.From.Id, cancellationToken);
             if (user == null)
             {
-                logger.LogError("{Name} chat: {ChatId}, user == null", nameof(AudioTranscribeService), message.Chat.Id);
+                logger.LogError("AudioTranscribeService for {ChatId} : user is null", message.Chat.Id);
                 return;
             }
 
             var audioFile = await botClient.GetFile(message.Voice?.FileId ?? string.Empty, cancellationToken);
-            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file info loaded, Mime {mime}", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id, message.Voice?.MimeType);
+            logger.LogInformation("AudioTranscribeService for {ChatId} : user {UserId}, audio file info loaded, Mime {mime}", message.Chat.Id, message.From.Id, message.Voice?.MimeType);
 
             if (audioFile.FilePath == null)
             {
-                logger.LogError("{Name} chat: {ChatId}, user {UserId}, FilePath == null", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+                logger.LogError("AudioTranscribeService for {ChatId} : user {UserId}, FilePath is null", message.Chat.Id, message.From.Id);
                 return;
             }
 
             var audioStream = new MemoryStream();
             await botClient.DownloadFile(audioFile.FilePath, audioStream, cancellationToken);
-            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio file downloaded", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+            logger.LogInformation("AudioTranscribeService for {ChatId} : user {UserId}, audio file downloaded", message.Chat.Id, message.From.Id);
             
             var convertedAudioStream = audioProcessor.ConvertAudio(audioStream);
-            logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, audio converted to wav", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+            logger.LogInformation("AudioTranscribeService for {ChatId} : user {UserId}, audio converted to wav", message.Chat.Id, message.From.Id);
 
             var transcript = await openAiAudioService.ProcessAudio(convertedAudioStream, cancellationToken);
             if (string.IsNullOrWhiteSpace(transcript))
             {
-                logger.LogInformation("{Name} chat: {ChatId}, user {UserId}, transcript is empty", nameof(AudioTranscribeService), message.Chat.Id, message.From.Id);
+                logger.LogInformation("AudioTranscribeService for {ChatId} : user {UserId}, transcript is empty", message.Chat.Id, message.From.Id);
                 return;
             }
             
@@ -79,7 +79,7 @@ public class AudioTranscribeService(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Exception in Reply, {Name} for char {ChatId}, user {UserId}", nameof(AudioTranscribeService), message.Chat.Id, message.From?.Id);
+            logger.LogError(e, "Exception in Reply, AudioTranscribeService for {ChatId} : user {UserId}", message.Chat.Id, message.From?.Id);
         }
     }
 }

@@ -18,7 +18,7 @@ public class RandomService(IHttpClientFactory httpClientFactory,
     {
         if (numbersQueueService.CanPeek(max))
         {
-            logger.LogInformation("Getting random number from queue");
+            logger.LogInformation("RandomService: Getting random number from queue");
             return numbersQueueService.GetNextRandomNumber(max);
         }
         else
@@ -30,7 +30,7 @@ public class RandomService(IHttpClientFactory httpClientFactory,
 
     private async Task FillRandomNumbersQueue(int max)
     {
-        logger.LogInformation("Filling random numbers queue from random.org");
+        logger.LogInformation("RandomService: Filling random numbers queue from random.org");
         var requestBody = new
         {
             jsonrpc = "2.0",
@@ -57,7 +57,7 @@ public class RandomService(IHttpClientFactory httpClientFactory,
             var dataElement = doc.RootElement.GetProperty("result").GetProperty("random").GetProperty("data");
             var rawData = dataElement.GetRawText();
             
-            logger.LogInformation("Received random numbers from random.org: {Data}", rawData);
+            logger.LogInformation("RandomService: Received random numbers from random.org: {Data}", rawData);
             
             var data = JsonSerializer.Deserialize<int[]>(rawData, SerializerOptions);
 
@@ -68,7 +68,7 @@ public class RandomService(IHttpClientFactory httpClientFactory,
             }
         }
 
-        logger.LogError("Failed to get numbers from random.org");
+        logger.LogError("RandomService: Failed to get numbers from random.org, falling back to default Random");
         numbersQueueService.EnqueueRange(max, [new Random().Next(max)]);
     }
 }

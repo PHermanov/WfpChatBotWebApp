@@ -72,7 +72,7 @@ public class BotReplyService(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Exception at {Class}", nameof(BotReplyService));
+            logger.LogError(e, "BotReplyService Exception");
 
             var response = new OpenAiResponse
             {
