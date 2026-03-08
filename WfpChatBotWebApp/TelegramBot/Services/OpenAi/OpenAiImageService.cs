@@ -3,19 +3,11 @@ using OpenAI.Images;
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
-public interface IOpenAiImageService
-{
-    IAsyncEnumerable<string> CreateImage(
-        string prompt,
-        int numOfImages = 1,
-        CancellationToken cancellationToken = default);
-}
-
 public class OpenAiImageService(
     IOpenAiClientFactory openAiClientFactory)
-    : IOpenAiImageService
+    : IAiImageService
 {
-    public async IAsyncEnumerable<string> CreateImage(
+    public async IAsyncEnumerable<(string?, byte[]?)> CreateImage(
         string prompt,
         int numOfImages = 1,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -31,7 +23,7 @@ public class OpenAiImageService(
         for (var i = 0; i < numOfImages; i++)
         {
             var res = await openAiClientFactory.ImageClient.GenerateImageAsync(prompt, imageGenerationOptions, cancellationToken);
-            yield return res.Value.ImageUri.OriginalString;
+            yield return (res.Value.ImageUri.OriginalString, null);
         }
     }
 }

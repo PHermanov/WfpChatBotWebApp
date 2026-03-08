@@ -18,7 +18,7 @@ public class DrawCommand(Message message) : CommandWithParam(message), IRequest
 public class DrawCommandHandler(
         ITelegramBotClient botClient,
         ITextMessageService messageService,
-        IOpenAiImageService openAiImageService,
+        IAiImageService aiImageService,
         ILogger<DrawCommandHandler> logger)
     : IRequestHandler<DrawCommand>
 {
@@ -46,12 +46,12 @@ public class DrawCommandHandler(
 
             var param = CutParameters(request.Param, out var imagesCount);
 
-            await foreach (var url in openAiImageService.CreateImage(param, imagesCount, cancellationToken))
+            await foreach (var (url, bytes) in aiImageService.CreateImage(param, imagesCount, cancellationToken))
             {
                 await botClient.TrySendPhotoAsync(
                     chatId: request.ChatId,
                     logger: logger,
-                    photo: InputFile.FromUri(url),
+                    photo: !string.IsNullOrWhiteSpace(url) ? InputFile.FromUri(url) : InputFile.FromStream(new MemoryStream(bytes)),
                     parseMode: ParseMode.Html,
                     replyToMessageId: request.MessageId,
                     cancellationToken: cancellationToken);

@@ -15,13 +15,13 @@ public interface IOpenAiChatToolsService
 }
 
 public class OpenAiChatToolsService(
-    IOpenAiImageService openAiImageService)
+    IAiImageService aiImageService)
     : IOpenAiChatToolsService
 {
     public ChatTool[] GetRegisteredTools()
     {
         var createImageTool = ChatTool.CreateFunctionTool(
-            functionName: nameof(openAiImageService.CreateImage),
+            functionName: nameof(aiImageService.CreateImage),
             functionDescription: "Creates an image by provided prompt.",
             functionParameters: BinaryData.FromString(
                 """
@@ -39,12 +39,12 @@ public class OpenAiChatToolsService(
 
         return [createImageTool];
     }
-    
+
     public async IAsyncEnumerable<OpenAiResponse> GetToolCallOutput(
         ChatToolCall toolCall,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (toolCall.FunctionName == nameof(openAiImageService.CreateImage))
+        if (toolCall.FunctionName == nameof(aiImageService.CreateImage))
         {
             using var argumentsDocument = JsonDocument.Parse(toolCall.FunctionArguments);
 
@@ -52,14 +52,26 @@ public class OpenAiChatToolsService(
             {
                 var prompt = promptElement.GetString() ?? string.Empty;
 
-                await foreach (var imageUrl in openAiImageService.CreateImage(prompt, cancellationToken: cancellationToken))
+                await foreach (var (imageUrl, imageBytes) in aiImageService.CreateImage(prompt, cancellationToken: cancellationToken))
                 {
-                    yield return new OpenAiResponse
+                    if (imageUrl != null)
                     {
-                        ContentType = OpenAiContentType.ImageUrl,
-                        Content = imageUrl,
-                        ContentComplete = true
-                    };
+                        yield return new OpenAiResponse
+                        {
+                            ContentType = OpenAiContentType.ImageUrl,
+                            Content = imageUrl,
+                            ContentComplete = true
+                        };
+                    }
+                    else if (imageBytes != null)
+                    {
+                        yield return new OpenAiResponse
+                        {
+                            ContentType = OpenAiContentType.ImageBytes,
+                            ImageContent = imageBytes,
+                            ContentComplete = true
+                        };
+                    }
                 }
             }
         }

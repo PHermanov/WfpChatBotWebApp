@@ -130,10 +130,15 @@ public class BotReplyService(
         switch (response.ContentType)
         {
             case OpenAiContentType.ImageUrl:
+            case OpenAiContentType.ImageBytes:
                 {
                     var caption = message.GetMessageText();
 
-                    var inputMediaPhoto = new InputMediaPhoto(InputFile.FromUri(response.Content))
+                    InputFile inputFile = response.ContentType == OpenAiContentType.ImageBytes
+                        ? InputFile.FromStream(new MemoryStream(response.ImageContent!))
+                        : InputFile.FromUri(response.Content);
+
+                    var inputMediaPhoto = new InputMediaPhoto(inputFile)
                     {
                         ShowCaptionAboveMedia = true,
                         Caption = caption == NonCompleteMessagePostfix

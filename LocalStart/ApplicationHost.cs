@@ -93,7 +93,8 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
-        serviceCollection.AddSingleton<IOpenAiImageService, OpenAiImageService>();
+        //serviceCollection.AddSingleton<IAiImageService, OpenAiImageService>();
+        serviceCollection.AddScoped<IAiImageService, FluxImageService>();
         serviceCollection.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
