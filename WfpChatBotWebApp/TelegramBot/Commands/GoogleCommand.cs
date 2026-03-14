@@ -1,12 +1,11 @@
 ﻿using MediatR;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
 using WfpChatBotWebApp.TelegramBot.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 namespace WfpChatBotWebApp.TelegramBot.Commands;
@@ -18,8 +17,7 @@ public class GoogleCommand(Message message) : CommandWithParam(message), IReques
 
 public class GoogleCommandHandler(
     ITelegramBotClient botClient,
-    IConfiguration configuration,
-    IHttpClientFactory httpClientFactory,
+    IInternetSearchService internetSearchService,
     ITextMessageService textMessageService,
     ILogger<GoogleCommandHandler> logger)
     : IRequestHandler<GoogleCommand>
@@ -44,47 +42,12 @@ public class GoogleCommandHandler(
             return;
         }
 
-        var googleKeys = configuration["GoogleApiKey"];
+        var results = await internetSearchService.Search(request.Param.Trim(), 3, cancellationToken);
 
-        if (string.IsNullOrEmpty(googleKeys))
-        {
-            logger.LogError("GoogleApiKey is null");
+        if (results == null || results.Length == 0)
             return;
-        }
 
-        var split = googleKeys.Split([' '], StringSplitOptions.RemoveEmptyEntries);
-
-        if (split.Length < 2 || string.IsNullOrEmpty(split[0]) || string.IsNullOrEmpty(split[1]))
-        {
-            logger.LogError("GoogleCommand: GoogleApiKey corrupted");
-            return;
-        }
-
-        var urlParams = $"v1?key={split[0]}&cx={split[1]}&q={request.Param.Trim()}";
-
-        var httpClient = httpClientFactory.CreateClient("Google");
-        var httpResponseMessage = await httpClient.GetAsync(urlParams, cancellationToken);
-
-        if (!httpResponseMessage.IsSuccessStatusCode)
-        {
-            logger.LogInformation("GoogleCommand: Google returned not success status");
-            return;
-        }
-
-        await using var contentStream = await httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken);
-
-        var searchResults = await JsonSerializer.DeserializeAsync<GoogleResponseModel>(contentStream, cancellationToken: cancellationToken);
-        if (searchResults == null)
-        {
-            logger.LogInformation("GoogleCommand: Parsed 0 results");
-            return;
-        }
-
-        logger.LogInformation("GoogleCommand: Parsed {searchResultsCount} results", searchResults.Items.Count);
-
-        var resultItems = searchResults.Items.Take(3).ToArray();
-
-        foreach (var result in resultItems)
+        foreach (var result in results)
         {
             var msg = $"{result.Title}{Environment.NewLine}{result.Link}";
 
@@ -93,17 +56,3 @@ public class GoogleCommandHandler(
     }
 }
 
-public record SearchResultModel
-{
-    [JsonPropertyName("title")] 
-    public string Title { get; init; } = string.Empty;
-
-    [JsonPropertyName("link")] 
-    public string Link { get; init; } = string.Empty;
-}
-
-public record GoogleResponseModel
-{
-    [JsonPropertyName("items")] 
-    public List<SearchResultModel> Items { get; set; } = new();
-}

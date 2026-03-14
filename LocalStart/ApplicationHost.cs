@@ -8,6 +8,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 namespace LocalStart;
@@ -94,6 +95,7 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
         //serviceCollection.AddSingleton<IAiImageService, OpenAiImageService>();
+        serviceCollection.AddScoped<IInternetSearchService, GoogleSearchService>();
         serviceCollection.AddScoped<IAiImageService, FluxImageService>();
         serviceCollection.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();

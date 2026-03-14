@@ -11,6 +11,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,6 +79,7 @@ builder.Services.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
 builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
 builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();
 // builder.Services.AddSingleton<IAiImageService, OpenAiImageService>();
+builder.Services.AddScoped<IInternetSearchService, GoogleSearchService>();
 builder.Services.AddScoped<IAiImageService, FluxImageService>();
 builder.Services.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
