@@ -76,12 +76,12 @@ public class PlaywrightFetcher : IPageFetcher, IAsyncDisposable
                     new BrowserTypeLaunchOptions
                     {
                         Headless = true,
-                        Args = new[]
-                        {
+                        Args =
+                        [
                             "--disable-blink-features=AutomationControlled",
                             "--no-sandbox",
                             "--disable-dev-shm-usage"
-                        }
+                        ]
                     });
             }
         }
@@ -91,7 +91,7 @@ public class PlaywrightFetcher : IPageFetcher, IAsyncDisposable
         }
     }
 
-    // 🔥 Cookie banner heuristic
+    // Cookie banner heuristic
     private async Task HandleCookieBanners(IPage page)
     {
         var selectors = new[]
@@ -141,15 +141,13 @@ public class PlaywrightFetcher : IPageFetcher, IAsyncDisposable
         }
     }
 
-    private bool IsAcceptText(string text)
-    {
-        return text.Contains("accept")
+    private static bool IsAcceptText(string text) =>
+        text.Contains("accept")
             || text.Contains("agree")
             || text.Contains("allow")
             || text.Contains("ok")
             || text.Contains("got it")
             || text.Contains("consent");
-    }
 
     private static string GetUserAgent()
     {
