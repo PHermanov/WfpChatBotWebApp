@@ -8,6 +8,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.InternetFetch;
 using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -106,6 +107,8 @@ public static class ApplicationHost
 
         serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<OpenAiChatServiceOptions>(hostBuilderContext.Configuration);
+
+        serviceCollection.AddSingleton<IPageFetcher, PlaywrightFetcher>();
     }
 
     private static void OnApplicationStopping()

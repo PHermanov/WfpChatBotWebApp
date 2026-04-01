@@ -11,6 +11,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.InternetFetch;
 using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -86,6 +87,8 @@ builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddScoped<IRandomService, RandomService>();
+
+builder.Services.AddSingleton<IPageFetcher, PlaywrightFetcher>();
 
 builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
 builder.Services.Configure<OpenAiChatServiceOptions>(builder.Configuration);

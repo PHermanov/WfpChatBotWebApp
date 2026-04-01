@@ -8,6 +8,13 @@ public class ConfigureWebhook(IServiceProvider serviceProvider, IConfiguration c
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        logger.LogInformation("Installing browsers");
+        var exitCode = Microsoft.Playwright.Program.Main(["install"]);
+        if (exitCode != 0)
+        {
+            throw new Exception($"Playwright exited with code {exitCode}");
+        }
+
         logger.LogInformation("Starting webhook");
         using var scope = serviceProvider.CreateScope();
         var botClient = scope.ServiceProvider.GetRequiredService<ITelegramBotClient>();
