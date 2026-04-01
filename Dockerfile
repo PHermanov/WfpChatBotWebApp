@@ -1,31 +1,36 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview-jammy
 
-# Install Playwright dependencies (for browsers)
-RUN apt-get update && \
-    apt-get install -y wget gnupg ca-certificates && \
-    apt-get install -y --no-install-recommends \
-        libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libgbm1 libxshmfence1 \
-        libdrm2 libxcomposite1 libxdamage1 libxrandr2 libxinerama1 libpango-1.0-0 \
-        libpangocairo-1.0-0 libcups2 libx11-xcb1 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy csproj and restore as distinct layers
-COPY ["WfpChatBotWebApp/WfpChatBotWebApp.csproj", "WfpChatBotWebApp/"]
-RUN dotnet restore "WfpChatBotWebApp/WfpChatBotWebApp.csproj"
-
-# Copy everything else and build
-COPY . .
-WORKDIR "/src/WfpChatBotWebApp"
-RUN dotnet publish "WfpChatBotWebApp.csproj" -c Release -o /app/publish
-
-# Install Playwright browsers
-RUN dotnet tool install --global Microsoft.Playwright.CLI && \
-    export PATH="$PATH:/root/.dotnet/tools" && \
-    playwright install --with-deps
-
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/publish .
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    ca-certificates \
+    libgtk-4-1 \
+    libgraphene-1.0-0 \
+    libevent-2.1-7 \
+    libopus0 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    libflite1 \
+    libavif16 \
+    libharfbuzz-icu0 \
+    libsecret-1-0 \
+    libwoff2-1 \
+    libx264-163 \
+    libgles2 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .
+
+RUN dotnet publish WfpChatBotWebApp/WfpChatBotWebApp.csproj -c Release -o /app/out
+
+WORKDIR /app/out
+
+RUN dotnet tool install --global Microsoft.Playwright.CLI \
+    && playwright install --with-deps
+
 ENV PATH="$PATH:/root/.dotnet/tools"
+ENV ASPNETCORE_URLS=http://+:8080
+
 ENTRYPOINT ["dotnet", "WfpChatBotWebApp.dll"]
