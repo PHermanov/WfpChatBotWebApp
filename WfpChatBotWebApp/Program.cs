@@ -15,10 +15,6 @@ using WfpChatBotWebApp.TelegramBot.Services.InternetFetch;
 using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
-Environment.SetEnvironmentVariable(
-    "PLAYWRIGHT_BROWSERS_PATH",
-    Path.Combine(AppContext.BaseDirectory, "ms-playwright"));
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddAzureKeyVault(
@@ -119,6 +115,10 @@ app.UseCors(corsPolicyBuilder =>
         .AllowAnyMethod()
         .AllowAnyHeader();
 });
+
+Environment.SetEnvironmentVariable(
+    "PLAYWRIGHT_BROWSERS_PATH",
+    Path.Combine(AppContext.BaseDirectory, "ms-playwright"));
 
 app.MapControllers();
 
