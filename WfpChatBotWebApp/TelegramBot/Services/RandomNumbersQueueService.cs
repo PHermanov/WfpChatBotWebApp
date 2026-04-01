@@ -9,7 +9,7 @@ public interface IRandomNumbersQueueService
 
 public class RandomNumbersQueueService : IRandomNumbersQueueService
 {
-    private readonly Lock _lockObject = new();
+    private readonly object _lockObject = new();
     private Dictionary<int, Queue<int>> RandomNumbers { get; } = new();
 
     public bool CanPeek(int max) => RandomNumbers.TryGetValue(max, out var ints) && ints.Count > 0;

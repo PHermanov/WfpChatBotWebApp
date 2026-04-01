@@ -6,7 +6,7 @@ namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 public class OpenAiChatMessageQueue
 {
     private readonly ConcurrentQueue<ChatMessage> _internalQueue = new();
-    private readonly Lock _lockObject = new();
+    private readonly object _lockObject = new();
 
     public void Enqueue(ChatMessage obj)
     {
