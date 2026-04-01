@@ -45,13 +45,14 @@ jobs:
       - name: Install Playwright browsers
         run: pwsh ./myapp/playwright.ps1 install chromium
 
-      - name: Upload artifact for deployment job
+      - name: Move Playwright browsers into app folder
+        run: mv ./ms-playwright ./myapp/ms-playwright
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: net-app
-          path: |
-            ./myapp
-            ./ms-playwright
+          path: ./myapp
 
   deploy:
     runs-on: ubuntu-latest
