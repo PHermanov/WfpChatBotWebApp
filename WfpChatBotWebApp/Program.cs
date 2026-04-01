@@ -116,14 +116,6 @@ app.UseCors(corsPolicyBuilder =>
         .AllowAnyHeader();
 });
 
-Environment.SetEnvironmentVariable(
-    "PLAYWRIGHT_BROWSERS_PATH",
-    Path.Combine(AppContext.BaseDirectory, "ms-playwright"));
-
-Environment.SetEnvironmentVariable(
-    "PLAYWRIGHT_DRIVER_SEARCH_PATH",
-    Path.Combine(AppContext.BaseDirectory, "ms-playwright"));
-
 app.MapControllers();
 
 app.Run();
