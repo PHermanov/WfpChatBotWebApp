@@ -42,11 +42,14 @@ jobs:
       - name: Publish
         run: dotnet publish WfpChatBotWebApp/WfpChatBotWebApp.csproj -c Release -o ./myapp --no-restore
 
-      - name: Install Playwright browsers
-        run: pwsh ./myapp/playwright.ps1 install chromium
+      - name: Install Playwright
+        run: pwsh ./myapp/playwright.ps1 install
 
       - name: Move Playwright browsers into app folder
         run: mv ./ms-playwright ./myapp/ms-playwright
+
+      - name: Debug playwright files
+        run: ls -la ./myapp/ms-playwright
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
