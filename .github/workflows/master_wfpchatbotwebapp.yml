@@ -18,6 +18,7 @@ permissions:
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  PLAYWRIGHT_BROWSERS_PATH: "./ms-playwright"
 
 jobs:
   build:
@@ -35,17 +36,22 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore WfpChatBotWebApp/WfpChatBotWebApp.csproj
 
-      - name: Build with dotnet
+      - name: Build
         run: dotnet build WfpChatBotWebApp/WfpChatBotWebApp.csproj --configuration Release --no-restore
 
       - name: Publish
         run: dotnet publish WfpChatBotWebApp/WfpChatBotWebApp.csproj -c Release -o ./myapp --no-restore
 
+      - name: Install Playwright browsers
+        run: pwsh ./myapp/playwright.ps1 install chromium
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: net-app
-          path: ./myapp
+          path: |
+            ./myapp
+            ./ms-playwright
 
   deploy:
     runs-on: ubuntu-latest
