@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/dotnet:v1.43.0-jammy
+FROM mcr.microsoft.com/playwright/dotnet:v1.58.0-noble
 
 WORKDIR /app
 
