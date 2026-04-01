@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.Options;
@@ -15,24 +14,30 @@ public interface IOpenAiClientFactory
     AudioClient AudioClient { get; }
 }
 
-public class OpenAiClientFactory(
-    IOptions<OpenAiClientFactoryOptions> options)
-    : IOpenAiClientFactory
+public class OpenAiClientFactory : IOpenAiClientFactory
 {
-    [field: MaybeNull]
-    private AzureOpenAIClient AzureOpenAiClient => field ??= new AzureOpenAIClient(
-        new Uri(options.Value.OpenAiUrl),
-        new AzureKeyCredential(options.Value.OpenAiKey));
-    
-    [field: MaybeNull]
-    public ChatClient ChatClient => field ??= AzureOpenAiClient
-        .GetChatClient(options.Value.OpenAiChatModelName);
+    private readonly IOptions<OpenAiClientFactoryOptions> _options;
+    private AzureOpenAIClient? _azureOpenAiClient;
+    private ChatClient? _chatClient;
+    private ImageClient? _imageClient;
+    private AudioClient? _audioClient;
 
-    [field: MaybeNull]
-    public ImageClient ImageClient => field ??= AzureOpenAiClient
-        .GetImageClient(options.Value.OpenAiImageModelName);
-    
-    [field: MaybeNull]
-    public AudioClient AudioClient => field ??= AzureOpenAiClient
-        .GetAudioClient(options.Value.OpenAiAudioModelName);
+    public OpenAiClientFactory(IOptions<OpenAiClientFactoryOptions> options)
+    {
+        _options = options;
+    }
+
+    private AzureOpenAIClient AzureOpenAiClient =>
+        _azureOpenAiClient ??= new AzureOpenAIClient(
+            new Uri(_options.Value.OpenAiUrl),
+            new AzureKeyCredential(_options.Value.OpenAiKey));
+
+    public ChatClient ChatClient =>
+        _chatClient ??= AzureOpenAiClient.GetChatClient(_options.Value.OpenAiChatModelName);
+
+    public ImageClient ImageClient =>
+        _imageClient ??= AzureOpenAiClient.GetImageClient(_options.Value.OpenAiImageModelName);
+
+    public AudioClient AudioClient =>
+        _audioClient ??= AzureOpenAiClient.GetAudioClient(_options.Value.OpenAiAudioModelName);
 }

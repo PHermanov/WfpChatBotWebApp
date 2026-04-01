@@ -7,235 +7,241 @@ namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
 public static class TelegramBotClientExtensions
 {
-    extension(ITelegramBotClient client)
+    public static async Task<Message?> TrySendTextMessageAsync(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        string text,
+        ILogger logger,
+        ParseMode parseMode,
+        bool disableNotification = false,
+        int replyToMessageId = 0,
+        string? messageEffectId = null,
+        CancellationToken cancellationToken = default)
     {
-        public async Task<Message?> TrySendTextMessageAsync(
-            ChatId chatId,
-            string text,
-            ILogger logger,
-            ParseMode parseMode,
-            bool disableNotification = false,
-            int replyToMessageId = 0,
-            string? messageEffectId = null,
-            CancellationToken cancellationToken = default)
+        try
         {
-            try
-            {
-                return await client.SendMessage(
-                    chatId: chatId,
-                    text: text,
-                    parseMode: parseMode,
-                    disableNotification: disableNotification,
-                    replyParameters: replyToMessageId,
-                    messageEffectId: messageEffectId,
-                    cancellationToken: cancellationToken);
-            }
-            catch (ApiRequestException exeption) when (exeption.Message.Contains("was kicked from the group chat"))
-            {
-                logger.LogWarning("Bot was kicked from the group chat with id {ChatId}", chatId);
-                return null;
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TrySendTextMessageAsync");
-                return null;
-            }
+            return await client.SendMessage(
+                chatId: chatId,
+                text: text,
+                parseMode: parseMode,
+                disableNotification: disableNotification,
+                replyParameters: replyToMessageId,
+                messageEffectId: messageEffectId,
+                cancellationToken: cancellationToken);
         }
-
-        public async Task TrySendStickerAsync(
-            ChatId chatId,
-            InputFile sticker,
-            ILogger logger,
-            int replyToMessageId = 0,
-            CancellationToken cancellationToken = default)
+        catch (ApiRequestException exeption) when (exeption.Message.Contains("was kicked from the group chat"))
         {
-            try
-            {
-                await client.SendSticker(
-                    chatId: chatId,
-                    sticker: sticker,
-                    replyParameters: replyToMessageId,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TrySendStickerAsync");
-            }
+            logger.LogWarning("Bot was kicked from the group chat with id {ChatId}", chatId);
+            return null;
         }
-
-        public async Task<Message?> TrySendPhotoAsync(
-            ILogger logger,
-            ChatId chatId,
-            InputFile photo,
-            ParseMode parseMode,
-            string? caption = null,
-            bool disableNotification = false,
-            int replyToMessageId = 0,
-            CancellationToken cancellationToken = default)
+        catch (Exception exception)
         {
-            try
-            {
-                return await client.SendPhoto(
-                    chatId: chatId,
-                    photo: photo,
-                    caption: caption,
-                    parseMode: parseMode,
-                    disableNotification: disableNotification,
-                    replyParameters: replyToMessageId,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TrySendPhotoAsync");
-
-                return null;
-            }
+            logger.LogError(exception, "Exception in TrySendTextMessageAsync");
+            return null;
         }
+    }
 
-        public async Task<Message?> TryEditMessageTextAsync(
-            Message message,
-            string text,
-            ILogger logger,
-            ParseMode parseMode,
-            CancellationToken cancellationToken = default)
+    public static async Task TrySendStickerAsync(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        InputFile sticker,
+        ILogger logger,
+        int replyToMessageId = 0,
+        CancellationToken cancellationToken = default)
+    {
+        try
         {
-            try
-            {
-                if (message.Text == text)
-                    return message;
-
-                return await client.EditMessageText(
-                    chatId: message.Chat.Id,
-                    messageId: message.Id,
-                    text: text,
-                    parseMode: parseMode,
-                    entities: null,
-                    replyMarkup: null,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TryEditMessageTextAsync");
-
-                return null;
-            }
+            await client.SendSticker(
+                chatId: chatId,
+                sticker: sticker,
+                replyParameters: replyToMessageId,
+                cancellationToken: cancellationToken);
         }
-
-        public async Task<Message?> TryEditMessageCaptionAsync(
-            Message message,
-            string? caption,
-            ILogger logger,
-            ParseMode parseMode,
-            bool showCaptionAboveMedia = false,
-            CancellationToken cancellationToken = default)
+        catch (Exception exception)
         {
-            try
-            {
-                return await client.EditMessageCaption(
-                    chatId: message.Chat.Id,
-                    messageId: message.Id,
-                    caption: caption,
-                    replyMarkup: null,
-                    parseMode: parseMode,
-                    captionEntities: null,
-                    showCaptionAboveMedia: showCaptionAboveMedia,
-                    businessConnectionId: null,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TryEditMessageCaptionAsync");
-
-                return null;
-            }
+            logger.LogError(exception, "Exception in TrySendStickerAsync");
         }
+    }
 
-        public async Task<Message?> TryEditMessageMediaAsync(
-            Message message,
-            InputMedia media,
-            ILogger logger,
-            CancellationToken cancellationToken = default)
+    public static async Task<Message?> TrySendPhotoAsync(
+        this ITelegramBotClient client,
+        ILogger logger,
+        ChatId chatId,
+        InputFile photo,
+        ParseMode parseMode,
+        string? caption = null,
+        bool disableNotification = false,
+        int replyToMessageId = 0,
+        CancellationToken cancellationToken = default)
+    {
+        try
         {
-            try
-            {
-                return await client.EditMessageMedia(
-                    chatId: message.Chat.Id,
-                    messageId: message.Id,
-                    media: media,
-                    replyMarkup: null,
-                    businessConnectionId: null,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TryEditMessageMediaAsync");
-
-                return null;
-            }
+            return await client.SendPhoto(
+                chatId: chatId,
+                photo: photo,
+                caption: caption,
+                parseMode: parseMode,
+                disableNotification: disableNotification,
+                replyParameters: replyToMessageId,
+                cancellationToken: cancellationToken);
         }
-
-        public async Task TrySendVideoAsync(
-            ChatId chatId,
-            InputFile video,
-            ILogger logger,
-            int? replyToMessageId = null,
-            CancellationToken cancellationToken = default)
+        catch (Exception exception)
         {
-            try
-            {
-                await client.SendVideo(
-                    chatId: chatId,
-                    video: video,
-                    replyParameters: replyToMessageId,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Exception in TrySendVideoAsync");
-            }
-        }
-
-        public async ValueTask<BinaryData?> GetPhotoFromMessage(
-            Message message,
-            CancellationToken cancellationToken)
-        {
-            var fileId = message.Photo?[^1].FileId;
-
-            if (fileId != null)
-            {
-                var imageFile = await client.GetFile(fileId, cancellationToken);
-
-                if (!string.IsNullOrEmpty(imageFile.FilePath))
-                {
-                    using var imageStream = new MemoryStream();
-                    await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
-                    return new BinaryData(imageStream.ToArray());
-                }
-            }
+            logger.LogError(exception, "Exception in TrySendPhotoAsync");
 
             return null;
         }
+    }
 
-        public async ValueTask<BinaryData?> GetStickerFromMessage(
-            Message message,
-            CancellationToken cancellationToken)
+    public static async Task<Message?> TryEditMessageTextAsync(
+        this ITelegramBotClient client,
+        Message message,
+        string text,
+        ILogger logger,
+        ParseMode parseMode,
+        CancellationToken cancellationToken = default)
+    {
+        try
         {
-            if (message.Sticker?.IsAnimated == true)
-                return null;
+            if (message.Text == text)
+                return message;
 
-            var fileId = message.Sticker?.FileId;
+            return await client.EditMessageText(
+                chatId: message.Chat.Id,
+                messageId: message.Id,
+                text: text,
+                parseMode: parseMode,
+                entities: null,
+                replyMarkup: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in TryEditMessageTextAsync");
 
-            if (fileId != null)
-            {
-                var stickerFile = await client.GetFile(fileId, cancellationToken);
-                if (!string.IsNullOrEmpty(stickerFile.FilePath))
-                {
-                    using var stickerStream = new MemoryStream();
-                    await client.DownloadFile(stickerFile.FilePath, stickerStream, cancellationToken);
-                    return new BinaryData(stickerStream.ToArray());
-                }
-            }
             return null;
         }
+    }
+
+    public static async Task<Message?> TryEditMessageCaptionAsync(
+         this ITelegramBotClient client,
+        Message message,
+        string? caption,
+        ILogger logger,
+        ParseMode parseMode,
+        bool showCaptionAboveMedia = false,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await client.EditMessageCaption(
+                chatId: message.Chat.Id,
+                messageId: message.Id,
+                caption: caption,
+                replyMarkup: null,
+                parseMode: parseMode,
+                captionEntities: null,
+                showCaptionAboveMedia: showCaptionAboveMedia,
+                businessConnectionId: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in TryEditMessageCaptionAsync");
+
+            return null;
+        }
+    }
+
+    public static async Task<Message?> TryEditMessageMediaAsync(
+        this ITelegramBotClient client,
+        Message message,
+        InputMedia media,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await client.EditMessageMedia(
+                chatId: message.Chat.Id,
+                messageId: message.Id,
+                media: media,
+                replyMarkup: null,
+                businessConnectionId: null,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in TryEditMessageMediaAsync");
+
+            return null;
+        }
+    }
+
+    public static async Task TrySendVideoAsync(
+        this ITelegramBotClient client,
+        ChatId chatId,
+        InputFile video,
+        ILogger logger,
+        int? replyToMessageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await client.SendVideo(
+                chatId: chatId,
+                video: video,
+                replyParameters: replyToMessageId,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Exception in TrySendVideoAsync");
+        }
+    }
+
+    public static async ValueTask<BinaryData?> GetPhotoFromMessage(
+        this ITelegramBotClient client,
+        Message message,
+        CancellationToken cancellationToken)
+    {
+        var fileId = message.Photo?[^1].FileId;
+
+        if (fileId != null)
+        {
+            var imageFile = await client.GetFile(fileId, cancellationToken);
+
+            if (!string.IsNullOrEmpty(imageFile.FilePath))
+            {
+                using var imageStream = new MemoryStream();
+                await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
+                return new BinaryData(imageStream.ToArray());
+            }
+        }
+
+        return null;
+    }
+
+    public static async ValueTask<BinaryData?> GetStickerFromMessage(
+        this ITelegramBotClient client,
+        Message message,
+        CancellationToken cancellationToken)
+    {
+        if (message.Sticker?.IsAnimated == true)
+            return null;
+
+        var fileId = message.Sticker?.FileId;
+
+        if (fileId != null)
+        {
+            var stickerFile = await client.GetFile(fileId, cancellationToken);
+            if (!string.IsNullOrEmpty(stickerFile.FilePath))
+            {
+                using var stickerStream = new MemoryStream();
+                await client.DownloadFile(stickerFile.FilePath, stickerStream, cancellationToken);
+                return new BinaryData(stickerStream.ToArray());
+            }
+        }
+        return null;
     }
 }

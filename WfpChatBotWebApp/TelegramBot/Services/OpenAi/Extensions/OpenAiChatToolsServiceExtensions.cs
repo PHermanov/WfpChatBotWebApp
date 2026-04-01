@@ -4,18 +4,15 @@ namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 
 public static class OpenAiChatToolsServiceExtensions
 {
-    extension(IOpenAiChatToolsService openAiChatToolsService)
+    public static ChatCompletionOptions RegisterTools(this IOpenAiChatToolsService openAiChatToolsService, ChatCompletionOptions chatCompletionOptions)
     {
-        public ChatCompletionOptions RegisterTools(ChatCompletionOptions chatCompletionOptions)
+        chatCompletionOptions.ToolChoice = ChatToolChoice.CreateAutoChoice();
+
+        foreach (var tool in openAiChatToolsService.GetRegisteredTools())
         {
-            chatCompletionOptions.ToolChoice = ChatToolChoice.CreateAutoChoice();
-
-            foreach (var tool in openAiChatToolsService.GetRegisteredTools())
-            {
-                chatCompletionOptions.Tools.Add(tool);
-            }
-
-            return chatCompletionOptions;
+            chatCompletionOptions.Tools.Add(tool);
         }
+
+        return chatCompletionOptions;
     }
 }
