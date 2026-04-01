@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview-jammy
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 WORKDIR /app
 
