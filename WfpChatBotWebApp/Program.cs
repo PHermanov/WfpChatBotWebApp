@@ -1,7 +1,7 @@
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
-using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Azure.Identity;
 using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
 using System.Reflection;
