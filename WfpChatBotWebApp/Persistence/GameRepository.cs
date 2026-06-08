@@ -34,6 +34,17 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
                 UserName = userName
             };
 
+            var chat = await context.Chats.FirstOrDefaultAsync(c => c.ChatId == chatId, cancellationToken);
+            if (chat == null) 
+            { 
+                var newChat = new Chat
+                {
+                    ChatId = chatId,
+                    GameEnabled = false
+                };
+                await context.Chats.AddAsync(newChat, cancellationToken);
+            }
+
             await context.Users.AddAsync(newUser, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
 
@@ -50,13 +61,6 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             await context.SaveChangesAsync(cancellationToken);
         }
     }
-    
-    public async Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken)
-        => await context.Users
-            .Where(p => p.ChatId < 0) // chats ids are negative
-            .Select(p => p.ChatId)
-            .Distinct()
-            .ToArrayAsync(cancellationToken);
     
     public async Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken)
         => await context.Users.Where(p => p.ChatId == chatId && p.Inactive == false).ToArrayAsync(cancellationToken);
@@ -132,6 +136,15 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
     public async Task<Sticker?> GetImageByNameAsync(string name, CancellationToken cancellationToken)
         => await context.Stickers
             .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
+
+    #endregion
+
+    #region Chats
+    public async Task<long[]> GetGameEnabledChatIdsAsync(CancellationToken cancellationToken)
+        => await context.Chats
+            .Where(c => c.GameEnabled)
+            .Select(c => c.ChatId)
+            .ToArrayAsync(cancellationToken);
 
     #endregion
 }

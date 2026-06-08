@@ -21,7 +21,7 @@ public class KolodaJobHandler(
     {
         try
         {
-            var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
+            var allChatIds = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
             logger.LogInformation("KolodaJobHandler for chats: {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
             if (allChatIds.Length == 0)

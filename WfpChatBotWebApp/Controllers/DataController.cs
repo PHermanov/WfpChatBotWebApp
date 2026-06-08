@@ -8,7 +8,7 @@ namespace WfpChatBotWebApp.Controllers;
 public class DataController(IConfiguration configuration, IGameRepository repository, ILogger<DataController> logger) : ControllerBase
 {
     [HttpGet("chats")]
-    public async Task<IActionResult> GetAllChats(
+    public async Task<IActionResult> GetGameEnabledChats(
     [FromQuery] string secret,
     CancellationToken cancellationToken)
     {
@@ -17,7 +17,7 @@ public class DataController(IConfiguration configuration, IGameRepository reposi
 
         try
         {
-            var chats = await repository.GetAllChatsIdsAsync(cancellationToken);
+            var chats = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
 
             if (chats.Length > 0)
                 return Ok(chats);
@@ -26,7 +26,7 @@ public class DataController(IConfiguration configuration, IGameRepository reposi
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Exception in GetAllChats");
+            logger.LogError(e, "Exception in GetGameEnabledChats");
             return Problem();
         }
     }

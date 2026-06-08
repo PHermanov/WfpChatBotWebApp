@@ -23,7 +23,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 {
     public async Task Handle(DailyWinnerJobRequest request, CancellationToken cancellationToken)
     {
-        var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
+        var allChatIds = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
 
         logger.LogInformation("DailyWinnerJobHandler: Got chats: {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
         

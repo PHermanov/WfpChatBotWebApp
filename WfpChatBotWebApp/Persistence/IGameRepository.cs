@@ -16,7 +16,7 @@ public interface IGameRepository
     Task SaveResultAsync(Result result, CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken);
     Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken);
-    Task<long[]> GetAllChatsIdsAsync(CancellationToken cancellationToken);
+    Task<long[]> GetGameEnabledChatIdsAsync(CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken);
     Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken);

@@ -23,7 +23,7 @@ public class WednesdayJobHandler(
     {
         try
         {
-            var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
+            var allChatIds = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
             logger.LogInformation("WednesdayJobHandler: for {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
             if (allChatIds.Length == 0)

@@ -25,7 +25,7 @@ public class YearlyWinnerJobHandler(
 {
     public async Task Handle(YearlyWinnerJobRequest request, CancellationToken cancellationToken)
     {
-        var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
+        var allChatIds = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
         logger.LogInformation("YearlyWinnerJobHandler for {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
         if (allChatIds.Length == 0)

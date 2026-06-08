@@ -23,7 +23,7 @@ public class MonthlyWinnerJobHandler(
 {
     public async Task Handle(MonthlyWinnerJobRequest request, CancellationToken cancellationToken)
     {
-        var allChatIds = await repository.GetAllChatsIdsAsync(cancellationToken);
+        var allChatIds = await repository.GetGameEnabledChatIdsAsync(cancellationToken);
         logger.LogInformation("MonthlyWinnerJobHandler for {Chats} at {Now}", string.Join(',', allChatIds), DateTime.UtcNow);
 
         if (allChatIds.Length == 0)

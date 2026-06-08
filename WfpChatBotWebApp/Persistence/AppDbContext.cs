@@ -17,6 +17,7 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Sticker> Stickers { get; set; }
     public virtual DbSet<ReplyMessage> ReplyMessages { get; set; }
+    public virtual DbSet<Chat> Chats { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +76,21 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Inactive)
                 .IsRequired()
                 .HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<Chat>(entity =>
+        {
+            entity.HasKey(e => e.Id)
+                .HasName("PK__Chats__3214EC07");
+
+            entity.Property(e => e.ChatId)
+                .IsRequired();
+
+            entity.Property(e => e.GameEnabled)
+                .IsRequired();
+
+            entity.Property(e => e.Comment)
+                .HasColumnType("nvarchar(max)");
         });
 
         OnModelCreatingPartial(modelBuilder);
