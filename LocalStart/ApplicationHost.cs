@@ -102,7 +102,7 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
-        serviceCollection.AddScoped<IRandomService, RandomService>();
+        serviceCollection.AddSingleton<IRandomService, RandomService>();
 
         serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<OpenAiChatServiceOptions>(hostBuilderContext.Configuration);

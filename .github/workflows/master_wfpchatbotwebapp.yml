@@ -6,6 +6,9 @@ on:
       - master
     paths:
       - WfpChatBotWebApp/**
+      - WfpChatBotWebApp.Tests/**
+      - WfpChatBotWebApp.slnx
+      - .github/workflows/master_wfpchatbotwebapp.yml
   workflow_dispatch:
 
 concurrency:
@@ -33,10 +36,13 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore WfpChatBotWebApp/WfpChatBotWebApp.csproj
+        run: dotnet restore WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj
 
       - name: Build with dotnet
         run: dotnet build WfpChatBotWebApp/WfpChatBotWebApp.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj --configuration Release --no-restore
 
       - name: Publish
         run: dotnet publish WfpChatBotWebApp/WfpChatBotWebApp.csproj -c Release -o ./myapp --no-restore

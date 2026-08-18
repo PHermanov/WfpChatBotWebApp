@@ -38,6 +38,12 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
         try
         {
             var users = await repository.GetActiveUsersForChatAsync(chatId, cancellationToken);
+
+            if (users.Length == 0)
+            {
+                logger.LogWarning("DailyWinnerJobHandler: Chat {ChatId} has no active users", chatId);
+                return;
+            }
             
             await ProcessMissedGames(chatId, users, cancellationToken);
             
@@ -132,7 +138,7 @@ public class DailyWinnerJobHandler(ITelegramBotClient botClient,
 
     private async Task<User> SelectWinnerForDate(long chatId, DateTime date, User[] users, CancellationToken cancellationToken)
     {
-        var random = await randomService.GetRandomNumber(users.Length);
+        var random = await randomService.GetRandomNumber(users.Length, cancellationToken);
         var newWinner = users[random];
 
         var dayResult = new Result

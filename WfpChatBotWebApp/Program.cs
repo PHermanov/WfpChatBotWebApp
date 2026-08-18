@@ -85,7 +85,7 @@ builder.Services.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
-builder.Services.AddScoped<IRandomService, RandomService>();
+builder.Services.AddSingleton<IRandomService, RandomService>();
 
 builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
 builder.Services.Configure<OpenAiChatServiceOptions>(builder.Configuration);

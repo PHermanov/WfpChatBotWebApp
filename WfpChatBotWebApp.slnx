@@ -5,5 +5,6 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="LocalStart/LocalStart.csproj" />
+  <Project Path="WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj" />
   <Project Path="WfpChatBotWebApp/WfpChatBotWebApp.csproj" />
 </Solution>

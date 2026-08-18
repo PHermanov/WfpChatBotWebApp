@@ -1,7 +1,7 @@
 # WfpChatBotWebApp coding instructions
 
 ## Architecture and data flow
-- This is a .NET 10 solution: `WfpChatBotWebApp/` is the ASP.NET Core production app; `LocalStart/` references it and runs the same bot logic through Telegram long polling.
+- This is a .NET 10 solution: `WfpChatBotWebApp/` is the ASP.NET Core production app; `LocalStart/` references it and runs the same bot logic through Telegram long polling; `WfpChatBotWebApp.Tests/` is the xUnit test project.
 - Production startup is centralized in `WfpChatBotWebApp/Program.cs`: Azure Key Vault configuration, Azure Monitor, SQL Server EF Core, Telegram/HTTP clients, MediatR, and an in-memory SlimMessageBus are registered there.
 - Telegram posts to `POST /telegrambot`. `TelegramBotController` validates `X-Telegram-Bot-Api-Secret-Token`, publishes the `Update` without awaiting it, and returns immediately; ten scoped consumers call `ITelegramBotService.HandleUpdateAsync`.
 - `TelegramBotService` is the routing hub: register/update the chat user, then route mentions/photos to AI replies, voice to transcription, slash commands to MediatR, and ordinary text to auto-reply services.
@@ -24,16 +24,17 @@
 - External systems include Telegram Bot API, Azure OpenAI/Foundry, Google Custom Search, random.org, Azure SQL/SQLite, Azure Key Vault, Azure Monitor, and Azure Blob-hosted stickers.
 
 ## Build, run, and deployment
-- Restore/build production exactly as CI does: `dotnet restore WfpChatBotWebApp/WfpChatBotWebApp.csproj` then `dotnet build WfpChatBotWebApp/WfpChatBotWebApp.csproj -c Release --no-restore`.
+- CI restores the test project and referenced web project, builds the web project, runs `WfpChatBotWebApp.Tests`, and only then publishes the deployment artifact.
 - Run local polling with `dotnet run --project LocalStart/LocalStart.csproj`; run the webhook app with `dotnet run --project WfpChatBotWebApp/WfpChatBotWebApp.csproj` when Azure credentials/configuration are available.
-- There is currently no test project; validate changes with a solution/project build and focused manual bot flows.
-- `.github/workflows/master_wfpchatbotwebapp.yml` builds/publishes only the web project on `master` changes under `WfpChatBotWebApp/**`, then deploys the artifact to Azure Web App via OIDC.
+- Run automated tests with `dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj`; add focused xUnit coverage for changed behavior, then validate the affected project or full solution build.
+- `.github/workflows/master_wfpchatbotwebapp.yml` runs for relevant web, test, solution, and workflow changes on `master`; failed tests block publishing and Azure Web App deployment.
 
 ## Copilot Instructions
 
 ### General Guidelines
 - Keep instructions concise (20–50 lines), actionable, codebase-specific, and example-driven.
 - Merge existing valuable guidance rather than replacing it blindly.
+- Keep `.github/copilot-instructions.md` synchronized with the repository structure.
 
 ### Code Style
 - Follow established patterns and conventions in the codebase.

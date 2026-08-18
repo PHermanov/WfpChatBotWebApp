@@ -2,40 +2,58 @@
 
 public interface IRandomNumbersQueueService
 {
-    bool CanPeek(int max);
-    int GetNextRandomNumber(int max);
+    bool TryDequeue(int max, out int value);
     void EnqueueRange(int max, int[] values);
 }
 
 public class RandomNumbersQueueService : IRandomNumbersQueueService
 {
     private readonly Lock _lockObject = new();
-    private Dictionary<int, Queue<int>> RandomNumbers { get; } = new();
+    private readonly Dictionary<int, Queue<int>> _randomNumbers = new();
 
-    public bool CanPeek(int max) => RandomNumbers.TryGetValue(max, out var ints) && ints.Count > 0;
-
-    public int GetNextRandomNumber(int max)
+    public bool TryDequeue(int max, out int value)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(max);
+
         lock (_lockObject)
         {
-            if (RandomNumbers.TryGetValue(max, out var ints))
-                return ints.Dequeue();
+            if (_randomNumbers.TryGetValue(max, out var numbers) && numbers.TryDequeue(out value))
+            {
+                if (numbers.Count == 0)
+                    _randomNumbers.Remove(max);
+
+                return true;
+            }
         }
-        return -1;
+
+        value = default;
+        return false;
     }
 
     public void EnqueueRange(int max, int[] values)
     {
-       if (RandomNumbers.TryGetValue(max, out var ints))
-           lock (_lockObject)
-           {
-               for (var i = 0; i < values.Length; i++)
-                   ints.Enqueue(values[i]);
-           }
-       else
-           lock (_lockObject)
-           {
-               RandomNumbers.Add(max, new Queue<int>(values));
-           }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(max);
+        ArgumentNullException.ThrowIfNull(values);
+
+        foreach (var value in values)
+        {
+            if (value < 0 || value >= max)
+                throw new ArgumentOutOfRangeException(nameof(values), value, $"Values must be between 0 and {max - 1}.");
+        }
+
+        if (values.Length == 0)
+            return;
+
+        lock (_lockObject)
+        {
+            if (!_randomNumbers.TryGetValue(max, out var numbers))
+            {
+                numbers = new Queue<int>();
+                _randomNumbers.Add(max, numbers);
+            }
+
+            foreach (var value in values)
+                numbers.Enqueue(value);
+        }
     }
 }

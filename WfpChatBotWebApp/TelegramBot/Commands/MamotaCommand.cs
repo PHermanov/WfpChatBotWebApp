@@ -33,7 +33,7 @@ public class MamotaCommandHandler(
             if (users.Length == 0)
                 return;
 
-            var random = await randomService.GetRandomNumber(users.Length);
+            var random = await randomService.GetRandomNumber(users.Length, cancellationToken);
             var randomUser = users[random];
 
             var textTemplate = await messageService.GetMessageByNameAsync(Messages.MamotaSays, cancellationToken);
