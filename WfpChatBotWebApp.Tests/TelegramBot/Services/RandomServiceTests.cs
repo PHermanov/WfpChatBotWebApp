@@ -19,7 +19,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient, queue);
 
-        var result = await service.GetRandomNumber(3);
+        var result = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, result);
         Assert.Equal(0, handler.CallCount);
@@ -39,8 +39,8 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var first = await service.GetRandomNumber(3);
-        var second = await service.GetRandomNumber(3);
+        var first = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
+        var second = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, first);
         Assert.Equal(1, second);
@@ -66,7 +66,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(4);
+        var result = await service.GetRandomNumber(4, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 3);
         Assert.Equal(1, handler.CallCount);
@@ -80,7 +80,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(5);
+        var result = await service.GetRandomNumber(5, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 4);
         Assert.Equal(1, handler.CallCount);
@@ -94,7 +94,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(6);
+        var result = await service.GetRandomNumber(6, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 5);
         Assert.Equal(1, handler.CallCount);
@@ -110,7 +110,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(7);
+        var result = await service.GetRandomNumber(7, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 6);
         Assert.Equal(1, handler.CallCount);
@@ -126,7 +126,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(3);
+        var result = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 2);
         Assert.Equal(1, handler.CallCount);
@@ -140,7 +140,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        var result = await service.GetRandomNumber(3);
+        var result = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 2);
         Assert.Equal(1, handler.CallCount);
@@ -155,7 +155,7 @@ public class RandomServiceTests
         var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
         var service = CreateService(httpClient, configuration: configuration);
 
-        var result = await service.GetRandomNumber(3);
+        var result = await service.GetRandomNumber(3, TestContext.Current.CancellationToken);
 
         Assert.InRange(result, 0, 2);
         Assert.Equal(0, handler.CallCount);
@@ -169,7 +169,7 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GetRandomNumber(0));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GetRandomNumber(0, TestContext.Current.CancellationToken));
         Assert.Equal(0, handler.CallCount);
     }
 
@@ -185,10 +185,11 @@ public class RandomServiceTests
         });
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
-        using var cancellation = new CancellationTokenSource(TestTimeout);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TestTimeout);
 
         var resultTask = service.GetRandomNumber(3, cancellation.Token);
-        await requestStarted.Task.WaitAsync(TestTimeout);
+        await requestStarted.Task.WaitAsync(TestTimeout, TestContext.Current.CancellationToken);
         await cancellation.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resultTask);
@@ -209,14 +210,15 @@ public class RandomServiceTests
         using var httpClient = new HttpClient(handler);
         var service = CreateService(httpClient);
 
-        using var cancellation = new CancellationTokenSource(TestTimeout);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TestTimeout);
         var resultTasks = Enumerable.Range(0, 10)
             .Select(_ => service.GetRandomNumber(10, cancellation.Token))
             .ToArray();
 
-        await requestStarted.Task.WaitAsync(TestTimeout);
+        await requestStarted.Task.WaitAsync(TestTimeout, TestContext.Current.CancellationToken);
         releaseResponse.SetResult();
-        var results = await Task.WhenAll(resultTasks).WaitAsync(TestTimeout);
+        var results = await Task.WhenAll(resultTasks).WaitAsync(TestTimeout, TestContext.Current.CancellationToken);
 
         Assert.Equal(Enumerable.Range(0, 10), results.Order());
         Assert.Equal(1, handler.CallCount);
