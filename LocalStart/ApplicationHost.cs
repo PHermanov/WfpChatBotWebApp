@@ -75,6 +75,8 @@ public static class ApplicationHost
                 httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["RandomOrgUri"] ?? string.Empty);
             });
         
+        serviceCollection.AddHttpClient("Flux");
+
         serviceCollection.AddMemoryCache();
         serviceCollection.AddMediatR(conf =>
         {

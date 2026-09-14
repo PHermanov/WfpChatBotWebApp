@@ -20,7 +20,7 @@
 ## Configuration and integrations
 - Production loads secrets through `AzureKeyVaultUri` and `DefaultAzureCredential`; expected keys are referenced in `Program.cs` and the OpenAI options classes.
 - `LocalStart` loads `appSettingsLocal.json`, uses SQLite `local.db`, console logging, and long polling instead of webhooks/SQL Server. Never copy credential values from local settings into code, docs, tests, or logs.
-- Named HTTP clients are `Google`, `Pictures`, and `Random`; Telegram uses the typed `ITelegramBotClient`. Keep these names when resolving clients.
+- Named HTTP clients are `Google`, `Pictures`, `Random`, and `Flux`; Telegram uses the typed `ITelegramBotClient`. Keep these names when resolving clients and register named clients in both hosts.
 - External systems include Telegram Bot API, Azure OpenAI/Foundry, Google Custom Search, random.org, Azure SQL/SQLite, Azure Key Vault, Azure Monitor, and Azure Blob-hosted stickers.
 
 ## Build, run, and deployment
@@ -39,3 +39,6 @@
 ### Code Style
 - Follow established patterns and conventions in the codebase.
 - Use imperative mood for instructions (e.g., "Use X" instead of "You should use X").
+
+### OpenAI Integration
+- For Astra Chat Completions compatibility, use the OPENAI001 pragma around the experimental `reasoning_effort` API usage as approved.

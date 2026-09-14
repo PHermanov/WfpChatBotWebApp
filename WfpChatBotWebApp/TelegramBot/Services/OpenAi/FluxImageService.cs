@@ -4,7 +4,9 @@ using System.Runtime.CompilerServices;
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
-public class FluxImageService(IConfiguration configuration) : IAiImageService
+public class FluxImageService(
+    IConfiguration configuration,
+    IHttpClientFactory httpClientFactory) : IAiImageService
 {
     public async IAsyncEnumerable<(string?, byte[]?)> CreateImage(string prompt, int numOfImages = 1, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -14,9 +16,11 @@ public class FluxImageService(IConfiguration configuration) : IAiImageService
             Width = 1024
         };
 
+        using var httpClient = httpClientFactory.CreateClient("Flux");
         using var generator = new Flux2Generator(
             endpoint: configuration["FoundryUrl"]!,
             apiKey: configuration["openAiKey"]!,
+            httpClient: httpClient,
             modelId: configuration["FluxModelName"]);
 
         for (var i = 0; i < numOfImages; i++)

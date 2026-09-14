@@ -52,6 +52,8 @@ builder.Services.AddHttpClient("Random",
         httpClient.BaseAddress = new Uri(builder.Configuration["RandomOrgUri"] ?? string.Empty);
     });
 
+builder.Services.AddHttpClient("Flux");
+
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
 

@@ -48,7 +48,13 @@ public class OpenAiChatService(
 
         var me = await GetMe(cancellationToken);
 
-        var completionOptions = openAiChatToolsService.RegisterTools(new ChatCompletionOptions());
+#pragma warning disable OPENAI001 // Required to set reasoning_effort to none for Astra function-tool compatibility.
+        var completionOptions = openAiChatToolsService.RegisterTools(
+            new ChatCompletionOptions
+            {
+                ReasoningEffortLevel = ChatReasoningEffortLevel.None
+            });
+#pragma warning restore OPENAI001
 
         var stream = openAiClientFactory.ChatClient.CompleteChatStreamingAsync(
             messages: messagesQueue.ToArray(),
