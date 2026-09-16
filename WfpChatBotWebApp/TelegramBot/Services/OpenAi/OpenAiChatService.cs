@@ -52,7 +52,7 @@ public class OpenAiChatService(
         var completionOptions = openAiChatToolsService.RegisterTools(
             new ChatCompletionOptions
             {
-                ReasoningEffortLevel = ChatReasoningEffortLevel.None
+                ReasoningEffortLevel = ChatReasoningEffortLevel.High
             });
 #pragma warning restore OPENAI001
 
