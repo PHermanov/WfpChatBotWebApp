@@ -41,4 +41,6 @@
 - Use imperative mood for instructions (e.g., "Use X" instead of "You should use X").
 
 ### OpenAI Integration
-- For Astra Chat Completions compatibility, use the OPENAI001 pragma around the experimental `reasoning_effort` API usage as approved.
+- Use `ResponsesClient` against Azure `/openai/v1/responses` for Astra chat with high reasoning and function tools; retain the Azure image/audio clients.
+- Keep Responses history local (`StoredOutputEnabled = false`), request encrypted reasoning, and replay all output items with tool results linked by `CallId`. Preserve direct image-tool delivery without an extra model turn.
+- Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1; do not restore the Chat Completions reasoning workaround.

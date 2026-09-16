@@ -2,13 +2,14 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.Options;
-using OpenAI.Chat;
+using OpenAI.Responses;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
-using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Builders;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
+
+#pragma warning disable OPENAI001 // Responses APIs are experimental in OpenAI 2.9.1.
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -23,6 +24,7 @@ public interface IOpenAiChatService
 
 public class OpenAiChatService(
     IOptions<OpenAiChatServiceOptions> options,
+    IOptions<OpenAiClientFactoryOptions> clientOptions,
     IOpenAiClientFactory openAiClientFactory,
     IOpenAiChatToolsService openAiChatToolsService,
     IGameRepository gameRepository,
@@ -41,35 +43,50 @@ public class OpenAiChatService(
 
         foreach (var request in requests)
         {
-            var chatMessage = await CreateChatMessage(request, cancellationToken);
-
-            messagesQueue.Enqueue(chatMessage);
+            messagesQueue.EnqueueRange(await CreateChatMessages(request, cancellationToken));
         }
 
-        var me = await GetMe(cancellationToken);
-
-#pragma warning disable OPENAI001 // Required to set reasoning_effort to none for Astra function-tool compatibility.
-        var completionOptions = openAiChatToolsService.RegisterTools(
-            new ChatCompletionOptions
+        var responseOptions = openAiChatToolsService.RegisterTools(
+            new CreateResponseOptions(clientOptions.Value.OpenAiChatModelName, messagesQueue.ToArray())
             {
-                ReasoningEffortLevel = ChatReasoningEffortLevel.High
+                StreamingEnabled = true,
+                StoredOutputEnabled = false,
+                ReasoningOptions = new ResponseReasoningOptions
+                {
+                    ReasoningEffortLevel = ResponseReasoningEffortLevel.High
+                },
+                IncludedProperties = { IncludedResponseProperty.ReasoningEncryptedContent }
             });
-#pragma warning restore OPENAI001
 
-        var stream = openAiClientFactory.ChatClient.CompleteChatStreamingAsync(
-            messages: messagesQueue.ToArray(),
-            options: completionOptions,
-            cancellationToken: cancellationToken);
-
+        var stream = openAiClientFactory.ResponsesClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
         StringBuilder contentBuilder = new();
-        StreamingChatToolCallsBuilder toolCallsBuilder = new();
+        ResponseResult? completedResponse = null;
 
-        await foreach (var completion in stream)
+        await foreach (var update in stream)
         {
-            foreach (var contentPart in completion.ContentUpdate)
+            string? delta = null;
+            switch (update)
             {
-                contentBuilder.Append(contentPart.Text);
+                case StreamingResponseOutputTextDeltaUpdate textUpdate:
+                    delta = textUpdate.Delta;
+                    break;
+                case StreamingResponseRefusalDeltaUpdate refusalUpdate:
+                    delta = refusalUpdate.Delta;
+                    break;
+                case StreamingResponseCompletedUpdate completedUpdate:
+                    completedResponse = completedUpdate.Response;
+                    break;
+                case StreamingResponseFailedUpdate failedUpdate:
+                    throw new InvalidOperationException($"OpenAI response failed: {failedUpdate.Response.Error?.Code}: {failedUpdate.Response.Error?.Message}");
+                case StreamingResponseIncompleteUpdate incompleteUpdate:
+                    throw new InvalidOperationException($"OpenAI response was incomplete: {incompleteUpdate.Response.IncompleteStatusDetails?.Reason}");
+                case StreamingResponseErrorUpdate errorUpdate:
+                    throw new InvalidOperationException($"OpenAI streaming error: {errorUpdate.Code}: {errorUpdate.Message}");
+            }
 
+            if (!string.IsNullOrEmpty(delta))
+            {
+                contentBuilder.Append(delta);
                 yield return new OpenAiResponse
                 {
                     ContentType = OpenAiContentType.Text,
@@ -77,74 +94,82 @@ public class OpenAiChatService(
                     ContentComplete = false
                 };
             }
-
-            foreach (var toolCallUpdate in completion.ToolCallUpdates)
-            {
-                toolCallsBuilder.Append(toolCallUpdate);
-            }
         }
 
-        if (contentBuilder.Length != 0)
+        cancellationToken.ThrowIfCancellationRequested();
+        if (completedResponse is null)
+            throw new InvalidOperationException("OpenAI stream ended without a completed response.");
+
+        var finalContent = string.Concat(completedResponse.OutputItems
+            .OfType<MessageResponseItem>()
+            .SelectMany(message => message.Content)
+            .Select(part => part.Kind == ResponseContentPartKind.Refusal ? part.Refusal : part.Text));
+        var toolCalls = completedResponse.OutputItems.OfType<FunctionCallResponseItem>().ToArray();
+        if (finalContent.Length == 0 && toolCalls.Length == 0)
+            throw new InvalidOperationException("OpenAI response contained no text or function calls.");
+
+        if (finalContent.Length != 0)
         {
             yield return new OpenAiResponse
             {
                 ContentType = OpenAiContentType.Text,
-                Content = contentBuilder.ToString(),
+                Content = finalContent,
                 ContentComplete = true
             };
         }
 
-        var toolCalls = toolCallsBuilder.Build();
-
-        if (toolCalls.Count != 0)
+        // Replay all output items, including encrypted reasoning, but never retain an unanswered tool call.
+        List<ResponseItem> outputItems = [.. completedResponse.OutputItems];
+        foreach (var toolCall in toolCalls)
         {
-            var assistantMessage = new AssistantChatMessage(toolCalls) { ParticipantName = me.Id.ToString() };
-            if (contentBuilder.Length != 0)
+            StringBuilder toolResult = new();
+            await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken))
             {
-                assistantMessage.Content.Add(ChatMessageContentPart.CreateTextPart(contentBuilder.ToString()));
+                toolResult.AppendLine(toolOutput.ContentType == OpenAiContentType.ImageBytes
+                    ? "Image generated and sent to the Telegram chat."
+                    : toolOutput.Content);
+                yield return toolOutput;
             }
 
-            messagesQueue.Enqueue(assistantMessage);
+            if (toolResult.Length == 0)
+                throw new InvalidOperationException($"OpenAI tool '{toolCall.FunctionName}' returned no output.");
 
-            foreach (var toolCall in toolCalls)
-            {
-                var tcm = new ToolChatMessage(toolCall.Id, string.Empty);
-                messagesQueue.Enqueue(tcm);
-
-                await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken))
-                {
-                    tcm.Content.Add(toolOutput.Content);
-
-                    yield return toolOutput;
-                }
-            }
+            outputItems.Add(ResponseItem.CreateFunctionCallOutputItem(toolCall.CallId, toolResult.ToString()));
         }
-        else
-        {
-            messagesQueue.Enqueue(
-                new AssistantChatMessage(contentBuilder.ToString()) { ParticipantName = me.Id.ToString() });
-        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        messagesQueue.EnqueueRange(outputItems);
     }
 
     private User? _botUser;
     private async ValueTask<User> GetMe(CancellationToken cancellationToken) =>
         _botUser ??= await botClient.GetMe(cancellationToken);
 
-    private async ValueTask<ChatMessage> CreateChatMessage(OpenAiRequest request, CancellationToken cancellationToken)
+    private async ValueTask<ResponseItem[]> CreateChatMessages(OpenAiRequest request, CancellationToken cancellationToken)
     {
         var me = await GetMe(cancellationToken);
+        var isAssistant = request.UserId == me.Id;
+        var userId = request.UserId?.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+        var text = $"Telegram UserId: {userId}\n{request.MessageText ?? string.Empty}";
 
-        ChatMessage chatMessage = request.UserId == me.Id
-            ? new AssistantChatMessage(request.MessageText ?? string.Empty) { ParticipantName = request.UserId.ToString() }
-            : new UserChatMessage(request.MessageText ?? string.Empty) { ParticipantName = request.UserId.ToString() };
-
-        if (request.Image is not null)
+        if (request.Image is null)
         {
-            var mediaType = GetImageMediaType(request.Image);
-            chatMessage.Content.Add(ChatMessageContentPart.CreateImagePart(request.Image, mediaType, ChatImageDetailLevel.High));
+            return [isAssistant
+                ? ResponseItem.CreateAssistantMessageItem(text)
+                : ResponseItem.CreateUserMessageItem(text)];
         }
 
-        return chatMessage;
+        var mediaType = GetImageMediaType(request.Image);
+        var imageUri = new Uri($"data:{mediaType};base64,{Convert.ToBase64String(request.Image.ToArray())}");
+        var imagePart = ResponseContentPart.CreateInputImagePart(imageUri, ResponseImageDetailLevel.High);
+
+        // Responses accepts input images on user messages, not assistant output messages.
+        return isAssistant
+            ? [ResponseItem.CreateAssistantMessageItem(text),
+                ResponseItem.CreateUserMessageItem([
+                    ResponseContentPart.CreateInputTextPart($"Image attached to the preceding message from Telegram UserId: {userId}."),
+                    imagePart])]
+            : [ResponseItem.CreateUserMessageItem([ResponseContentPart.CreateInputTextPart(text), imagePart])];
     }
 
     private static string GetImageMediaType(BinaryData image)
@@ -202,7 +227,7 @@ public class OpenAiChatService(
         return messagesQueue;
     }
 
-    private async Task<SystemChatMessage> CreateSystemMessage(long chatId, CancellationToken cancellationToken)
+    private async Task<MessageResponseItem> CreateSystemMessage(long chatId, CancellationToken cancellationToken)
     {
         var chatUsers = await gameRepository.GetActiveUsersForChatAsync(chatId, cancellationToken);
 
@@ -220,10 +245,10 @@ public class OpenAiChatService(
 
         var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F", CultureInfo.InvariantCulture));
 
-        return ChatMessage.CreateSystemMessage(
-            content: $"""
+        return ResponseItem.CreateSystemMessageItem(
+            inputTextContent: $"""
             {prompt}.
-            
+
             Telegram chat participants are:
             {string.Join(Environment.NewLine, chatUserInfos)}
             

@@ -1,4 +1,6 @@
-using OpenAI.Chat;
+using OpenAI.Responses;
+
+#pragma warning disable OPENAI001 // Responses APIs are experimental in OpenAI 2.9.1.
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 
@@ -6,16 +8,16 @@ public static class OpenAiChatToolsServiceExtensions
 {
     extension(IOpenAiChatToolsService openAiChatToolsService)
     {
-        public ChatCompletionOptions RegisterTools(ChatCompletionOptions chatCompletionOptions)
+        public CreateResponseOptions RegisterTools(CreateResponseOptions responseOptions)
         {
-            chatCompletionOptions.ToolChoice = ChatToolChoice.CreateAutoChoice();
+            responseOptions.ToolChoice = ResponseToolChoice.CreateAutoChoice();
 
             foreach (var tool in openAiChatToolsService.GetRegisteredTools())
             {
-                chatCompletionOptions.Tools.Add(tool);
+                responseOptions.Tools.Add(tool);
             }
 
-            return chatCompletionOptions;
+            return responseOptions;
         }
     }
 }
