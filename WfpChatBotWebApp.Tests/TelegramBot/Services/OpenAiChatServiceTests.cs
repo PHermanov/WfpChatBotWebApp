@@ -59,7 +59,9 @@ public class OpenAiChatServiceTests
         Assert.False(body.TryGetProperty("reasoning_effort", out _));
         Assert.False(body.TryGetProperty("previous_response_id", out _));
         Assert.Equal("auto", body.GetProperty("tool_choice").GetString());
-        var tool = Assert.Single(body.GetProperty("tools").EnumerateArray());
+        var tools = body.GetProperty("tools").EnumerateArray().ToArray();
+        Assert.Equal(["CreateImage", "EditImage"], tools.Select(tool => tool.GetProperty("name").GetString()));
+        var tool = tools[0];
         Assert.Equal("function", tool.GetProperty("type").GetString());
         Assert.Equal("CreateImage", tool.GetProperty("name").GetString());
         Assert.True(tool.GetProperty("strict").GetBoolean());
@@ -115,11 +117,11 @@ public class OpenAiChatServiceTests
     [Fact]
     public async Task ProcessMessage_ReplaysReasoningAndAllToolResultsWithoutAnExtraModelTurn()
     {
-        var firstCall = FunctionCall("call_url", "url");
+        var firstCall = FunctionCall("call_first", "first");
         using var harness = new Harness(
-            Event(new { type = "response.function_call_arguments.delta", sequence_number = 1, item_id = "fc_call_url", output_index = 2, delta = "{\"prompt\":" }) +
+            Event(new { type = "response.function_call_arguments.delta", sequence_number = 1, item_id = "fc_call_first", output_index = 2, delta = "{\"prompt\":" }) +
             Event(new { type = "response.output_item.done", sequence_number = 2, output_index = 2, item = firstCall }) +
-            Completed(Reasoning(), Message("Here are your pictures.", "commentary"), firstCall, FunctionCall("call_bytes", "bytes")),
+            Completed(Reasoning(), Message("Here are your pictures.", "commentary"), firstCall, FunctionCall("call_second", "second")),
             Completed(Message("Follow-up.")),
             Completed(Message("Separate context.")));
         var context = Guid.NewGuid();
@@ -127,10 +129,11 @@ public class OpenAiChatServiceTests
         var first = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Draw two images", 42)], TestContext.Current.CancellationToken));
 
         Assert.Single(harness.Requests);
-        Assert.Equal(["url", "bytes"], harness.Images.Prompts);
-        Assert.Equal([OpenAiContentType.Text, OpenAiContentType.ImageUrl, OpenAiContentType.ImageBytes], first.Select(result => result.ContentType));
-        Assert.Equal("https://images.example/generated.png", first[1].Content);
-        Assert.Equal(new byte[] { 1, 2, 3 }, first[2].ImageContent);
+        Assert.Equal(["first", "second"], harness.Images.Prompts);
+        Assert.Equal([OpenAiContentType.Text, OpenAiContentType.ImageBytes, OpenAiContentType.ImageBytes], first.Select(result => result.ContentType));
+        Assert.Equal(new byte[] { 1, 2, 3 }, first[1].ImageContent);
+        Assert.Equal(new byte[] { 4, 5, 6 }, first[2].ImageContent);
+        Assert.All(first.Skip(1), result => Assert.Empty(result.Content));
         Assert.Equal(TestContext.Current.CancellationToken, harness.Images.ReceivedCancellationToken);
 
         await Collect(harness.Service.ProcessMessage(context, 10, [Request("Thanks", 84)], TestContext.Current.CancellationToken));
@@ -140,9 +143,9 @@ public class OpenAiChatServiceTests
             input.EnumerateArray().Select(item => item.GetProperty("type").GetString()));
         Assert.Equal("opaque-reasoning", input[2].GetProperty("encrypted_content").GetString());
         Assert.Equal("commentary", input[3].GetProperty("phase").GetString());
-        Assert.Equal("call_url", input[6].GetProperty("call_id").GetString());
-        Assert.Contains("https://images.example/generated.png", input[6].GetProperty("output").GetString());
-        Assert.Equal("call_bytes", input[7].GetProperty("call_id").GetString());
+        Assert.Equal("call_first", input[6].GetProperty("call_id").GetString());
+        Assert.Contains("Image generated", input[6].GetProperty("output").GetString());
+        Assert.Equal("call_second", input[7].GetProperty("call_id").GetString());
         Assert.Contains("Image generated", input[7].GetProperty("output").GetString());
         Assert.Equal("Telegram UserId: 84\nThanks", input[8].GetProperty("content")[0].GetProperty("text").GetString());
 
@@ -181,7 +184,7 @@ public class OpenAiChatServiceTests
             _ => string.Empty
         };
         using var harness = new Harness(TextDelta("Partial") +
-            Event(new { type = "response.output_item.done", sequence_number = 1, output_index = 0, item = FunctionCall("call_partial", "url") }) + terminal,
+            Event(new { type = "response.output_item.done", sequence_number = 1, output_index = 0, item = FunctionCall("call_partial", "first") }) + terminal,
             Completed(Message("Recovered.")));
         var context = Guid.NewGuid();
         List<OpenAiResponse> results = [];
@@ -200,13 +203,15 @@ public class OpenAiChatServiceTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ProcessMessage_DoesNotRetainUnansweredCallsWhenToolFails(bool noOutput)
+    [InlineData("exception")]
+    [InlineData("no-output")]
+    [InlineData("empty-bytes")]
+    public async Task ProcessMessage_DoesNotRetainUnansweredCallsWhenToolFails(string failureKind)
     {
-        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_failed", "url")), Completed(Message("Recovered.")));
-        harness.Images.ReturnNoOutput = noOutput;
-        harness.Images.Failure = noOutput ? null : new InvalidOperationException("Image provider failed.");
+        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_failed", "first")), Completed(Message("Recovered.")));
+        harness.Images.ReturnNoOutput = failureKind == "no-output";
+        harness.Images.ReturnEmptyBytes = failureKind == "empty-bytes";
+        harness.Images.Failure = failureKind == "exception" ? new InvalidOperationException("Image provider failed.") : null;
         var context = Guid.NewGuid();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(harness.Service.ProcessMessage(
@@ -228,7 +233,7 @@ public class OpenAiChatServiceTests
     public async Task Tools_RejectInvalidCalls(string name, string arguments)
     {
         var images = new StubImageService();
-        var tools = new OpenAiChatToolsService(images);
+        var tools = new OpenAiChatToolsService(images, new FakeImages());
         var call = ResponseItem.CreateFunctionCallItem("call_invalid", name, BinaryData.FromString(arguments));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken)));
@@ -249,6 +254,53 @@ public class OpenAiChatServiceTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resultTask);
         Assert.Empty(harness.Images.Prompts);
+    }
+
+    [Fact]
+    public async Task EditImage_ReplaysCallIdAndDoesNotReuseSourceForLaterRequests()
+    {
+        var editCall = new { type = "function_call", id = "fc_edit", call_id = "call_edit", name = "EditImage", arguments = "{\"prompt\":\"add a cup\"}", status = "completed" };
+        using var harness = new Harness(Completed(Reasoning(), editCall), Completed(editCall));
+        var context = Guid.NewGuid();
+        var source = new BinaryData(ImageTestData.Png);
+        var result = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Edit", 42)], TestContext.Current.CancellationToken,
+            new ImageToolContext(source, "Attach a photo.", "Editing failed.")));
+        Assert.Equal(OpenAiContentType.ImageBytes, Assert.Single(result).ContentType);
+        Assert.Same(source, Assert.Single(harness.Edits.Sources));
+        Assert.Single(harness.Requests);
+        result = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Edit again", 42)], TestContext.Current.CancellationToken,
+            new ImageToolContext(null, "Attach a photo.", "Editing failed.")));
+        Assert.Equal("Attach a photo.", Assert.Single(result).Content);
+        Assert.Single(harness.Edits.Sources);
+        var input = harness.Requests[1].GetProperty("input").EnumerateArray().ToArray();
+        Assert.Contains(input, item => item.GetProperty("type").GetString() == "reasoning");
+        var output = Assert.Single(input.Where(item => item.GetProperty("type").GetString() == "function_call_output"));
+        Assert.Equal("call_edit", output.GetProperty("call_id").GetString());
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"prompt\":null}")]
+    [InlineData("{\"prompt\":42}")]
+    [InlineData("{\"prompt\":\" \"}")]
+    public async Task EditImage_RejectsInvalidArguments(string arguments)
+    {
+        var images = new FakeImages();
+        var tools = new OpenAiChatToolsService(images, images);
+        var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString(arguments));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken)));
+        Assert.Empty(images.Sources);
+    }
+
+    [Fact]
+    public async Task EditImage_ReturnsSafeErrorOnProviderFailure()
+    {
+        var images = new FakeImages { EditFailure = new HttpRequestException("Private provider details") };
+        var tools = new OpenAiChatToolsService(images, images);
+        var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString("{\"prompt\":\"cup\"}"));
+        var result = await Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken,
+            new ImageToolContext(new BinaryData(ImageTestData.Png), "Attach a photo.", "Editing failed.")));
+        Assert.Equal("Editing failed.", Assert.Single(result).Content);
     }
 
     private static async Task<List<OpenAiResponse>> Collect(IAsyncEnumerable<OpenAiResponse> stream)
@@ -311,6 +363,7 @@ public class OpenAiChatServiceTests
         public List<JsonElement> Requests { get; } = [];
         public List<Uri> RequestUris { get; } = [];
         public StubImageService Images { get; } = new();
+        public FakeImages Edits { get; } = new();
         public OpenAiChatService Service { get; }
         public bool BlockResponses { get; init; }
         public TaskCompletionSource ResponseStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -351,7 +404,7 @@ public class OpenAiChatServiceTests
                 Options.Create(new OpenAiChatServiceOptions { SystemPrompt = "Test prompt at {0}" }),
                 Options.Create(CreateClientOptions()),
                 new StubClientFactory(client),
-                new OpenAiChatToolsService(Images),
+                new OpenAiChatToolsService(Images, Edits),
                 new EmptyGameRepository(),
                 new TelegramBotClient("123456:test-key", _httpClient));
         }
@@ -376,10 +429,10 @@ public class OpenAiChatServiceTests
         public List<string> Prompts { get; } = [];
         public Exception? Failure { get; set; }
         public bool ReturnNoOutput { get; set; }
+        public bool ReturnEmptyBytes { get; set; }
         public CancellationToken ReceivedCancellationToken { get; private set; }
 
-        public async IAsyncEnumerable<(string?, byte[]?)> CreateImage(string prompt, int numOfImages = 1,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<byte[]> CreateImage(string prompt, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.CompletedTask;
             cancellationToken.ThrowIfCancellationRequested();
@@ -389,7 +442,7 @@ public class OpenAiChatServiceTests
                 throw Failure;
             if (ReturnNoOutput)
                 yield break;
-            yield return prompt == "bytes" ? (null, new byte[] { 1, 2, 3 }) : ("https://images.example/generated.png", null);
+            yield return ReturnEmptyBytes ? [] : prompt == "first" ? new byte[] { 1, 2, 3 } : new byte[] { 4, 5, 6 };
         }
     }
 

@@ -1,32 +1,44 @@
-﻿using ElBruno.Text2Image;
-using ElBruno.Text2Image.Foundry;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
+using WfpChatBotWebApp.Helpers;
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 public class FluxImageService(
     IConfiguration configuration,
-    IHttpClientFactory httpClientFactory) : IAiImageService
+    IHttpClientFactory httpClientFactory) : IAiImageService, IAiImageEditService
 {
-    public async IAsyncEnumerable<(string?, byte[]?)> CreateImage(string prompt, int numOfImages = 1, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<byte[]> CreateImage(string prompt, CancellationToken cancellationToken = default) =>
+        Generate(prompt, null, cancellationToken);
+
+    public IAsyncEnumerable<byte[]> EditImage(string prompt, BinaryData sourceImage, CancellationToken cancellationToken = default)
     {
-        var options = new ImageGenerationOptions()
-        {
-            Height = 1024,
-            Width = 1024
-        };
+        cancellationToken.ThrowIfCancellationRequested();
+        return Generate(prompt, ImageInput.ToReferenceImage(sourceImage), cancellationToken);
+    }
 
+    private async IAsyncEnumerable<byte[]> Generate(string prompt, string? referenceImage,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentException.ThrowIfNullOrWhiteSpace(prompt);
+
+        var foundryUrl = configuration["FoundryUrl"];
+        var apiKey = configuration["openAiKey"];
+        var modelId = configuration["FluxModelName"];
+        if (string.IsNullOrWhiteSpace(foundryUrl) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(modelId))
+            throw new InvalidOperationException("FoundryUrl, OpenAiKey, and FluxModelName must be configured.");
+
+        var endpoint = FluxEndpoint.BuildUrl(foundryUrl, modelId);
         using var httpClient = httpClientFactory.CreateClient("Flux");
-        using var generator = new Flux2Generator(
-            endpoint: configuration["FoundryUrl"]!,
-            apiKey: configuration["openAiKey"]!,
-            httpClient: httpClient,
-            modelId: configuration["FluxModelName"]);
 
-        for (var i = 0; i < numOfImages; i++)
-        {
-            var res = await generator.GenerateAsync(prompt, options, cancellationToken);
-            yield return (null, res.ImageBytes);
-        }
+        var bytes = referenceImage is null
+            ? await FluxClient.GenerateAsync(httpClient, endpoint, apiKey, modelId, prompt, cancellationToken)
+            : await FluxClient.EditAsync(httpClient, endpoint, apiKey, modelId, prompt, referenceImage, cancellationToken);
+
+        if (bytes is not { Length: > 0 })
+            throw new InvalidOperationException("FLUX returned no image bytes.");
+
+        yield return bytes;
     }
 }
+

@@ -34,7 +34,7 @@ public class LocalTelegramBotService : ILocalTelegramBotService
     {
         _telegramBotClient = telegramBotClient;
         _mediator = mediator;
-        
+
         _telegramBotService = new TelegramBotService(
             _mediator,
             gameRepository,
@@ -80,7 +80,7 @@ public class LocalTelegramBotService : ILocalTelegramBotService
         return Task.CompletedTask;
     }
 
-    private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         var localCommand = update.Message?.Text ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(localCommand))
@@ -96,12 +96,12 @@ public class LocalTelegramBotService : ILocalTelegramBotService
 
             if (request != null)
             {
-                _mediator.Send(request, cancellationToken);
-                return Task.CompletedTask;
+                await _mediator.Send(request, cancellationToken);
+                return;
             }
         }
 
-        return HandleUpdateAsync(update, cancellationToken);
+        await HandleUpdateAsync(update, cancellationToken);
     }
 
     public Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)

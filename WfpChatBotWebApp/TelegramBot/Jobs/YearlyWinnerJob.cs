@@ -3,7 +3,6 @@ using MediatR;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Models;
 using WfpChatBotWebApp.TelegramBot.Extensions;
@@ -18,8 +17,7 @@ public class YearlyWinnerJobHandler(
     ITelegramBotClient botClient,
     ITextMessageService messageService,
     IGameRepository repository,
-    IHttpClientFactory httpClientFactory,
-    IConfiguration configuration,
+    IWinnerAnnouncementService announcements,
     ILogger<YearlyWinnerJobRequest> logger)
     : IRequestHandler<YearlyWinnerJobRequest>
 {
@@ -177,81 +175,16 @@ public class YearlyWinnerJobHandler(
                 }
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception e)
         {
             logger.LogError(e, "Exception in YearlyWinnerJobHandler for {ChatId}", chatId);
         }
     }
 
-    private async Task SendPicture(long chatId, PlayerCountViewModel player, string msg, CancellationToken cancellationToken)
-    {
-        var httpClient = httpClientFactory.CreateClient("Pictures");
-        var bowlImageStream = await httpClient.GetStreamAsync("GoldenCup.png" + configuration.GetValue<string>("StickerSas"), cancellationToken);
-
-        logger.LogInformation("YearlyWinnerJobHandler Downloaded GoldenCup.png image for {ChatId}", chatId);
-
-        UserProfilePhotos? userProfilePhotos = null;
-        try
-        {
-            logger.LogInformation("YearlyWinnerJobHandler for Chat: {ChatId}, User: {UserId} Loading user photos", chatId, player.UserId);
-            userProfilePhotos = await botClient.GetUserProfilePhotos(player.UserId, cancellationToken: cancellationToken);
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Exception in YearlyWinnerJobHandler for {ChatId}, User: {UserId}, loading user photos", chatId, player.UserId);
-        }
-
-        if (userProfilePhotos == null || userProfilePhotos.Photos.Length == 0)
-        {
-            logger.LogInformation("YearlyWinnerJobHandler for {ChatId}, photos not loaded", chatId);
-            await botClient.TrySendPhotoAsync(
-                logger: logger,
-                chatId: chatId,
-                photo: InputFile.FromStream(bowlImageStream),
-                caption: msg,
-                parseMode: ParseMode.Markdown,
-                cancellationToken: cancellationToken);
-        }
-        else
-        {
-            logger.LogInformation("YearlyWinnerJobHandler for {ChatId} : user {UserId} photo loaded", chatId, player.UserId);
-
-            var photoSize = userProfilePhotos.Photos[0].MaxBy(p => p.Height);
-            var photoFile = await botClient.GetFile(photoSize?.FileId ?? string.Empty, cancellationToken);
-
-            logger.LogInformation("YearlyWinnerJobHandler for {ChatId} : user {UserId}, photo file info loaded", chatId, player.UserId);
-
-            var avatarStream = new MemoryStream();
-            await botClient.DownloadFile(photoFile.FilePath ?? string.Empty, avatarStream, cancellationToken);
-
-            logger.LogInformation("YearlyWinnerJobHandler for {ChatId} : user {UserId} photo file downloaded", chatId, player.UserId);
-
-            try
-            {
-                var winnerImage = await ImageProcessor.GetWinnerImageYear(bowlImageStream, avatarStream, DateTime.Now.Year);
-
-                logger.LogInformation("YearlyWinnerJobHandler for {ChatId} : user {UserId}, winner image created. Sending", chatId, player.UserId);
-                await botClient.TrySendPhotoAsync(
-                    logger: logger,
-                    chatId: chatId,
-                    photo: winnerImage,
-                    caption: msg,
-                    parseMode: ParseMode.Markdown,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "Exception in YearlyWinnerJobHandler for {ChatId} : user {UserId}", chatId, player.UserId);
-                await botClient.TrySendPhotoAsync(
-                    logger: logger,
-                    chatId: chatId,
-                    photo: InputFile.FromStream(bowlImageStream),
-                    caption: msg,
-                    parseMode: ParseMode.Markdown,
-                    cancellationToken: cancellationToken);
-            }
-        }
-    }
+    private Task SendPicture(long chatId, PlayerCountViewModel player, string msg, CancellationToken cancellationToken) =>
+        announcements.SendAsync(chatId, player.UserId, player.UserName, DateTime.Today,
+            WinnerPeriod.Year, msg, ParseMode.Markdown, cancellationToken);
 
     private async Task<string> GetMonthName(int number, CancellationToken cancellationToken)
     {

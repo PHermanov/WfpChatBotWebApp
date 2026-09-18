@@ -2,6 +2,7 @@
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using WfpChatBotWebApp.Helpers;
 
 namespace WfpChatBotWebApp.TelegramBot.Extensions;
 
@@ -34,6 +35,10 @@ public static class TelegramBotClientExtensions
             {
                 logger.LogWarning("Bot was kicked from the group chat with id {ChatId}", chatId);
                 return null;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception exception)
             {
@@ -84,6 +89,10 @@ public static class TelegramBotClientExtensions
                     replyParameters: replyToMessageId,
                     cancellationToken: cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Exception in TrySendPhotoAsync");
@@ -113,6 +122,7 @@ public static class TelegramBotClientExtensions
                     replyMarkup: null,
                     cancellationToken: cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Exception in TryEditMessageTextAsync");
@@ -142,6 +152,7 @@ public static class TelegramBotClientExtensions
                     businessConnectionId: null,
                     cancellationToken: cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Exception in TryEditMessageCaptionAsync");
@@ -166,6 +177,7 @@ public static class TelegramBotClientExtensions
                     businessConnectionId: null,
                     cancellationToken: cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Exception in TryEditMessageMediaAsync");
@@ -195,15 +207,36 @@ public static class TelegramBotClientExtensions
             }
         }
 
+        public async Task<BinaryData?> TryGetUserProfilePhoto(long userId, ILogger logger, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var photos = await client.GetUserProfilePhotos(userId, limit: 1, cancellationToken: cancellationToken);
+                if (photos.Photos.Length == 0) return null;
+                return await client.GetPhotoFromMessage(new Message { Photo = photos.Photos[0] }, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception e)
+            {
+                logger.LogWarning("Could not load avatar for user {UserId}: {ErrorType}", userId, e.GetType().Name);
+                return null;
+            }
+        }
+
         public async ValueTask<BinaryData?> GetPhotoFromMessage(
             Message message,
             CancellationToken cancellationToken)
         {
-            var fileId = message.Photo?[^1].FileId;
+            var photo = message.Photo?.MaxBy(p => (long)p.Width * p.Height);
+            if (photo?.FileSize > ImageInput.MaxBytes)
+                throw new ArgumentException("The image exceeds the 10 MiB limit.");
+            var fileId = photo?.FileId;
 
             if (fileId != null)
             {
                 var imageFile = await client.GetFile(fileId, cancellationToken);
+                if (imageFile.FileSize > ImageInput.MaxBytes)
+                    throw new ArgumentException("The image exceeds the 10 MiB limit.");
 
                 if (!string.IsNullOrEmpty(imageFile.FilePath))
                 {
@@ -220,7 +253,7 @@ public static class TelegramBotClientExtensions
             Message message,
             CancellationToken cancellationToken)
         {
-            if (message.Sticker?.IsAnimated == true)
+            if (message.Sticker?.IsAnimated == true || message.Sticker?.IsVideo == true)
                 return null;
 
             var fileId = message.Sticker?.FileId;

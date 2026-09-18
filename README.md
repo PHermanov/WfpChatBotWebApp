@@ -3,7 +3,7 @@
 This is a Telegram chatbot application built with C# and JavaScript (for Azure Functions). 
 This project aims to provide users with an interactive conversational interface that can respond intelligently and follow the style of a freingly group chat with occasional pranks.
 
-To get started, clone the repo and open the solution file WfpChatBotWebApp.sln in Visual Studio. 
+To get started, clone the repo and open the solution file WfpChatBotWebApp.slnx in Visual Studio.
 Ensure you configure necessary configuration values before running. 
 
 For contributting, please fork the repository and submit a pull request with your changes.

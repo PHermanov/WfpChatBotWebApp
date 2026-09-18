@@ -4,7 +4,5 @@ namespace WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 public abstract class CommandWithParam(Message message) : CommandBase(message)
 {
-    public string Param { get; } = message.Text!.TrimEnd().Contains(' ') 
-        ? message.Text[message.Text.IndexOf(' ')..] 
-        : string.Empty;
+    public string Param { get; } = CommandText.Split(message) is [_, var param] ? param : string.Empty;
 }

@@ -4,16 +4,19 @@ namespace WfpChatBotWebApp.TelegramBot.Commands.Common;
 
 public static class CommandParser
 {
-    private static readonly char[] Separator = [' '];
-
-    public static CommandBase? Parse(Message message)
+    public static CommandBase? Parse(Message message, string? botUserName = null)
     {
-        if (string.IsNullOrEmpty(message.Text))
+        var split = CommandText.Split(message);
+        if (split.Length == 0)
             return null;
-
-        var split = message.Text.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
-
-        var commandName = split[0].ToLower();
+        var commandName = split[0].ToLowerInvariant();
+        var suffix = commandName.IndexOf('@');
+        if (suffix >= 0)
+        {
+            if (!string.Equals(commandName[(suffix + 1)..], botUserName, StringComparison.OrdinalIgnoreCase))
+                return null;
+            commandName = commandName[..suffix];
+        }
 
         return commandName switch
         {
@@ -30,6 +33,7 @@ public static class CommandParser
             "/mamota" => new MamotaCommand(message),
             "/year" => new YearCommand(message),
             "/draw" => new DrawCommand(message),
+            "/redraw" => new RedrawCommand(message),
             _ => null
         };
     }

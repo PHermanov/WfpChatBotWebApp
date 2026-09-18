@@ -52,7 +52,8 @@ builder.Services.AddHttpClient("Random",
         httpClient.BaseAddress = new Uri(builder.Configuration["RandomOrgUri"] ?? string.Empty);
     });
 
-builder.Services.AddHttpClient("Flux");
+builder.Services.AddHttpClient("Flux", client => client.Timeout = TimeSpan.FromMinutes(5))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
@@ -80,9 +81,12 @@ builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
 builder.Services.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
 builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
 builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();
-// builder.Services.AddSingleton<IAiImageService, OpenAiImageService>();
 builder.Services.AddScoped<IInternetSearchService, GoogleSearchService>();
-builder.Services.AddScoped<IAiImageService, FluxImageService>();
+builder.Services.AddSingleton<FluxImageService>();
+builder.Services.AddSingleton<IAiImageService>(services => services.GetRequiredService<FluxImageService>());
+builder.Services.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
+builder.Services.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
+builder.Services.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
 builder.Services.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
@@ -91,6 +95,7 @@ builder.Services.AddSingleton<IRandomService, RandomService>();
 
 builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
 builder.Services.Configure<OpenAiChatServiceOptions>(builder.Configuration);
+builder.Services.Configure<ThrottlingServiceOptions>(builder.Configuration);
 
 // Message bus
 builder.Services.AddSlimMessageBus(mbb =>

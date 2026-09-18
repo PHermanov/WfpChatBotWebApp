@@ -37,15 +37,15 @@ public class BotReplyService(
         if (answerMessage is null)
             return;
 
-        var requests = await CreateRequestsQueue(message, cancellationToken);
-
         var contextKey = GetContextKey(message);
 
         try
         {
+            var requests = await CreateRequestsQueue(message, cancellationToken);
+            var imageContext = await CreateImageToolContext(message, requests, cancellationToken);
             var previousContentLength = 0;
 
-            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken))
+            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken, imageContext))
             {
                 if (response.ContentType is OpenAiContentType.Text && !response.ContentComplete)
                 {
@@ -70,6 +70,7 @@ public class BotReplyService(
                 await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception e)
         {
             logger.LogError(e, "BotReplyService Exception");
@@ -110,6 +111,21 @@ public class BotReplyService(
         return requests.ToArray();
     }
 
+    private async Task<ImageToolContext> CreateImageToolContext(Message message, OpenAiRequest[] requests, CancellationToken cancellationToken)
+    {
+        var source = requests[^1].Image;
+        if (source is null && message.ReplyToMessage is not null)
+            source = requests.Length > 1 ? requests[0].Image : (await CreateRequest(message.ReplyToMessage, cancellationToken)).Image;
+
+        var missing = await messageService.GetMessageByNameAsync(Messages.ImageSourceMissing, cancellationToken);
+        if (string.IsNullOrWhiteSpace(missing))
+            missing = await messageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
+        var failed = await messageService.GetMessageByNameAsync(Messages.ImageEditFailed, cancellationToken);
+        if (string.IsNullOrWhiteSpace(failed))
+            failed = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken);
+        return new ImageToolContext(source, missing, failed);
+    }
+
     private async Task<OpenAiRequest> CreateRequest(
         Message message,
         CancellationToken cancellationToken) =>
@@ -129,14 +145,12 @@ public class BotReplyService(
 
         switch (response.ContentType)
         {
-            case OpenAiContentType.ImageUrl:
             case OpenAiContentType.ImageBytes:
                 {
                     var caption = message.GetMessageText();
 
-                    InputFile inputFile = response.ContentType == OpenAiContentType.ImageBytes
-                        ? InputFile.FromStream(new MemoryStream(response.ImageContent!))
-                        : InputFile.FromUri(response.Content);
+                    using var imageStream = new MemoryStream(response.ImageContent!);
+                    var inputFile = InputFile.FromStream(imageStream, "image.png");
 
                     var inputMediaPhoto = new InputMediaPhoto(inputFile)
                     {

@@ -2,8 +2,7 @@
 
 public interface IAiImageService
 {
-    IAsyncEnumerable<(string?, byte[]?)> CreateImage(
+    IAsyncEnumerable<byte[]> CreateImage(
         string prompt,
-        int numOfImages = 1,
         CancellationToken cancellationToken = default);
 }

@@ -58,6 +58,14 @@ public class TelegramBotService(
                 return;
             }
 
+            var command = CommandParser.Parse(message, bot.Username);
+            if (command != null)
+            {
+                if (await throttlingService.IsAllowed(message, command.Name, cancellationToken))
+                    await mediator.Send((IRequest)command, cancellationToken);
+                return;
+            }
+
             var botMentioned = IsBotMentioned(message, bot.Username);
             if (botMentioned)
             {
@@ -75,18 +83,7 @@ public class TelegramBotService(
                 return;
             }
 
-            // command received
-            if (text.StartsWith('/'))
-            {
-                var command = CommandParser.Parse(message);
-                if (command != null)
-                {
-                    var allowed = await throttlingService.IsAllowed(message, command.Name, cancellationToken);
-                    if (allowed)
-                        await mediator.Send((IRequest)command, cancellationToken);
-                }
-            }
-            else if (!string.IsNullOrEmpty(text))
+            if (!string.IsNullOrEmpty(text) && !text.TrimStart().StartsWith('/'))
             {
                 await autoReplyService.AutoReplyAsync(message, cancellationToken);
                 await autoReplyService.AutoMentionAsync(message, cancellationToken);

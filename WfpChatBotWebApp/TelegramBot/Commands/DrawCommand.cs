@@ -26,7 +26,7 @@ public class DrawCommandHandler(
     {
         try
         {
-            if (string.IsNullOrEmpty(request.Param))
+            if (string.IsNullOrWhiteSpace(request.Param))
             {
                 var responsePhrase = await messageService.GetMessageByNameAsync(Messages.WhatWanted, cancellationToken);
 
@@ -44,18 +44,21 @@ public class DrawCommandHandler(
                 return;
             }
 
-            var param = CutParameters(request.Param, out var imagesCount);
-
-            await foreach (var (url, bytes) in aiImageService.CreateImage(param, imagesCount, cancellationToken))
+            await foreach (var bytes in aiImageService.CreateImage(request.Param, cancellationToken: cancellationToken))
             {
+                using var stream = new MemoryStream(bytes);
                 await botClient.TrySendPhotoAsync(
                     chatId: request.ChatId,
                     logger: logger,
-                    photo: !string.IsNullOrWhiteSpace(url) ? InputFile.FromUri(url) : InputFile.FromStream(new MemoryStream(bytes)),
+                    photo: InputFile.FromStream(stream, "draw.png"),
                     parseMode: ParseMode.Html,
                     replyToMessageId: request.MessageId,
                     cancellationToken: cancellationToken);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -70,26 +73,5 @@ public class DrawCommandHandler(
                 logger: logger,
                 cancellationToken: cancellationToken);
         }
-    }
-    
-    private static string CutParameters(string param, out int imagesCount)
-    {
-        imagesCount = 1;
-
-        var split = param.Split(" ");
-        var countPart = split[0];
-
-        if (countPart.Contains('(') && countPart.Contains(')'))
-        {
-            if (int.TryParse(countPart.Trim(' ', '(', ')'), out imagesCount))
-            {
-                if (imagesCount > 10)
-                    imagesCount = 10;
-
-                return string.Join(" ", split[1..]);
-            }
-        }
-
-        return param;
     }
 }

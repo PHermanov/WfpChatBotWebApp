@@ -42,5 +42,13 @@
 
 ### OpenAI Integration
 - Use `ResponsesClient` against Azure `/openai/v1/responses` for Astra chat with high reasoning and function tools; retain the Azure image/audio clients.
+- Use FLUX as this bot's image-generation provider with byte-only results. Do not retain the legacy URL/bytes tuple or the unused DALL·E image-service fallback and commented registrations.
 - Keep Responses history local (`StoredOutputEnabled = false`), request encrypted reasoning, and replay all output items with tool results linked by `CallId`. Preserve direct image-tool delivery without an extra model turn.
 - Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1; do not restore the Chat Completions reasoning workaround.
+- Use native Azure `input_image` with raw base64 for `IAiImageEditService`; retain the SDK for creation. Keep edit source bytes request-local and separate from history de-duplication; validate against the provider contract, not SDK serialization.
+- Keep winner prompts in `TextMessages`; seed scripts and setup are documented in `docs/image-editing.md`. Preserve edit-to-generate-to-text fallbacks.
+- Test image/Telegram/Responses behavior with fakes; use LocalStart with development resources for explicit manual verification.
+- FLUX creation and editing use a direct `HttpClient` implementation (`FluxEndpoint`/`FluxClient`) against Azure's documented BFL provider REST contract; there is no ElBruno or other third-party FLUX SDK dependency. Validate image requests against the provider's documented contract, and do not treat a successful response or valid PNG alone as proof that the source image was used.
+
+### Testing Guidelines
+- Keep automated image/AI/Telegram tests isolated with fakes; never use real Telegram resources or bot APIs in automated tests. Use LocalStart for explicit manual integration checks. Preserve local settings file structure and omit credential values from shared files, code, documentation, tests, and logs.

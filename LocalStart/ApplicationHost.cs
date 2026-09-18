@@ -20,7 +20,6 @@ public static class ApplicationHost
     public static Task Run(string[] args)
     {
         var host = CreateHostBuilder(args)
-            .ConfigureAppConfiguration(c => c.AddJsonFile("appSettingsLocal.json"))
             .ConfigureLogging(builder =>
             {
                 builder.ClearProviders();
@@ -42,6 +41,10 @@ public static class ApplicationHost
     {
         return Host
             .CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(configuration => configuration
+                .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appSettingsLocal.json"), optional: true)
+                .AddEnvironmentVariables()
+                .AddCommandLine(args))
             .ConfigureServices(ConfigureServices);
     }
     
@@ -75,7 +78,8 @@ public static class ApplicationHost
                 httpClient.BaseAddress = new Uri(hostBuilderContext.Configuration["RandomOrgUri"] ?? string.Empty);
             });
         
-        serviceCollection.AddHttpClient("Flux");
+        serviceCollection.AddHttpClient("Flux", client => client.Timeout = TimeSpan.FromMinutes(5))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
         serviceCollection.AddMemoryCache();
         serviceCollection.AddMediatR(conf =>
@@ -96,9 +100,12 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
-        //serviceCollection.AddSingleton<IAiImageService, OpenAiImageService>();
         serviceCollection.AddScoped<IInternetSearchService, GoogleSearchService>();
-        serviceCollection.AddScoped<IAiImageService, FluxImageService>();
+        serviceCollection.AddSingleton<FluxImageService>();
+        serviceCollection.AddSingleton<IAiImageService>(services => services.GetRequiredService<FluxImageService>());
+        serviceCollection.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
+        serviceCollection.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
+        serviceCollection.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
         serviceCollection.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
@@ -108,6 +115,7 @@ public static class ApplicationHost
 
         serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<OpenAiChatServiceOptions>(hostBuilderContext.Configuration);
+        serviceCollection.Configure<ThrottlingServiceOptions>(hostBuilderContext.Configuration);
     }
 
     private static void OnApplicationStopping()

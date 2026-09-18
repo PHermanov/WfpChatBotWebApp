@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using OpenAI.Responses;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
@@ -19,7 +20,8 @@ public interface IOpenAiChatService
         Guid contextKey,
         long chatId,
         OpenAiRequest[] requests,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        ImageToolContext? imageContext = null);
 }
 
 public class OpenAiChatService(
@@ -37,8 +39,10 @@ public class OpenAiChatService(
         Guid contextKey,
         long chatId,
         OpenAiRequest[] requests,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken,
+        ImageToolContext? imageContext = null)
     {
+        imageContext ??= new ImageToolContext(requests.LastOrDefault(request => request.Image is not null)?.Image);
         var messagesQueue = await GetChatMessageQueue(contextKey, chatId, cancellationToken);
 
         foreach (var request in requests)
@@ -123,7 +127,7 @@ public class OpenAiChatService(
         foreach (var toolCall in toolCalls)
         {
             StringBuilder toolResult = new();
-            await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken))
+            await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken, imageContext))
             {
                 toolResult.AppendLine(toolOutput.ContentType == OpenAiContentType.ImageBytes
                     ? "Image generated and sent to the Telegram chat."
@@ -159,7 +163,7 @@ public class OpenAiChatService(
                 : ResponseItem.CreateUserMessageItem(text)];
         }
 
-        var mediaType = GetImageMediaType(request.Image);
+        var mediaType = ImageInput.GetMediaType(request.Image) ?? "image/jpeg";
         var imageUri = new Uri($"data:{mediaType};base64,{Convert.ToBase64String(request.Image.ToArray())}");
         var imagePart = ResponseContentPart.CreateInputImagePart(imageUri, ResponseImageDetailLevel.High);
 
@@ -170,48 +174,6 @@ public class OpenAiChatService(
                     ResponseContentPart.CreateInputTextPart($"Image attached to the preceding message from Telegram UserId: {userId}."),
                     imagePart])]
             : [ResponseItem.CreateUserMessageItem([ResponseContentPart.CreateInputTextPart(text), imagePart])];
-    }
-
-    private static string GetImageMediaType(BinaryData image)
-    {
-        var bytes = image.ToArray();
-
-        // WebP: "RIFF"...."WEBP" (bytes 0-3 == 'R','I','F','F' and bytes 8-11 == 'W','E','B','P')
-        if (bytes.Length >= 12 &&
-            bytes[0] == (byte)'R' && bytes[1] == (byte)'I' && bytes[2] == (byte)'F' && bytes[3] == (byte)'F' &&
-            bytes[8] == (byte)'W' && bytes[9] == (byte)'E' && bytes[10] == (byte)'B' && bytes[11] == (byte)'P')
-        {
-            return "image/webp";
-        }
-
-        // JPEG
-        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
-            return "image/jpeg";
-
-        // PNG
-        if (bytes.Length >= 8 &&
-            bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 &&
-            bytes[4] == 0x0D && bytes[5] == 0x0A && bytes[6] == 0x1A && bytes[7] == 0x0A)
-            return "image/png";
-
-        // GIF
-        if (bytes.Length >= 3 && bytes[0] == (byte)'G' && bytes[1] == (byte)'I' && bytes[2] == (byte)'F')
-            return "image/gif";
-
-        // BMP
-        if (bytes.Length >= 2 && bytes[0] == (byte)'B' && bytes[1] == (byte)'M')
-            return "image/bmp";
-
-        // AVIF (ftyp...avif)
-        if (bytes.Length >= 12 &&
-            bytes[4] == (byte)'f' && bytes[5] == (byte)'t' && bytes[6] == (byte)'y' && bytes[7] == (byte)'p' &&
-            bytes[8] == (byte)'a' && bytes[9] == (byte)'v' && bytes[10] == (byte)'i' && bytes[11] == (byte)'f')
-        {
-            return "image/avif";
-        }
-
-        // Fallback: preserve previous behavior to avoid breaking existing callers.
-        return "image/jpeg";
     }
 
     private async ValueTask<OpenAiChatMessageQueue> GetChatMessageQueue(Guid contextKey, long chatId, CancellationToken cancellationToken)

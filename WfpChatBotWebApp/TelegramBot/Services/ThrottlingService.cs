@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,10 +19,14 @@ public class ThrottlingService(
     ITelegramBotClient botClient,
     IGameRepository gameRepository,
     ITextMessageService textMessageService,
+    IOptions<ThrottlingServiceOptions> options,
     ILogger<ThrottlingService> logger) : IThrottlingService
 {
     public async Task<bool> IsAllowed(Message message, string commandKey, CancellationToken cancellationToken)
     {
+        if (!options.Value.ThrottlingEnabled)
+            return true;
+
         var cacheKey = $"{message.Chat.Id}_{message.From!.Id}_{commandKey}";
 
         if (memoryCache.TryGetValue(cacheKey, out bool showMessage))

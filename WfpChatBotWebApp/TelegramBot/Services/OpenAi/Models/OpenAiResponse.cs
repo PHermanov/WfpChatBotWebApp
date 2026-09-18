@@ -11,6 +11,5 @@ public class OpenAiResponse
 public enum OpenAiContentType
 {
     Text = 1,
-    ImageUrl = 2,
     ImageBytes = 3
 }

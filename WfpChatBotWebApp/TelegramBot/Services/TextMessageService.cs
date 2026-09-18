@@ -21,10 +21,9 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         if (cache.TryGetValue<string>(name, out var text))
             return string.IsNullOrEmpty(text) ? string.Empty : text;
 
+        await Semaphore.WaitAsync(cancellationToken);
         try
         {
-            await Semaphore.WaitAsync(cancellationToken);
-
             if (cache.TryGetValue(name, out text))
             {
                 return string.IsNullOrEmpty(text) ? string.Empty : text;
@@ -94,5 +93,13 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         public const string ImageDescriptionPreText = nameof(ImageDescriptionPreText);
         public const string AudioTranscriptTestTemplate = nameof(AudioTranscriptTestTemplate);
         public const string TakeRest = nameof(TakeRest);
+        public const string RedrawUsage = nameof(RedrawUsage);
+        public const string ImageSourceMissing = nameof(ImageSourceMissing);
+        public const string ImageInputInvalid = nameof(ImageInputInvalid);
+        public const string ImageEditFailed = nameof(ImageEditFailed);
+        public const string MonthWinnerEditPrompt = nameof(MonthWinnerEditPrompt);
+        public const string MonthWinnerCreatePrompt = nameof(MonthWinnerCreatePrompt);
+        public const string YearWinnerEditPrompt = nameof(YearWinnerEditPrompt);
+        public const string YearWinnerCreatePrompt = nameof(YearWinnerCreatePrompt);
     }
 }
