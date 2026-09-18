@@ -37,11 +37,15 @@ public class BotReplyService(
         if (answerMessage is null)
             return;
 
+        // Capture this before GetContextKey, which registers the replied message key itself.
+        var repliedMessageInContext = message.ReplyToMessage is not null
+            && contextKeysService.ContainsKey(GetKey(message.Chat.Id, message.ReplyToMessage.MessageId));
+
         var contextKey = GetContextKey(message);
 
         try
         {
-            var requests = await CreateRequestsQueue(message, cancellationToken);
+            var requests = await CreateRequestsQueue(message, repliedMessageInContext, cancellationToken);
             var imageContext = await CreateImageToolContext(message, requests, cancellationToken);
             var previousContentLength = 0;
 
@@ -93,17 +97,14 @@ public class BotReplyService(
         }
     }
 
-    private async Task<OpenAiRequest[]> CreateRequestsQueue(Message message, CancellationToken cancellationToken)
+    private async Task<OpenAiRequest[]> CreateRequestsQueue(Message message, bool repliedMessageInContext, CancellationToken cancellationToken)
     {
         var requests = new List<OpenAiRequest>();
 
-        if (message.ReplyToMessage != null)
+        // Add the replied message only when it is not already part of the conversation context
+        if (message.ReplyToMessage != null && !repliedMessageInContext)
         {
-            // Check if the reply message is not the last message in context
-            if (!contextKeysService.ContainsKey($"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"))
-            {
-                requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
-            }
+            requests.Add(await CreateRequest(message.ReplyToMessage, cancellationToken));
         }
 
         requests.Add(await CreateRequest(message, cancellationToken));
@@ -238,11 +239,13 @@ public class BotReplyService(
         }
     }
 
+    private static string GetKey(long chatId, int messageId) => $"{chatId}_{messageId}";
+
     private KeyValuePair<string, Guid> GetContextKey(Message message)
     {
         var key = message.ReplyToMessage is not null
-            ? $"{message.Chat.Id}_{message.ReplyToMessage.MessageId}"
-            : $"{message.Chat.Id}_{message.MessageId}";
+            ? GetKey(message.Chat.Id, message.ReplyToMessage.MessageId)
+            : GetKey(message.Chat.Id, message.MessageId);
 
         if (contextKeysService.TryGetValue(key, out var contextKey))
         {
@@ -258,7 +261,7 @@ public class BotReplyService(
 
     private void SetContextKey(Message answer, KeyValuePair<string, Guid> prevKey)
     {
-        var key = $"{answer.Chat.Id}_{answer.MessageId}";
+        var key = GetKey(answer.Chat.Id, answer.MessageId);
         contextKeysService.SetValue(key, prevKey.Value);
         contextKeysService.RemoveValue(prevKey.Key);
     }

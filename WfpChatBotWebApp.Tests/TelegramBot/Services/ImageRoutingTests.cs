@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -66,10 +67,13 @@ public class ImageRoutingTests
         if (allowed) Assert.IsType<RedrawCommand>(dispatched); else Assert.Null(dispatched);
     }
 
-    [Fact]
-    public async Task BotReply_PreservesSourceWhenRepliedMessageIsAlreadyInHistory()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BotReply_ResolvesRepliedPhotoWhetherOrNotItIsAlreadyInHistory(bool inHistory)
     {
         ImageToolContext? received = null;
+        OpenAiRequest[]? sent = null;
         using var handler = new ImageHttpHandler((request, _) =>
         {
             var path = request.RequestUri!.AbsolutePath;
@@ -77,26 +81,29 @@ public class ImageRoutingTests
                 return Task.FromResult(ImageTestData.Json(new { ok = true, result = new { file_id = "reply", file_unique_id = "reply", file_path = "reply.png" } }));
             if (path.EndsWith("/reply.png"))
                 return Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new ByteArrayContent(ImageTestData.Png) });
-            Assert.EndsWith("/sendMessage", path);
             return Task.FromResult(ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, chat = new { id = 10, type = "private" } } }));
         });
         using var client = new HttpClient(handler);
         var ai = TestProxy.Create<IOpenAiChatService>((_, args) =>
         {
-            var requests = Assert.IsType<OpenAiRequest[]>(args![2]);
-            Assert.Single(requests);
+            sent = Assert.IsType<OpenAiRequest[]>(args![2]);
             received = Assert.IsType<ImageToolContext>(args[4]);
             return Empty();
         });
         var contextKeys = new ContextKeysService();
-        contextKeys.SetValue("10_99", Guid.NewGuid());
+        if (inHistory)
+            contextKeys.SetValue("10_99", Guid.NewGuid());
+        var logger = new CapturingLogger<BotReplyService>();
         var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
-            new FakeImageMessages(), contextKeys, NullLogger<BotReplyService>.Instance);
+            new FakeImageMessages(), contextKeys, logger);
         await sut.Reply(new Message
         {
-            Id = 42, Chat = new Chat { Id = 10 }, Text = "Add a cup", From = new User { Id = 42, FirstName = "Alice" },
+            Id = 42, Chat = new Chat { Id = 10 }, Text = "@test_bot домалюй пиво замість телефону", From = new User { Id = 42, FirstName = "Alice" },
             ReplyToMessage = new Message { Id = 99, Chat = new Chat { Id = 10 }, Photo = [new PhotoSize { FileId = "reply", FileUniqueId = "reply", Width = 20, Height = 20 }] }
         }, TestContext.Current.CancellationToken);
+        Assert.Empty(logger.Errors);
+        Assert.NotNull(sent);
+        Assert.Equal(inHistory ? 1 : 2, sent.Length);
         Assert.NotNull(received);
         Assert.Equal(ImageTestData.Png, received.SourceImage!.ToArray());
     }
@@ -138,5 +145,17 @@ public class ImageRoutingTests
     {
         await Task.CompletedTask;
         yield break;
+    }
+}
+
+internal sealed class CapturingLogger<T> : ILogger<T>
+{
+    public List<Exception> Errors { get; } = [];
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        if (exception is not null)
+            Errors.Add(exception);
     }
 }
