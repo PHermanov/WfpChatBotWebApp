@@ -9,6 +9,7 @@ using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Extensions;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
+using Messages = WfpChatBotWebApp.TelegramBot.Services.TextMessageService.TextMessageNames;
 
 #pragma warning disable OPENAI001 // Responses APIs are experimental in OpenAI 2.9.1.
 
@@ -25,7 +26,7 @@ public interface IOpenAiChatService
 }
 
 public class OpenAiChatService(
-    IOptions<OpenAiChatServiceOptions> options,
+    ITextMessageService textMessageService,
     IOptions<OpenAiClientFactoryOptions> clientOptions,
     IOpenAiClientFactory openAiClientFactory,
     IOpenAiChatToolsService openAiChatToolsService,
@@ -205,7 +206,8 @@ public class OpenAiChatService(
 
         var botUser = await GetMe(cancellationToken);
 
-        var prompt = string.Format(options.Value.SystemPrompt, DateTime.Now.ToString("F", CultureInfo.InvariantCulture));
+        var promptTemplate = await textMessageService.GetMessageByNameAsync(Messages.SystemPrompt, cancellationToken);
+        var prompt = string.Format(promptTemplate, DateTime.Now.ToString("F", CultureInfo.InvariantCulture));
 
         return ResponseItem.CreateSystemMessageItem(
             inputTextContent: $"""

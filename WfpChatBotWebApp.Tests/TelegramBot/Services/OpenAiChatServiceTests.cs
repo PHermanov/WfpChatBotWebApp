@@ -13,6 +13,7 @@ using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Entities;
 using WfpChatBotWebApp.Persistence.Models;
+using WfpChatBotWebApp.TelegramBot.Services;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
@@ -401,7 +402,7 @@ public class OpenAiChatServiceTests
                 Transport = new HttpClientPipelineTransport(_httpClient)
             });
             Service = new OpenAiChatService(
-                Options.Create(new OpenAiChatServiceOptions { SystemPrompt = "Test prompt at {0}" }),
+                new StubTextMessageService("Test prompt at {0}"),
                 Options.Create(CreateClientOptions()),
                 new StubClientFactory(client),
                 new OpenAiChatToolsService(Images, Edits),
@@ -422,6 +423,12 @@ public class OpenAiChatServiceTests
         public ResponsesClient ResponsesClient => responsesClient;
         public ImageClient ImageClient => throw new NotSupportedException();
         public AudioClient AudioClient => throw new NotSupportedException();
+    }
+
+    private sealed class StubTextMessageService(string systemPrompt) : ITextMessageService
+    {
+        public Task<string> GetMessageByNameAsync(string name, CancellationToken cancellationToken) =>
+            Task.FromResult(name == TextMessageService.TextMessageNames.SystemPrompt ? systemPrompt : string.Empty);
     }
 
     private sealed class StubImageService : IAiImageService

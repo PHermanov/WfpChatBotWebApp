@@ -94,7 +94,6 @@ builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueServ
 builder.Services.AddSingleton<IRandomService, RandomService>();
 
 builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
-builder.Services.Configure<OpenAiChatServiceOptions>(builder.Configuration);
 builder.Services.Configure<ThrottlingServiceOptions>(builder.Configuration);
 
 // Message bus

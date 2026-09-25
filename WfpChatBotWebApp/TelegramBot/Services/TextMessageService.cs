@@ -78,7 +78,6 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         public const string NewWinner = nameof(NewWinner);
         public const string TodayString = nameof(TodayString);
         public const string TodayWinnerAlreadySet = nameof(TodayWinnerAlreadySet);
-        public const string TodayWinnerAlreadySetUkr = nameof(TodayWinnerAlreadySetUkr);
         public const string Tomorrow = nameof(Tomorrow);
         public const string TopMonthWinners = nameof(TopMonthWinners);
         public const string WednesdayMyDudes = nameof(WednesdayMyDudes);
@@ -93,6 +92,7 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         public const string ImageDescriptionPreText = nameof(ImageDescriptionPreText);
         public const string AudioTranscriptTestTemplate = nameof(AudioTranscriptTestTemplate);
         public const string TakeRest = nameof(TakeRest);
+        public const string SystemPrompt = nameof(SystemPrompt);
         public const string RedrawUsage = nameof(RedrawUsage);
         public const string ImageSourceMissing = nameof(ImageSourceMissing);
         public const string ImageInputInvalid = nameof(ImageInputInvalid);

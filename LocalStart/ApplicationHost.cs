@@ -114,7 +114,6 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IRandomService, RandomService>();
 
         serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
-        serviceCollection.Configure<OpenAiChatServiceOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<ThrottlingServiceOptions>(hostBuilderContext.Configuration);
     }
 

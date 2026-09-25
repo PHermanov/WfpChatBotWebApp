@@ -5,7 +5,6 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Audio;
-using OpenAI.Images;
 using OpenAI.Responses;
 
 #pragma warning disable OPENAI001 // Responses APIs are experimental in OpenAI 2.9.1.
@@ -15,7 +14,6 @@ namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 public interface IOpenAiClientFactory
 {
     ResponsesClient ResponsesClient { get; }
-    ImageClient ImageClient { get; }
     AudioClient AudioClient { get; }
 }
 
@@ -48,10 +46,6 @@ public class OpenAiClientFactory(
         return endpoint.Uri;
     }
 
-    [field: MaybeNull]
-    public ImageClient ImageClient => field ??= AzureOpenAiClient
-        .GetImageClient(options.Value.OpenAiImageModelName);
-    
     [field: MaybeNull]
     public AudioClient AudioClient => field ??= AzureOpenAiClient
         .GetAudioClient(options.Value.OpenAiAudioModelName);
