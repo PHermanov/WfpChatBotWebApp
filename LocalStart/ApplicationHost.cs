@@ -97,7 +97,7 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
         serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
         serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
-        serviceCollection.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
+        serviceCollection.AddOpenAiClients();
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
         serviceCollection.AddScoped<IInternetSearchService, GoogleSearchService>();
@@ -113,7 +113,7 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
         serviceCollection.AddSingleton<IRandomService, RandomService>();
 
-        serviceCollection.Configure<OpenAiClientFactoryOptions>(hostBuilderContext.Configuration);
+        serviceCollection.Configure<OpenAiOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<ThrottlingServiceOptions>(hostBuilderContext.Configuration);
     }
 

@@ -78,7 +78,7 @@ builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
 builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
 builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
-builder.Services.AddSingleton<IOpenAiClientFactory, OpenAiClientFactory>();
+builder.Services.AddOpenAiClients();
 builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
 builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();
 builder.Services.AddScoped<IInternetSearchService, GoogleSearchService>();
@@ -93,7 +93,7 @@ builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddSingleton<IRandomService, RandomService>();
 
-builder.Services.Configure<OpenAiClientFactoryOptions>(builder.Configuration);
+builder.Services.Configure<OpenAiOptions>(builder.Configuration);
 builder.Services.Configure<ThrottlingServiceOptions>(builder.Configuration);
 
 // Message bus

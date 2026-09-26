@@ -4,10 +4,11 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Audio;
-using OpenAI.Images;
 using OpenAI.Responses;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
@@ -30,12 +31,32 @@ public class OpenAiChatServiceTests
     [InlineData("https://example.openai.azure.com/openai/v1/", "https://example.openai.azure.com/openai/v1")]
     [InlineData("https://gateway.example/prefix/", "https://gateway.example/prefix/openai/v1")]
     [InlineData("https://gateway.example/prefix/openai/v1", "https://gateway.example/prefix/openai/v1")]
-    public void Factory_UsesV1EndpointAndReusesClient(string configuredEndpoint, string expectedEndpoint)
+    public void Endpoint_ResolvesToV1ResponsesEndpoint(string configuredEndpoint, string expectedEndpoint)
     {
-        var factory = new OpenAiClientFactory(Options.Create(CreateClientOptions(configuredEndpoint)));
+        Assert.Equal(new Uri(expectedEndpoint), OpenAiEndpoint.ForResponses(configuredEndpoint));
+    }
 
-        Assert.Equal(new Uri(expectedEndpoint), factory.ResponsesClient.Endpoint);
-        Assert.Same(factory.ResponsesClient, factory.ResponsesClient);
+    [Fact]
+    public void AddOpenAiClients_RegistersSingletonClientsFromConfiguration()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["OpenAiUrl"] = "https://example.openai.azure.com",
+            ["OpenAiKey"] = "test-key",
+            ["OpenAiChatModelName"] = "gpt-6-astra",
+            ["OpenAiAudioModelName"] = "test-audio"
+        }).Build();
+
+        using var provider = new ServiceCollection()
+            .Configure<OpenAiOptions>(configuration)
+            .AddOpenAiClients()
+            .BuildServiceProvider();
+
+        var responsesClient = provider.GetRequiredService<ResponsesClient>();
+
+        Assert.Equal(new Uri("https://example.openai.azure.com/openai/v1"), responsesClient.Endpoint);
+        Assert.Same(responsesClient, provider.GetRequiredService<ResponsesClient>());
+        Assert.Same(provider.GetRequiredService<AudioClient>(), provider.GetRequiredService<AudioClient>());
     }
 
     [Fact]
@@ -314,12 +335,11 @@ public class OpenAiChatServiceTests
 
     private static OpenAiRequest Request(string text, long userId) => new() { MessageText = text, UserId = userId };
 
-    private static OpenAiClientFactoryOptions CreateClientOptions(string endpoint = "https://example.openai.azure.com") => new()
+    private static OpenAiOptions CreateClientOptions(string endpoint = "https://example.openai.azure.com") => new()
     {
         OpenAiUrl = endpoint,
         OpenAiKey = "test-key",
         OpenAiChatModelName = "gpt-6-astra",
-        OpenAiImageModelName = "test-image",
         OpenAiAudioModelName = "test-audio"
     };
 
@@ -404,7 +424,7 @@ public class OpenAiChatServiceTests
             Service = new OpenAiChatService(
                 new StubTextMessageService("Test prompt at {0}"),
                 Options.Create(CreateClientOptions()),
-                new StubClientFactory(client),
+                client,
                 new OpenAiChatToolsService(Images, Edits),
                 new EmptyGameRepository(),
                 new TelegramBotClient("123456:test-key", _httpClient));
@@ -416,13 +436,6 @@ public class OpenAiChatServiceTests
     private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request, cancellationToken);
-    }
-
-    private sealed class StubClientFactory(ResponsesClient responsesClient) : IOpenAiClientFactory
-    {
-        public ResponsesClient ResponsesClient => responsesClient;
-        public ImageClient ImageClient => throw new NotSupportedException();
-        public AudioClient AudioClient => throw new NotSupportedException();
     }
 
     private sealed class StubTextMessageService(string systemPrompt) : ITextMessageService

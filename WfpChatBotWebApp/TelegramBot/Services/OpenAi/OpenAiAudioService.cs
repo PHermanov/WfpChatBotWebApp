@@ -10,7 +10,7 @@ public interface IOpenAiAudioService
 }
 
 public class OpenAiAudioService(
-    IOpenAiClientFactory openAiClientFactory)
+    AudioClient audioClient)
     : IOpenAiAudioService
 {
     public async Task<string> ProcessAudio(
@@ -20,7 +20,7 @@ public class OpenAiAudioService(
         audioStream.Position = 0;
         var audioTranscriptionOptions = new AudioTranscriptionOptions { Language = "uk" };
 
-        var audioTranscriptionResult = await openAiClientFactory.AudioClient
+        var audioTranscriptionResult = await audioClient
             .TranscribeAudioAsync(audioStream, "voice.wav", audioTranscriptionOptions, cancellationToken);
         
         return audioTranscriptionResult.Value.Text;

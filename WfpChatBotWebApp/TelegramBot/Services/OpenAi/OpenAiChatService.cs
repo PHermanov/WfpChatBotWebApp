@@ -27,8 +27,8 @@ public interface IOpenAiChatService
 
 public class OpenAiChatService(
     ITextMessageService textMessageService,
-    IOptions<OpenAiClientFactoryOptions> clientOptions,
-    IOpenAiClientFactory openAiClientFactory,
+    IOptions<OpenAiOptions> openAiOptions,
+    ResponsesClient responsesClient,
     IOpenAiChatToolsService openAiChatToolsService,
     IGameRepository gameRepository,
     ITelegramBotClient botClient)
@@ -52,7 +52,7 @@ public class OpenAiChatService(
         }
 
         var responseOptions = openAiChatToolsService.RegisterTools(
-            new CreateResponseOptions(clientOptions.Value.OpenAiChatModelName, messagesQueue.ToArray())
+            new CreateResponseOptions(openAiOptions.Value.OpenAiChatModelName, messagesQueue.ToArray())
             {
                 StreamingEnabled = true,
                 StoredOutputEnabled = false,
@@ -63,7 +63,7 @@ public class OpenAiChatService(
                 IncludedProperties = { IncludedResponseProperty.ReasoningEncryptedContent }
             });
 
-        var stream = openAiClientFactory.ResponsesClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
+        var stream = responsesClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
         StringBuilder contentBuilder = new();
         ResponseResult? completedResponse = null;
 
