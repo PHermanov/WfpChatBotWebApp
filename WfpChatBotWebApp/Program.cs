@@ -7,7 +7,6 @@ using SlimMessageBus.Host.Memory;
 using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
