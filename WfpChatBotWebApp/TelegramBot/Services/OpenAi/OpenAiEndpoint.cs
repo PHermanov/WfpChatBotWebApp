@@ -1,16 +1,16 @@
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 /// <summary>
-/// Resolves the Azure OpenAI v1 Responses endpoint from the configured resource URL, so an
-/// <c>OpenAiUrl</c> with or without an <c>/openai[/v1]</c> suffix keeps working unchanged.
+/// Resolves the Azure OpenAI v1 Responses endpoint from the configured resource URL, so a
+/// <c>FoundryUrl</c> with or without an <c>/openai[/v1]</c> suffix keeps working unchanged.
 /// </summary>
 public static class OpenAiEndpoint
 {
-    public static Uri ForResponses(string openAiUrl)
+    public static Uri ForResponses(string foundryUrl)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(openAiUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(foundryUrl);
 
-        var endpoint = new UriBuilder(openAiUrl);
+        var endpoint = new UriBuilder(foundryUrl);
         var path = endpoint.Path.TrimEnd('/');
         if (!path.EndsWith("/openai/v1", StringComparison.OrdinalIgnoreCase))
         {

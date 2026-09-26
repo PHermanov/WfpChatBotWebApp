@@ -8,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenAI;
-using OpenAI.Audio;
 using OpenAI.Responses;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
@@ -25,6 +24,8 @@ namespace WfpChatBotWebApp.Tests.TelegramBot.Services;
 public class OpenAiChatServiceTests
 {
     [Theory]
+    [InlineData("https://example.services.ai.azure.com", "https://example.services.ai.azure.com/openai/v1")]
+    [InlineData("https://example.services.ai.azure.com/", "https://example.services.ai.azure.com/openai/v1")]
     [InlineData("https://example.openai.azure.com", "https://example.openai.azure.com/openai/v1")]
     [InlineData("https://example.openai.azure.com/", "https://example.openai.azure.com/openai/v1")]
     [InlineData("https://example.openai.azure.com/openai", "https://example.openai.azure.com/openai/v1")]
@@ -41,10 +42,9 @@ public class OpenAiChatServiceTests
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["OpenAiUrl"] = "https://example.openai.azure.com",
+            ["FoundryUrl"] = "https://example.services.ai.azure.com",
             ["OpenAiKey"] = "test-key",
-            ["OpenAiChatModelName"] = "gpt-6-astra",
-            ["OpenAiAudioModelName"] = "test-audio"
+            ["OpenAiChatModelName"] = "gpt-6-astra"
         }).Build();
 
         using var provider = new ServiceCollection()
@@ -54,9 +54,8 @@ public class OpenAiChatServiceTests
 
         var responsesClient = provider.GetRequiredService<ResponsesClient>();
 
-        Assert.Equal(new Uri("https://example.openai.azure.com/openai/v1"), responsesClient.Endpoint);
+        Assert.Equal(new Uri("https://example.services.ai.azure.com/openai/v1"), responsesClient.Endpoint);
         Assert.Same(responsesClient, provider.GetRequiredService<ResponsesClient>());
-        Assert.Same(provider.GetRequiredService<AudioClient>(), provider.GetRequiredService<AudioClient>());
     }
 
     [Fact]
@@ -335,12 +334,11 @@ public class OpenAiChatServiceTests
 
     private static OpenAiRequest Request(string text, long userId) => new() { MessageText = text, UserId = userId };
 
-    private static OpenAiOptions CreateClientOptions(string endpoint = "https://example.openai.azure.com") => new()
+    private static OpenAiOptions CreateClientOptions(string endpoint = "https://example.services.ai.azure.com") => new()
     {
-        OpenAiUrl = endpoint,
+        FoundryUrl = endpoint,
         OpenAiKey = "test-key",
-        OpenAiChatModelName = "gpt-6-astra",
-        OpenAiAudioModelName = "test-audio"
+        OpenAiChatModelName = "gpt-6-astra"
     };
 
     private static string Event(object update)

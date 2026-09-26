@@ -76,8 +76,6 @@ builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
-builder.Services.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
-builder.Services.AddTransient<IAudioProcessor, AudioProcessor>();
 builder.Services.AddOpenAiClients();
 builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
 builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();
@@ -87,7 +85,6 @@ builder.Services.AddSingleton<IAiImageService>(services => services.GetRequiredS
 builder.Services.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
 builder.Services.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
 builder.Services.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
-builder.Services.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
 builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();

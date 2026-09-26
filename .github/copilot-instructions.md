@@ -4,7 +4,7 @@
 - This is a .NET 10 solution: `WfpChatBotWebApp/` is the ASP.NET Core production app; `LocalStart/` references it and runs the same bot logic through Telegram long polling; `WfpChatBotWebApp.Tests/` is the xUnit test project.
 - Production startup is centralized in `WfpChatBotWebApp/Program.cs`: Azure Key Vault configuration, Azure Monitor, SQL Server EF Core, Telegram/HTTP clients, MediatR, and an in-memory SlimMessageBus are registered there.
 - Telegram posts to `POST /telegrambot`. `TelegramBotController` validates `X-Telegram-Bot-Api-Secret-Token`, publishes the `Update` without awaiting it, and returns immediately; ten scoped consumers call `ITelegramBotService.HandleUpdateAsync`.
-- `TelegramBotService` is the routing hub: register/update the chat user, then route mentions/photos to AI replies, voice to transcription, slash commands to MediatR, and ordinary text to auto-reply services.
+route mentions/photos to AI replies, slash commands to MediatR, and ordinary text to auto-reply services.
 - `JobController` maps secret-protected job names to MediatR requests. `LocalStart/LocalTelegramBotService.cs` exposes equivalent `/dailyjob`, `/monthlyjob`, etc. commands for local debugging.
 
 ## Established implementation patterns
@@ -15,7 +15,6 @@
 - Persistence is behind `IGameRepository`; all user/result queries are scoped by Telegram `chatId`. `GameRepository.CheckUserAsync` also creates missing chats and caches known users for one hour.
 - Message templates, stickers, users, chats, and game results are database data (`AppDbContext`), not hard-coded response text. Preserve the existing Telegram `ParseMode` expected by each template.
 - AI replies stream from `OpenAiChatService` through `BotReplyService`. Preserve per-context queues, tool-call handling, Telegram-supported HTML validation, and throttled message edits.
-- Audio conversion depends on copied `StaticFiles/ffmpeg` and `StaticFiles/ffprobe`; `AudioProcessor` resolves them via `BinaryFolder = "StaticFiles"`.
 
 ## Configuration and integrations
 - Production loads secrets through `AzureKeyVaultUri` and `DefaultAzureCredential`; expected keys are referenced in `Program.cs` and the OpenAI options classes.
@@ -41,7 +40,7 @@
 - Use imperative mood for instructions (e.g., "Use X" instead of "You should use X").
 
 ### OpenAI Integration
-- Use `ResponsesClient` against Azure `/openai/v1/responses` for Astra chat with high reasoning and function tools; retain the Azure image/audio clients.
+- Use `ResponsesClient` against Azure `/openai/v1/responses` for Astra chat with high reasoning and function tools. `FoundryUrl` + `OpenAiKey` serve both Responses and FLUX; register SDK clients via `AddOpenAiClients()` in both hosts, with no client factory or `Azure.AI.OpenAI` dependency.
 - Use FLUX as this bot's image-generation provider with byte-only results. Do not retain the legacy URL/bytes tuple or the unused DALL·E image-service fallback and commented registrations.
 - Keep Responses history local (`StoredOutputEnabled = false`), request encrypted reasoning, and replay all output items with tool results linked by `CallId`. Preserve direct image-tool delivery without an extra model turn.
 - Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1; do not restore the Chat Completions reasoning workaround.

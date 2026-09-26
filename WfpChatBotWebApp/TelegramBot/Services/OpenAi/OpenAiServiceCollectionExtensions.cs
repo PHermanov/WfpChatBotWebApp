@@ -1,6 +1,4 @@
 using System.ClientModel;
-using Azure;
-using Azure.AI.OpenAI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Responses;
@@ -17,12 +15,6 @@ public static class OpenAiServiceCollectionExtensions
             var options = provider.GetRequiredService<IOptions<OpenAiOptions>>().Value;
             return new ResponsesClient(
                 new ApiKeyCredential(options.OpenAiKey),
-                new OpenAIClientOptions { Endpoint = OpenAiEndpoint.ForResponses(options.OpenAiUrl) });
-        })
-        .AddSingleton(provider =>
-        {
-            var options = provider.GetRequiredService<IOptions<OpenAiOptions>>().Value;
-            return new AzureOpenAIClient(new Uri(options.OpenAiUrl), new AzureKeyCredential(options.OpenAiKey))
-                .GetAudioClient(options.OpenAiAudioModelName);
+                new OpenAIClientOptions { Endpoint = OpenAiEndpoint.ForResponses(options.FoundryUrl) });
         });
 }

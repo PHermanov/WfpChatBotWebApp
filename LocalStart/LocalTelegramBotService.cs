@@ -28,7 +28,6 @@ public class LocalTelegramBotService : ILocalTelegramBotService
         IGameRepository gameRepository,
         IAutoReplyService autoReplyService,
         IBotReplyService botReplyService,
-        IAudioTranscribeService audioTranscribeService,
         IThrottlingService throttlingService,
         ILogger<TelegramBotService> logger)
     {
@@ -41,7 +40,6 @@ public class LocalTelegramBotService : ILocalTelegramBotService
             autoReplyService,
             _telegramBotClient,
             botReplyService,
-            audioTranscribeService,
             throttlingService,
             logger);
     }

@@ -170,11 +170,6 @@ INSERT INTO TextMessages (Name, Text)
 SELECT 'ImageDescriptionPreText', 'Here is what I see on this picture:'
 WHERE NOT EXISTS (SELECT 1 FROM TextMessages WHERE Name = 'ImageDescriptionPreText');
 
--- Voice transcript, HTML. {0} is the user name, {1} is the transcript.
-INSERT INTO TextMessages (Name, Text)
-SELECT 'AudioTranscriptTestTemplate', '<b>{0}</b> said: <i>{1}</i>'
-WHERE NOT EXISTS (SELECT 1 FROM TextMessages WHERE Name = 'AudioTranscriptTestTemplate');
-
 -- Month names used in the yearly summary. No placeholders.
 INSERT INTO TextMessages (Name, Text)
 SELECT 'Month_1', 'January'

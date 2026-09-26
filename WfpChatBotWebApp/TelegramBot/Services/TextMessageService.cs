@@ -90,7 +90,6 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         public const string YesterdayWinner = nameof(YesterdayWinner);
         public const string UserMissing = nameof(UserMissing);
         public const string ImageDescriptionPreText = nameof(ImageDescriptionPreText);
-        public const string AudioTranscriptTestTemplate = nameof(AudioTranscriptTestTemplate);
         public const string TakeRest = nameof(TakeRest);
         public const string SystemPrompt = nameof(SystemPrompt);
         public const string RedrawUsage = nameof(RedrawUsage);

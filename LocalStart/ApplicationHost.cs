@@ -95,8 +95,6 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IStickerService, StickerService>();
         serviceCollection.AddScoped<IAutoReplyService, AutoReplyService>();
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
-        serviceCollection.AddScoped<IAudioTranscribeService, AudioTranscribeService>();
-        serviceCollection.AddTransient<IAudioProcessor, AudioProcessor>();
         serviceCollection.AddOpenAiClients();
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();
@@ -106,7 +104,6 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
         serviceCollection.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
         serviceCollection.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
-        serviceCollection.AddSingleton<IOpenAiAudioService, OpenAiAudioService>();
         serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();

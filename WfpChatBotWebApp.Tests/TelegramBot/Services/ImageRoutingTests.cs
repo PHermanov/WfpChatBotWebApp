@@ -48,7 +48,6 @@ public class ImageRoutingTests
             TestProxy.Create<IAutoReplyService>((_, _) => throw new InvalidOperationException("Unexpected auto reply")),
             new TelegramBotClient("123456:test-key", client),
             TestProxy.Create<IBotReplyService>((_, _) => throw new InvalidOperationException("Unexpected AI reply")),
-            TestProxy.Create<IAudioTranscribeService>((_, _) => throw new InvalidOperationException("Unexpected audio")),
             throttle, NullLogger<TelegramBotService>.Instance);
         var message = new Message
         {

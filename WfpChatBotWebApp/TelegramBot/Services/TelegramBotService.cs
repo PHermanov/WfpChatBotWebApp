@@ -18,7 +18,6 @@ public class TelegramBotService(
     IAutoReplyService autoReplyService,
     ITelegramBotClient botClient,
     IBotReplyService botReplyService,
-    IAudioTranscribeService audioTranscribeService,
     IThrottlingService throttlingService,
     ILogger<TelegramBotService> logger)
     : ITelegramBotService
@@ -35,8 +34,7 @@ public class TelegramBotService(
             return;
 
         if ((message.Type is MessageType.Text && !string.IsNullOrWhiteSpace(message.Text))
-            || message.Type == MessageType.Photo
-            || message.Type == MessageType.Voice)
+            || message.Type == MessageType.Photo)
         {
             var userName = message.From?.Username;
             var text = message.Text ?? string.Empty;
@@ -75,13 +73,6 @@ public class TelegramBotService(
 
             if (message.Type == MessageType.Photo && !botMentioned)
                 return;
-
-            if (message is { Type: MessageType.Voice, Voice: not null })
-            {
-                logger.LogInformation("TelegramBotService chat: {ChatId}, Received voice message", message.Chat.Id);
-                await audioTranscribeService.Reply(message, cancellationToken);
-                return;
-            }
 
             if (!string.IsNullOrEmpty(text) && !text.TrimStart().StartsWith('/'))
             {
