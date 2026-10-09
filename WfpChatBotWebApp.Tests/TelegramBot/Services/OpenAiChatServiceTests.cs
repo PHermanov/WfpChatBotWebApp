@@ -1,19 +1,18 @@
-using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Azure.AI.Extensions.OpenAI;
+using Azure.AI.Projects;
+using Azure.Core;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using OpenAI;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenAI.Responses;
 using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.Persistence.Entities;
-using WfpChatBotWebApp.Persistence.Models;
-using WfpChatBotWebApp.TelegramBot.Services;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
@@ -23,76 +22,102 @@ namespace WfpChatBotWebApp.Tests.TelegramBot.Services;
 
 public class OpenAiChatServiceTests
 {
-    [Theory]
-    [InlineData("https://example.services.ai.azure.com", "https://example.services.ai.azure.com/openai/v1")]
-    [InlineData("https://example.services.ai.azure.com/", "https://example.services.ai.azure.com/openai/v1")]
-    [InlineData("https://example.openai.azure.com", "https://example.openai.azure.com/openai/v1")]
-    [InlineData("https://example.openai.azure.com/", "https://example.openai.azure.com/openai/v1")]
-    [InlineData("https://example.openai.azure.com/openai", "https://example.openai.azure.com/openai/v1")]
-    [InlineData("https://example.openai.azure.com/openai/v1/", "https://example.openai.azure.com/openai/v1")]
-    [InlineData("https://gateway.example/prefix/", "https://gateway.example/prefix/openai/v1")]
-    [InlineData("https://gateway.example/prefix/openai/v1", "https://gateway.example/prefix/openai/v1")]
-    public void Endpoint_ResolvesToV1ResponsesEndpoint(string configuredEndpoint, string expectedEndpoint)
-    {
-        Assert.Equal(new Uri(expectedEndpoint), OpenAiEndpoint.ForResponses(configuredEndpoint));
-    }
+    private const string ThreadKey = "10_99";
 
     [Fact]
-    public void AddOpenAiClients_RegistersSingletonClientsFromConfiguration()
+    public void AddOpenAiClients_RegistersProjectClientAndAgentReferenceFromConfiguration()
     {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        using var provider = BuildProvider(new Dictionary<string, string?>
         {
-            ["FoundryUrl"] = "https://example.services.ai.azure.com",
-            ["OpenAiKey"] = "test-key",
-            ["OpenAiChatModelName"] = "gpt-6-astra"
-        }).Build();
+            ["FoundryProjectEndpoint"] = "https://example.services.ai.azure.com/api/projects/test-project",
+            ["FoundryAgentName"] = "wfp-agent",
+            ["FoundryAgentVersion"] = "7"
+        });
 
-        using var provider = new ServiceCollection()
-            .Configure<OpenAiOptions>(configuration)
-            .AddOpenAiClients()
-            .BuildServiceProvider();
+        var projectClient = provider.GetRequiredService<AIProjectClient>();
+        var agent = provider.GetRequiredService<AgentReference>();
 
-        var responsesClient = provider.GetRequiredService<ResponsesClient>();
+        Assert.Same(projectClient, provider.GetRequiredService<AIProjectClient>());
+        Assert.Equal("wfp-agent", agent.Name);
+        Assert.Equal("7", agent.Version);
+    }
 
-        Assert.Equal(new Uri("https://example.services.ai.azure.com/openai/v1"), responsesClient.Endpoint);
-        Assert.Same(responsesClient, provider.GetRequiredService<ResponsesClient>());
+    [Theory]
+    [InlineData(null, "wfp-agent", "7", typeof(AIProjectClient))]
+    [InlineData("https://example.services.ai.azure.com/api/projects/test-project", null, "7", typeof(AgentReference))]
+    [InlineData("https://example.services.ai.azure.com/api/projects/test-project", "wfp-agent", null, typeof(AgentReference))]
+    public void AddOpenAiClients_ThrowsClearErrorWhenSettingIsMissing(string? endpoint, string? name, string? version, Type service)
+    {
+        using var provider = BuildProvider(new Dictionary<string, string?>
+        {
+            ["FoundryProjectEndpoint"] = endpoint,
+            ["FoundryAgentName"] = name,
+            ["FoundryAgentVersion"] = version
+        });
+
+        var exception = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService(service));
+        Assert.Contains("must be configured", exception.Message);
     }
 
     [Fact]
-    public async Task ProcessMessage_StreamsTextAndSendsResponsesOptionsAndStrictTools()
+    public async Task ProcessMessage_CreatesConversationAndSendsAgentRequestWithoutPerRequestTools()
     {
-        using var harness = new Harness(
-            TextDelta("<b>Hello") + TextDelta(" world</b>") + Completed(Message("<b>Hello world</b>")));
+        using var harness = new Harness(TextDelta("<b>Hello") + TextDelta(" world</b>") + Completed(Message("<b>Hello world</b>")));
 
-        var results = await Collect(harness.Service.ProcessMessage(
-            Guid.NewGuid(), 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+        var results = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
 
         Assert.Equal(["<b>Hello", "<b>Hello world</b>", "<b>Hello world</b>"], results.Select(result => result.Content));
         Assert.Equal([false, false, true], results.Select(result => result.ContentComplete));
-        Assert.All(results, result => Assert.Equal(OpenAiContentType.Text, result.ContentType));
-        Assert.Equal(new Uri("https://example.openai.azure.com/openai/v1/responses"), Assert.Single(harness.RequestUris));
-        var body = Assert.Single(harness.Requests);
-        Assert.Equal("gpt-6-astra", body.GetProperty("model").GetString());
-        Assert.True(body.GetProperty("stream").GetBoolean());
-        Assert.False(body.GetProperty("store").GetBoolean());
-        Assert.Equal("high", body.GetProperty("reasoning").GetProperty("effort").GetString());
-        Assert.Contains("reasoning.encrypted_content", body.GetProperty("include").EnumerateArray().Select(item => item.GetString()));
-        Assert.False(body.TryGetProperty("reasoning_effort", out _));
-        Assert.False(body.TryGetProperty("previous_response_id", out _));
-        Assert.Equal("auto", body.GetProperty("tool_choice").GetString());
-        var tools = body.GetProperty("tools").EnumerateArray().ToArray();
-        Assert.Equal(["CreateImage", "EditImage"], tools.Select(tool => tool.GetProperty("name").GetString()));
-        var tool = tools[0];
-        Assert.Equal("function", tool.GetProperty("type").GetString());
-        Assert.Equal("CreateImage", tool.GetProperty("name").GetString());
-        Assert.True(tool.GetProperty("strict").GetBoolean());
-        Assert.False(tool.GetProperty("parameters").GetProperty("additionalProperties").GetBoolean());
-        var input = body.GetProperty("input");
-        Assert.Equal("system", input[0].GetProperty("role").GetString());
-        Assert.Contains("Test prompt", input[0].GetProperty("content")[0].GetProperty("text").GetString());
-        Assert.Equal("user", input[1].GetProperty("role").GetString());
-        Assert.Equal("Telegram UserId: 42\nHello", input[1].GetProperty("content")[0].GetProperty("text").GetString());
-        Assert.False(input[1].TryGetProperty("name", out _));
+
+        var creation = Assert.Single(harness.Of(RequestKind.CreateConversation));
+        Assert.Equal("10", creation.Body.GetProperty("metadata").GetProperty("telegram_chat_id").GetString());
+        Assert.Equal(ThreadKey, creation.Body.GetProperty("metadata").GetProperty("telegram_thread_key").GetString());
+        var context = Assert.Single(creation.Body.GetProperty("items").EnumerateArray());
+        Assert.Equal("system", context.GetProperty("role").GetString());
+        var contextText = context.GetProperty("content")[0].GetProperty("text").GetString();
+        Assert.Contains("Your identifiers are: UserId: 123456", contextText);
+        Assert.Contains("Telegram chat participants are:", contextText);
+
+        var response = Assert.Single(harness.Of(RequestKind.CreateResponse));
+        Assert.Equal("/api/projects/test-project/openai/v1/responses", response.Path);
+        var agent = response.Body.GetProperty("agent_reference");
+        Assert.Equal("agent_reference", agent.GetProperty("type").GetString());
+        Assert.Equal("wfp-agent", agent.GetProperty("name").GetString());
+        Assert.Equal("7", agent.GetProperty("version").GetString());
+        Assert.Equal("conv_1", response.Body.GetProperty("conversation").GetProperty("id").GetString());
+        Assert.True(response.Body.GetProperty("stream").GetBoolean());
+        Assert.Equal("auto", response.Body.GetProperty("truncation").GetString());
+        Assert.False(response.Body.TryGetProperty("tools", out _));
+        Assert.False(response.Body.TryGetProperty("tool_choice", out _));
+        Assert.False(response.Body.TryGetProperty("model", out _));
+        Assert.False(response.Body.TryGetProperty("reasoning", out _));
+        Assert.False(response.Body.TryGetProperty("store", out _));
+        Assert.False(response.Body.TryGetProperty("previous_response_id", out _));
+
+        var input = Assert.Single(response.Body.GetProperty("input").EnumerateArray());
+        Assert.Equal("user", input.GetProperty("role").GetString());
+        Assert.StartsWith("Telegram UserId: 42; Time: ", input.GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.EndsWith("\nHello", input.GetProperty("content")[0].GetProperty("text").GetString());
+
+        Assert.All(harness.Requests, request => Assert.Equal("Bearer test-token", request.Authorization));
+    }
+
+    [Fact]
+    public async Task ProcessMessage_ReusesConversationAndSendsOnlyNewItems()
+    {
+        using var harness = new Harness(Completed(Message("First.")), Completed(Message("Second.")));
+
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Thanks", 84)], TestContext.Current.CancellationToken));
+
+        Assert.Single(harness.Of(RequestKind.CreateConversation));
+        var responses = harness.Of(RequestKind.CreateResponse).ToArray();
+        Assert.Equal(2, responses.Length);
+        Assert.All(responses, response => Assert.Equal("conv_1", response.Body.GetProperty("conversation").GetProperty("id").GetString()));
+        var input = Assert.Single(responses[1].Body.GetProperty("input").EnumerateArray());
+        Assert.EndsWith("\nThanks", input.GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.True(harness.Store.TryGetConversationId(ThreadKey, out var conversationId));
+        Assert.Equal("conv_1", conversationId);
     }
 
     [Theory]
@@ -107,9 +132,9 @@ public class OpenAiChatServiceTests
         var request = Request("Describe this", 42);
         request.Image = BinaryData.FromBytes(bytes);
 
-        await Collect(harness.Service.ProcessMessage(Guid.NewGuid(), 10, [request], TestContext.Current.CancellationToken));
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [request], TestContext.Current.CancellationToken));
 
-        var image = Assert.Single(harness.Requests).GetProperty("input")[1].GetProperty("content")[1];
+        var image = Assert.Single(harness.Of(RequestKind.CreateResponse)).Body.GetProperty("input")[0].GetProperty("content")[1];
         Assert.Equal("input_image", image.GetProperty("type").GetString());
         Assert.Equal($"data:{mediaType};base64,{Convert.ToBase64String(bytes)}", image.GetProperty("image_url").GetString());
         Assert.Equal("high", image.GetProperty("detail").GetString());
@@ -122,56 +147,35 @@ public class OpenAiChatServiceTests
         var referencedMessage = Request("My picture", 123456);
         referencedMessage.Image = BinaryData.FromBytes(new byte[] { 0xFF, 0xD8, 0xFF });
 
-        await Collect(harness.Service.ProcessMessage(Guid.NewGuid(), 10,
-            [referencedMessage, Request("Change it", 42)], TestContext.Current.CancellationToken));
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [referencedMessage, Request("Change it", 42)], TestContext.Current.CancellationToken));
 
-        var input = Assert.Single(harness.Requests).GetProperty("input");
-        Assert.Equal("assistant", input[1].GetProperty("role").GetString());
-        Assert.Equal("output_text", input[1].GetProperty("content")[0].GetProperty("type").GetString());
-        Assert.Contains("My picture", input[1].GetProperty("content")[0].GetProperty("text").GetString());
-        Assert.Equal("user", input[2].GetProperty("role").GetString());
-        Assert.Contains("123456", input[2].GetProperty("content")[0].GetProperty("text").GetString());
-        Assert.Equal("input_image", input[2].GetProperty("content")[1].GetProperty("type").GetString());
-        Assert.Contains("Change it", input[3].GetProperty("content")[0].GetProperty("text").GetString());
+        var input = Assert.Single(harness.Of(RequestKind.CreateResponse)).Body.GetProperty("input");
+        Assert.Equal("assistant", input[0].GetProperty("role").GetString());
+        Assert.Equal("output_text", input[0].GetProperty("content")[0].GetProperty("type").GetString());
+        Assert.Contains("My picture", input[0].GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.Equal("user", input[1].GetProperty("role").GetString());
+        Assert.Contains("123456", input[1].GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.Equal("input_image", input[1].GetProperty("content")[1].GetProperty("type").GetString());
+        Assert.Contains("Change it", input[2].GetProperty("content")[0].GetProperty("text").GetString());
     }
 
     [Fact]
-    public async Task ProcessMessage_ReplaysReasoningAndAllToolResultsWithoutAnExtraModelTurn()
+    public async Task ProcessMessage_AppendsEveryToolOutputWithoutAnExtraModelTurn()
     {
-        var firstCall = FunctionCall("call_first", "first");
         using var harness = new Harness(
-            Event(new { type = "response.function_call_arguments.delta", sequence_number = 1, item_id = "fc_call_first", output_index = 2, delta = "{\"prompt\":" }) +
-            Event(new { type = "response.output_item.done", sequence_number = 2, output_index = 2, item = firstCall }) +
-            Completed(Reasoning(), Message("Here are your pictures.", "commentary"), firstCall, FunctionCall("call_second", "second")),
-            Completed(Message("Follow-up.")),
-            Completed(Message("Separate context.")));
-        var context = Guid.NewGuid();
+            Completed(Reasoning(), Message("Here are your pictures.", "commentary"), FunctionCall("call_first", "first"), FunctionCall("call_second", "second")));
 
-        var first = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Draw two images", 42)], TestContext.Current.CancellationToken));
+        var results = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw two images", 42)], TestContext.Current.CancellationToken));
 
-        Assert.Single(harness.Requests);
-        Assert.Equal(["first", "second"], harness.Images.Prompts);
-        Assert.Equal([OpenAiContentType.Text, OpenAiContentType.ImageBytes, OpenAiContentType.ImageBytes], first.Select(result => result.ContentType));
-        Assert.Equal(new byte[] { 1, 2, 3 }, first[1].ImageContent);
-        Assert.Equal(new byte[] { 4, 5, 6 }, first[2].ImageContent);
-        Assert.All(first.Skip(1), result => Assert.Empty(result.Content));
-        Assert.Equal(TestContext.Current.CancellationToken, harness.Images.ReceivedCancellationToken);
+        Assert.Single(harness.Of(RequestKind.CreateResponse));
+        Assert.Equal(["first", "second"], harness.Images.CreatePrompts);
+        Assert.Equal([OpenAiContentType.Text, OpenAiContentType.ImageBytes, OpenAiContentType.ImageBytes], results.Select(result => result.ContentType));
+        Assert.All(results.Skip(1), result => Assert.Equal(ImageTestData.Png, result.ImageContent));
 
-        await Collect(harness.Service.ProcessMessage(context, 10, [Request("Thanks", 84)], TestContext.Current.CancellationToken));
-
-        var input = harness.Requests[1].GetProperty("input");
-        Assert.Equal(["message", "message", "reasoning", "message", "function_call", "function_call", "function_call_output", "function_call_output", "message"],
-            input.EnumerateArray().Select(item => item.GetProperty("type").GetString()));
-        Assert.Equal("opaque-reasoning", input[2].GetProperty("encrypted_content").GetString());
-        Assert.Equal("commentary", input[3].GetProperty("phase").GetString());
-        Assert.Equal("call_first", input[6].GetProperty("call_id").GetString());
-        Assert.Contains("Image generated", input[6].GetProperty("output").GetString());
-        Assert.Equal("call_second", input[7].GetProperty("call_id").GetString());
-        Assert.Contains("Image generated", input[7].GetProperty("output").GetString());
-        Assert.Equal("Telegram UserId: 84\nThanks", input[8].GetProperty("content")[0].GetProperty("text").GetString());
-
-        await Collect(harness.Service.ProcessMessage(Guid.NewGuid(), 20, [Request("Unrelated", 90)], TestContext.Current.CancellationToken));
-        Assert.Equal(2, harness.Requests[2].GetProperty("input").GetArrayLength());
+        var outputs = harness.ToolOutputs();
+        Assert.Equal(["call_first", "call_second"], outputs.Select(output => output.CallId));
+        Assert.All(outputs, output => Assert.Contains("Image generated", output.Output));
+        Assert.All(harness.Of(RequestKind.CreateItems), request => Assert.Contains("/conversations/conv_1/items", request.Path));
     }
 
     [Fact]
@@ -181,7 +185,7 @@ public class OpenAiChatServiceTests
             Event(new { type = "response.refusal.delta", sequence_number = 1, item_id = "msg_test", output_index = 0, content_index = 0, delta = "Cannot help." }) +
             Completed(new { type = "message", id = "msg_test", role = "assistant", status = "completed", content = new[] { new { type = "refusal", refusal = "Cannot help." } } }));
 
-        var results = await Collect(harness.Service.ProcessMessage(Guid.NewGuid(), 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+        var results = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
 
         Assert.Equal(["Cannot help.", "Cannot help."], results.Select(result => result.Content));
         Assert.False(results[0].ContentComplete);
@@ -194,7 +198,7 @@ public class OpenAiChatServiceTests
     [InlineData("error", "invalid_request_error")]
     [InlineData("eof", "without a completed response")]
     [InlineData("empty", "no text or function calls")]
-    public async Task ProcessMessage_RejectsUnsuccessfulStreamsWithoutExecutingOrRetainingTools(string kind, string expectedError)
+    public async Task ProcessMessage_RejectsUnsuccessfulStreamsClosesSeenCallsAndStartsNewConversation(string kind, string expectedError)
     {
         var terminal = kind switch
         {
@@ -204,44 +208,111 @@ public class OpenAiChatServiceTests
             "error" => Event(new { type = "error", sequence_number = 2, code = "invalid_request_error", message = "Bad input.", param = "input" }),
             _ => string.Empty
         };
-        using var harness = new Harness(TextDelta("Partial") +
-            Event(new { type = "response.output_item.done", sequence_number = 1, output_index = 0, item = FunctionCall("call_partial", "first") }) + terminal,
+        using var harness = new Harness(
+            TextDelta("Partial") + Event(new { type = "response.output_item.done", sequence_number = 1, output_index = 0, item = FunctionCall("call_partial", "first") }) + terminal,
             Completed(Message("Recovered.")));
-        var context = Guid.NewGuid();
         List<OpenAiResponse> results = [];
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await foreach (var result in harness.Service.ProcessMessage(context, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken))
+            await foreach (var result in harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken))
                 results.Add(result);
         });
 
         Assert.Contains(expectedError, exception.Message);
         Assert.DoesNotContain(results, result => result.ContentComplete);
-        Assert.Empty(harness.Images.Prompts);
-        await Collect(harness.Service.ProcessMessage(context, 10, [Request("Retry", 42)], TestContext.Current.CancellationToken));
-        Assert.Equal(3, harness.Requests[1].GetProperty("input").GetArrayLength());
+        Assert.Empty(harness.Images.CreatePrompts);
+        var closed = Assert.Single(harness.ToolOutputs());
+        Assert.Equal("call_partial", closed.CallId);
+        Assert.DoesNotContain("Image generated", closed.Output);
+        Assert.False(harness.Store.TryGetConversationId(ThreadKey, out _));
+
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Retry", 42)], TestContext.Current.CancellationToken));
+
+        Assert.Equal(2, harness.Of(RequestKind.CreateConversation).Count());
+        Assert.Equal("conv_2", harness.Of(RequestKind.CreateResponse).Last().Body.GetProperty("conversation").GetProperty("id").GetString());
     }
 
     [Theory]
     [InlineData("exception")]
     [InlineData("no-output")]
-    [InlineData("empty-bytes")]
-    public async Task ProcessMessage_DoesNotRetainUnansweredCallsWhenToolFails(string failureKind)
+    public async Task ProcessMessage_ClosesToolCallAndResetsThreadWhenToolFails(string failureKind)
     {
-        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_failed", "first")), Completed(Message("Recovered.")));
-        harness.Images.ReturnNoOutput = failureKind == "no-output";
-        harness.Images.ReturnEmptyBytes = failureKind == "empty-bytes";
-        harness.Images.Failure = failureKind == "exception" ? new InvalidOperationException("Image provider failed.") : null;
-        var context = Guid.NewGuid();
+        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_failed", "first")));
+        harness.Images.CreateFailure = failureKind == "exception" ? new InvalidOperationException("Provider failed.") : null;
+        harness.Images.EmptyResult = failureKind == "no-output";
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(harness.Service.ProcessMessage(
-            context, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken)));
-        await Collect(harness.Service.ProcessMessage(context, 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken)));
 
-        var input = harness.Requests[1].GetProperty("input");
-        Assert.Equal(3, input.GetArrayLength());
-        Assert.All(input.EnumerateArray(), item => Assert.Equal("message", item.GetProperty("type").GetString()));
+        var closed = Assert.Single(harness.ToolOutputs());
+        Assert.Equal("call_failed", closed.CallId);
+        Assert.DoesNotContain("Image generated", closed.Output);
+        Assert.False(harness.Store.TryGetConversationId(ThreadKey, out _));
+    }
+
+    [Fact]
+    public async Task ProcessMessage_PropagatesCancellationAndResetsThread()
+    {
+        using var harness = new Harness(Completed(Message("Unused."))) { BlockResponses = true };
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        cancellation.CancelAfter(TimeSpan.FromSeconds(10));
+        var resultTask = Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Hello", 42)], cancellation.Token));
+        await harness.ResponseStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        await cancellation.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resultTask);
+        Assert.Empty(harness.Images.CreatePrompts);
+        Assert.False(harness.Store.TryGetConversationId(ThreadKey, out _));
+    }
+
+    [Fact]
+    public async Task ProcessMessage_CreatesOneConversationAndSerializesConcurrentTurns()
+    {
+        using var harness = new Harness(Completed(Message("First.")), Completed(Message("Second."))) { BlockResponses = true };
+
+        var first = Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("One", 42)], TestContext.Current.CancellationToken));
+        var second = Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Two", 84)], TestContext.Current.CancellationToken));
+        await harness.ResponseStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await Task.Delay(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken);
+
+        Assert.Single(harness.Of(RequestKind.CreateConversation));
+        Assert.Single(harness.Of(RequestKind.CreateResponse));
+
+        harness.ReleaseResponses();
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.Single(harness.Of(RequestKind.CreateConversation));
+        Assert.Equal(2, harness.Of(RequestKind.CreateResponse).Count());
+    }
+
+    [Fact]
+    public async Task ProcessMessage_AppendsWebSourcesOnlyToFinalText()
+    {
+        var message = new
+        {
+            type = "message", id = "msg_test", role = "assistant", status = "completed", phase = "final_answer",
+            content = new[]
+            {
+                new
+                {
+                    type = "output_text", text = "Answer",
+                    annotations = new object[]
+                    {
+                        new { type = "url_citation", url = "https://example.com/a?x=1&y=2", title = "Title & Co", start_index = 0, end_index = 6 },
+                        new { type = "url_citation", url = "https://example.com/a?x=1&y=2", title = "Duplicate", start_index = 0, end_index = 6 }
+                    }
+                }
+            }
+        };
+        using var harness = new Harness(TextDelta("Answer") + Completed(new { type = "web_search_call", id = "ws_1", status = "completed" }, message));
+
+        var results = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("News?", 42)], TestContext.Current.CancellationToken));
+
+        Assert.Equal("Answer", results[0].Content);
+        Assert.Equal("Answer\n\n🔗 <a href=\"https://example.com/a?x=1&amp;y=2\">Title &amp; Co</a>", results[^1].Content);
+        Assert.True(results[^1].ContentComplete);
     }
 
     [Theory]
@@ -253,50 +324,37 @@ public class OpenAiChatServiceTests
     [InlineData("Unknown", "{\"prompt\":\"draw\"}")]
     public async Task Tools_RejectInvalidCalls(string name, string arguments)
     {
-        var images = new StubImageService();
-        var tools = new OpenAiChatToolsService(images, new FakeImages());
+        var images = new FakeImages();
+        var tools = new OpenAiChatToolsService(images, images);
         var call = ResponseItem.CreateFunctionCallItem("call_invalid", name, BinaryData.FromString(arguments));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken)));
 
-        Assert.Empty(images.Prompts);
+        Assert.Empty(images.CreatePrompts);
     }
 
     [Fact]
-    public async Task ProcessMessage_PropagatesCancellationToTheStreamingRequest()
-    {
-        using var harness = new Harness(Completed(Message("Unused."))) { BlockResponses = true };
-        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        cancellation.CancelAfter(TimeSpan.FromSeconds(10));
-        var resultTask = Collect(harness.Service.ProcessMessage(Guid.NewGuid(), 10, [Request("Hello", 42)], cancellation.Token));
-        await harness.ResponseStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-
-        await cancellation.CancelAsync();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resultTask);
-        Assert.Empty(harness.Images.Prompts);
-    }
-
-    [Fact]
-    public async Task EditImage_ReplaysCallIdAndDoesNotReuseSourceForLaterRequests()
+    public async Task EditImage_UsesRequestSourceAndDoesNotReuseItForLaterRequests()
     {
         var editCall = new { type = "function_call", id = "fc_edit", call_id = "call_edit", name = "EditImage", arguments = "{\"prompt\":\"add a cup\"}", status = "completed" };
         using var harness = new Harness(Completed(Reasoning(), editCall), Completed(editCall));
-        var context = Guid.NewGuid();
         var source = new BinaryData(ImageTestData.Png);
-        var result = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Edit", 42)], TestContext.Current.CancellationToken,
+
+        var result = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Edit", 42)], TestContext.Current.CancellationToken,
             new ImageToolContext(source, "Attach a photo.", "Editing failed.")));
+
         Assert.Equal(OpenAiContentType.ImageBytes, Assert.Single(result).ContentType);
-        Assert.Same(source, Assert.Single(harness.Edits.Sources));
-        Assert.Single(harness.Requests);
-        result = await Collect(harness.Service.ProcessMessage(context, 10, [Request("Edit again", 42)], TestContext.Current.CancellationToken,
+        Assert.Same(source, Assert.Single(harness.Images.Sources));
+
+        result = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Edit again", 42)], TestContext.Current.CancellationToken,
             new ImageToolContext(null, "Attach a photo.", "Editing failed.")));
+
         Assert.Equal("Attach a photo.", Assert.Single(result).Content);
-        Assert.Single(harness.Edits.Sources);
-        var input = harness.Requests[1].GetProperty("input").EnumerateArray().ToArray();
-        Assert.Contains(input, item => item.GetProperty("type").GetString() == "reasoning");
-        var output = Assert.Single(input.Where(item => item.GetProperty("type").GetString() == "function_call_output"));
-        Assert.Equal("call_edit", output.GetProperty("call_id").GetString());
+        Assert.Single(harness.Images.Sources);
+        Assert.Equal(2, harness.Of(RequestKind.CreateResponse).Count());
+        var outputs = harness.ToolOutputs();
+        Assert.Equal(["call_edit", "call_edit"], outputs.Select(output => output.CallId));
+        Assert.Contains("Attach a photo.", outputs[1].Output);
     }
 
     [Theory]
@@ -309,7 +367,9 @@ public class OpenAiChatServiceTests
         var images = new FakeImages();
         var tools = new OpenAiChatToolsService(images, images);
         var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString(arguments));
+
         await Assert.ThrowsAsync<InvalidOperationException>(() => Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken)));
+
         Assert.Empty(images.Sources);
     }
 
@@ -319,9 +379,22 @@ public class OpenAiChatServiceTests
         var images = new FakeImages { EditFailure = new HttpRequestException("Private provider details") };
         var tools = new OpenAiChatToolsService(images, images);
         var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString("{\"prompt\":\"cup\"}"));
+
         var result = await Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken,
             new ImageToolContext(new BinaryData(ImageTestData.Png), "Attach a photo.", "Editing failed.")));
+
         Assert.Equal("Editing failed.", Assert.Single(result).Content);
+    }
+
+    private static ServiceProvider BuildProvider(Dictionary<string, string?> settings)
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+        return new ServiceCollection()
+            .AddLogging()
+            .Configure<FoundryAgentOptions>(configuration)
+            .AddSingleton<TokenCredential>(new FakeTokenCredential())
+            .AddOpenAiClients()
+            .BuildServiceProvider();
     }
 
     private static async Task<List<OpenAiResponse>> Collect(IAsyncEnumerable<OpenAiResponse> stream)
@@ -333,13 +406,6 @@ public class OpenAiChatServiceTests
     }
 
     private static OpenAiRequest Request(string text, long userId) => new() { MessageText = text, UserId = userId };
-
-    private static OpenAiOptions CreateClientOptions(string endpoint = "https://example.services.ai.azure.com") => new()
-    {
-        FoundryUrl = endpoint,
-        OpenAiKey = "test-key",
-        OpenAiChatModelName = "gpt-6-astra"
-    };
 
     private static string Event(object update)
     {
@@ -356,7 +422,7 @@ public class OpenAiChatServiceTests
     {
         type = "response.completed",
         sequence_number = 10,
-        response = new { id = "resp_test", @object = "response", created_at = 1_800_000_000, status = "completed", model = "gpt-6-astra", output }
+        response = new { id = "resp_test", @object = "response", created_at = 1_800_000_000, status = "completed", output }
     });
 
     private static object Message(string text, string phase = "final_answer") => new
@@ -376,16 +442,34 @@ public class OpenAiChatServiceTests
         arguments = JsonSerializer.Serialize(new { prompt }), status = "completed"
     };
 
+    private enum RequestKind
+    {
+        CreateConversation,
+        CreateItems,
+        CreateResponse,
+        Other
+    }
+
+    private sealed record CapturedRequest(RequestKind Kind, string Path, string? Authorization, JsonElement Body);
+
     private sealed class Harness : IDisposable
     {
         private readonly HttpClient _httpClient;
-        public List<JsonElement> Requests { get; } = [];
-        public List<Uri> RequestUris { get; } = [];
-        public StubImageService Images { get; } = new();
-        public FakeImages Edits { get; } = new();
+        private readonly Lock _lock = new();
+        private readonly List<CapturedRequest> _requests = [];
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _conversationCount;
+
+        public FakeImages Images { get; } = new();
+        public ConversationStore Store { get; } = new(new MemoryCache(new MemoryCacheOptions()));
         public OpenAiChatService Service { get; }
         public bool BlockResponses { get; init; }
         public TaskCompletionSource ResponseStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public IReadOnlyList<CapturedRequest> Requests
+        {
+            get { lock (_lock) return [.. _requests]; }
+        }
 
         public Harness(params string[] streams)
         {
@@ -395,94 +479,92 @@ public class OpenAiChatServiceTests
                 if (request.RequestUri!.Host == "api.telegram.org")
                 {
                     Assert.EndsWith("/getMe", request.RequestUri.AbsolutePath);
-                    return new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent("{\"ok\":true,\"result\":{\"id\":123456,\"is_bot\":true,\"first_name\":\"Test Bot\",\"username\":\"test_bot\"}}", Encoding.UTF8, "application/json")
-                    };
+                    return Json("{\"ok\":true,\"result\":{\"id\":123456,\"is_bot\":true,\"first_name\":\"Test Bot\",\"username\":\"test_bot\"}}");
                 }
 
                 Assert.Equal(HttpMethod.Post, request.Method);
-                Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
-                RequestUris.Add(request.RequestUri);
-                using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
-                Requests.Add(body.RootElement.Clone());
-                ResponseStarted.TrySetResult();
-                if (BlockResponses)
-                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                var path = request.RequestUri.AbsolutePath;
+                var bodyText = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken);
+                using var body = JsonDocument.Parse(string.IsNullOrWhiteSpace(bodyText) ? "{}" : bodyText);
+                var kind = path.EndsWith("/items", StringComparison.Ordinal) ? RequestKind.CreateItems
+                    : path.EndsWith("/conversations", StringComparison.Ordinal) ? RequestKind.CreateConversation
+                    : path.EndsWith("/responses", StringComparison.Ordinal) ? RequestKind.CreateResponse
+                    : RequestKind.Other;
+                lock (_lock)
+                    _requests.Add(new CapturedRequest(kind, path, request.Headers.Authorization?.ToString(), body.RootElement.Clone()));
+
+                switch (kind)
                 {
-                    Content = new StringContent(responses.Dequeue(), Encoding.UTF8, "text/event-stream")
-                };
+                    case RequestKind.CreateConversation:
+                        var id = $"conv_{Interlocked.Increment(ref _conversationCount)}";
+                        return Json($"{{\"id\":\"{id}\",\"object\":\"conversation\",\"created_at\":1800000000,\"metadata\":{{}}}}");
+                    case RequestKind.CreateItems:
+                        return Json("{\"object\":\"list\",\"data\":[],\"first_id\":null,\"last_id\":null,\"has_more\":false}");
+                    case RequestKind.CreateResponse:
+                        ResponseStarted.TrySetResult();
+                        if (BlockResponses)
+                            await _release.Task.WaitAsync(cancellationToken);
+                        string stream;
+                        lock (_lock)
+                            stream = responses.Dequeue();
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(stream, Encoding.UTF8, "text/event-stream")
+                        };
+                    default:
+                        throw new InvalidOperationException($"Unexpected request to {path}.");
+                }
             }));
-            var client = new ResponsesClient(new ApiKeyCredential("test-key"), new OpenAIClientOptions
-            {
-                Endpoint = new Uri("https://example.openai.azure.com/openai/v1"),
-                Transport = new HttpClientPipelineTransport(_httpClient)
-            });
+
+            var projectClient = new AIProjectClient(
+                endpoint: new Uri("https://example.services.ai.azure.com/api/projects/test-project"),
+                tokenProvider: new FakeTokenCredential(),
+                options: new AIProjectClientOptions { Transport = new HttpClientPipelineTransport(_httpClient) });
+
+            var repository = TestProxy.Create<IGameRepository>((method, _) => method!.Name == nameof(IGameRepository.GetActiveUsersForChatAsync)
+                ? Task.FromResult(Array.Empty<User>())
+                : throw new InvalidOperationException($"Unexpected repository call {method.Name}."));
+
             Service = new OpenAiChatService(
-                new StubTextMessageService("Test prompt at {0}"),
-                Options.Create(CreateClientOptions()),
-                client,
-                new OpenAiChatToolsService(Images, Edits),
-                new EmptyGameRepository(),
-                new TelegramBotClient("123456:test-key", _httpClient));
+                projectClient,
+                new AgentReference("wfp-agent", "7"),
+                new OpenAiChatToolsService(Images, Images),
+                repository,
+                new TelegramBotClient("123456:test-key", _httpClient),
+                Store,
+                NullLogger<OpenAiChatService>.Instance);
         }
 
+        public IEnumerable<CapturedRequest> Of(RequestKind kind) => Requests.Where(request => request.Kind == kind);
+
+        public List<(string CallId, string Output)> ToolOutputs() => Of(RequestKind.CreateItems)
+            .SelectMany(request => request.Body.GetProperty("items").EnumerateArray())
+            .Where(item => item.GetProperty("type").GetString() == "function_call_output")
+            .Select(item => (item.GetProperty("call_id").GetString()!, item.GetProperty("output").GetString()!))
+            .ToList();
+
+        public void ReleaseResponses() => _release.TrySetResult();
+
         public void Dispose() => _httpClient.Dispose();
+
+        private static HttpResponseMessage Json(string json) => new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
     }
 
     private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request, cancellationToken);
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            send(request, cancellationToken);
     }
 
-    private sealed class StubTextMessageService(string systemPrompt) : ITextMessageService
+    private sealed class FakeTokenCredential : TokenCredential
     {
-        public Task<string> GetMessageByNameAsync(string name, CancellationToken cancellationToken) =>
-            Task.FromResult(name == TextMessageService.TextMessageNames.SystemPrompt ? systemPrompt : string.Empty);
-    }
+        public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken) =>
+            new("test-token", DateTimeOffset.UtcNow.AddHours(1));
 
-    private sealed class StubImageService : IAiImageService
-    {
-        public List<string> Prompts { get; } = [];
-        public Exception? Failure { get; set; }
-        public bool ReturnNoOutput { get; set; }
-        public bool ReturnEmptyBytes { get; set; }
-        public CancellationToken ReceivedCancellationToken { get; private set; }
-
-        public async IAsyncEnumerable<byte[]> CreateImage(string prompt, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            cancellationToken.ThrowIfCancellationRequested();
-            ReceivedCancellationToken = cancellationToken;
-            Prompts.Add(prompt);
-            if (Failure is not null)
-                throw Failure;
-            if (ReturnNoOutput)
-                yield break;
-            yield return ReturnEmptyBytes ? [] : prompt == "first" ? new byte[] { 1, 2, 3 } : new byte[] { 4, 5, 6 };
-        }
-    }
-
-    private sealed class EmptyGameRepository : IGameRepository
-    {
-        public Task<User[]> GetActiveUsersForChatAsync(long chatId, CancellationToken cancellationToken) => Task.FromResult(Array.Empty<User>());
-        public Task CheckUserAsync(long chatId, long userId, string userName, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<User[]> GetAllUsersForChat(long chatId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<User?> GetUserByUserIdAndChatIdAsync(long chatId, long userId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<User?> GetUserByNameAsync(long chatId, string userName) => throw new NotSupportedException();
-        public Task<Result?> GetTodayResultAsync(long chatId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<Result?> GetYesterdayResultAsync(long chatId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<Result?> GetLastPlayedGameAsync(long chatId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task SaveResultAsync(Result result, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PlayerCountViewModel[]> GetAllWinnersForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<long[]> GetGameEnabledChatIdsAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<Sticker[]> GetStickersBySetAsync(string set, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<Sticker?> GetImageByNameAsync(string name, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task SetUserInactiveFlag(long chatId, long userId, bool inactive, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(GetToken(requestContext, cancellationToken));
     }
 }
