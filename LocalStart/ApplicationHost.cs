@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
-using WfpChatBotWebApp.Helpers;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
@@ -25,6 +24,7 @@ public static class ApplicationHost
                 builder.ClearProviders();
                 builder.AddConsole();
                 builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
+                builder.AddFilter("WfpChatBotWebApp.TelegramBot.Services.OpenAi", LogLevel.Debug);
             })
             .Build();
 
@@ -104,13 +104,13 @@ public static class ApplicationHost
         serviceCollection.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
         serviceCollection.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
         serviceCollection.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
-        serviceCollection.AddSingleton<IContextKeysService, ContextKeysService>();
+        serviceCollection.AddSingleton<IConversationStore, ConversationStore>();
         serviceCollection.AddSingleton<IThrottlingService, ThrottlingService>();
         serviceCollection.AddSingleton<ILocalTelegramBotService, LocalTelegramBotService>();
         serviceCollection.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
         serviceCollection.AddSingleton<IRandomService, RandomService>();
 
-        serviceCollection.Configure<OpenAiOptions>(hostBuilderContext.Configuration);
+        serviceCollection.Configure<FoundryAgentOptions>(hostBuilderContext.Configuration);
         serviceCollection.Configure<ThrottlingServiceOptions>(hostBuilderContext.Configuration);
     }
 

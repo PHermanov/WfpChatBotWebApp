@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Telegram.Bot;
@@ -89,12 +90,12 @@ public class ImageRoutingTests
             received = Assert.IsType<ImageToolContext>(args[4]);
             return Empty();
         });
-        var contextKeys = new ContextKeysService();
+        var conversationStore = new ConversationStore(new MemoryCache(new MemoryCacheOptions()));
         if (inHistory)
-            contextKeys.SetValue("10_99", Guid.NewGuid());
+            conversationStore.SetConversationId("10_99", "conv_test");
         var logger = new CapturingLogger<BotReplyService>();
         var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
-            new FakeImageMessages(), contextKeys, logger);
+            new FakeImageMessages(), conversationStore, logger);
         await sut.Reply(new Message
         {
             Id = 42, Chat = new Chat { Id = 10 }, Text = "@test_bot домалюй пиво замість телефону", From = new User { Id = 42, FirstName = "Alice" },
@@ -126,7 +127,7 @@ public class ImageRoutingTests
         using var client = new HttpClient(handler);
         var ai = TestProxy.Create<IOpenAiChatService>((_, _) => ImageResponse());
         var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
-            new FakeImageMessages(), new ContextKeysService(), NullLogger<BotReplyService>.Instance);
+            new FakeImageMessages(), new ConversationStore(new MemoryCache(new MemoryCacheOptions())), NullLogger<BotReplyService>.Instance);
         await sut.Reply(new Message
         {
             Id = 42, Chat = new Chat { Id = 10 }, Text = "Draw a cup", From = new User { Id = 42, FirstName = "Alice" }
@@ -137,6 +138,41 @@ public class ImageRoutingTests
         {
             await Task.CompletedTask;
             yield return new OpenAiResponse { ContentType = OpenAiContentType.ImageBytes, ImageContent = ImageTestData.Png, ContentComplete = true };
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BotReply_MapsUserAndAnswerMessagesToConversationOnlyWhenTurnSucceeds(bool succeeds)
+    {
+        string? threadKey = null;
+        using var handler = new ImageHttpHandler((_, _) =>
+            Task.FromResult(ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } })));
+        using var client = new HttpClient(handler);
+        var store = new ConversationStore(new MemoryCache(new MemoryCacheOptions()));
+        var ai = TestProxy.Create<IOpenAiChatService>((_, args) =>
+        {
+            threadKey = Assert.IsType<string>(args![0]);
+            if (succeeds)
+                store.SetConversationId(threadKey, "conv_test");
+            return Empty();
+        });
+        var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
+            new FakeImageMessages(), store, NullLogger<BotReplyService>.Instance);
+
+        await sut.Reply(new Message
+        {
+            Id = 42, Chat = new Chat { Id = 10 }, Text = "@test_bot hello", From = new User { Id = 42, FirstName = "Alice" }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal("10_42", threadKey);
+        Assert.Equal(succeeds, store.TryGetConversationId("10_42", out var userConversation));
+        Assert.Equal(succeeds, store.TryGetConversationId("10_100", out var answerConversation));
+        if (succeeds)
+        {
+            Assert.Equal("conv_test", userConversation);
+            Assert.Equal("conv_test", answerConversation);
         }
     }
 

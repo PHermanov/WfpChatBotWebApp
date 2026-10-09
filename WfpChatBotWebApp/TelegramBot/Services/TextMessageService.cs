@@ -91,7 +91,6 @@ public class TextMessageService(AppDbContext appDbContext, IMemoryCache cache) :
         public const string UserMissing = nameof(UserMissing);
         public const string ImageDescriptionPreText = nameof(ImageDescriptionPreText);
         public const string TakeRest = nameof(TakeRest);
-        public const string SystemPrompt = nameof(SystemPrompt);
         public const string RedrawUsage = nameof(RedrawUsage);
         public const string ImageSourceMissing = nameof(ImageSourceMissing);
         public const string ImageInputInvalid = nameof(ImageInputInvalid);

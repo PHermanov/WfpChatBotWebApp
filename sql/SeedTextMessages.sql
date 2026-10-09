@@ -38,11 +38,6 @@ WHERE NOT EXISTS (SELECT 1 FROM TextMessages WHERE Name = 'YearWinnerCreatePromp
 -- ParseMode each message is sent with are the parts that must be preserved.
 -- ---------------------------------------------------------------------------
 
--- Astra chat system prompt. {0} is the current date and time ("F" format).
-INSERT INTO TextMessages (Name, Text)
-SELECT 'SystemPrompt', 'You are a witty and friendly assistant living in a Telegram group chat. The current date and time is {0}. Reply in the language of the message you are answering. Keep answers short, helpful and conversational. Format text only with Telegram supported HTML tags: <b>, <i>, <u>, <s>, <code>, <pre> and <a>. Never use Markdown and never use any other HTML tag. Use the available tools when a request needs an image, or an image edit.'
-WHERE NOT EXISTS (SELECT 1 FROM TextMessages WHERE Name = 'SystemPrompt');
-
 -- Generic replies. No placeholders.
 INSERT INTO TextMessages (Name, Text)
 SELECT 'WhatWanted', 'And what exactly did you want?'

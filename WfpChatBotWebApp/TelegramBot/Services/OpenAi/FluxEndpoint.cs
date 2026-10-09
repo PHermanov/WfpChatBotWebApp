@@ -1,9 +1,8 @@
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 /// <summary>
-/// Resolves the Azure FLUX (Black Forest Labs provider) REST endpoint from a configured base URL and model id.
-/// Mirrors the resolution rules previously provided by the ElBruno.Text2Image.Foundry SDK so existing
-/// FoundryUrl/FluxModelName configuration keeps working unchanged.
+/// Resolves the Azure FLUX (Black Forest Labs provider) REST endpoint from the configured
+/// <c>FoundryUrl</c> base URL and <c>FluxModelName</c> model id.
 /// </summary>
 internal static class FluxEndpoint
 {

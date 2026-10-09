@@ -18,7 +18,7 @@ public class BotReplyService(
     ITelegramBotClient botClient,
     IOpenAiChatService openAiChatService,
     ITextMessageService messageService,
-    IContextKeysService contextKeysService,
+    IConversationStore conversationStore,
     ILogger<BotReplyService> logger)
     : IBotReplyService
 {
@@ -39,9 +39,9 @@ public class BotReplyService(
 
         // Capture this before GetContextKey, which registers the replied message key itself.
         var repliedMessageInContext = message.ReplyToMessage is not null
-            && contextKeysService.ContainsKey(GetKey(message.Chat.Id, message.ReplyToMessage.MessageId));
+            && conversationStore.ContainsKey(TelegramThreadKey.GetMessageKey(message.Chat.Id, message.ReplyToMessage.MessageId));
 
-        var contextKey = GetContextKey(message);
+        var threadKey = TelegramThreadKey.GetThreadKey(message);
 
         try
         {
@@ -49,7 +49,7 @@ public class BotReplyService(
             var imageContext = await CreateImageToolContext(message, requests, cancellationToken);
             var previousContentLength = 0;
 
-            await foreach (var response in openAiChatService.ProcessMessage(contextKey.Value, message.Chat.Id, requests, cancellationToken, imageContext))
+            await foreach (var response in openAiChatService.ProcessMessage(threadKey, message.Chat.Id, requests, cancellationToken, imageContext))
             {
                 if (response.ContentType is OpenAiContentType.Text && !response.ContentComplete)
                 {
@@ -93,7 +93,11 @@ public class BotReplyService(
         }
         finally
         {
-            SetContextKey(answerMessage, contextKey);
+            if (conversationStore.TryGetConversationId(threadKey, out var conversationId))
+            {
+                conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(message.Chat.Id, message.MessageId), conversationId);
+                conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(answerMessage.Chat.Id, answerMessage.MessageId), conversationId);
+            }
         }
     }
 
@@ -239,30 +243,4 @@ public class BotReplyService(
         }
     }
 
-    private static string GetKey(long chatId, int messageId) => $"{chatId}_{messageId}";
-
-    private KeyValuePair<string, Guid> GetContextKey(Message message)
-    {
-        var key = message.ReplyToMessage is not null
-            ? GetKey(message.Chat.Id, message.ReplyToMessage.MessageId)
-            : GetKey(message.Chat.Id, message.MessageId);
-
-        if (contextKeysService.TryGetValue(key, out var contextKey))
-        {
-            return new KeyValuePair<string, Guid>(key, contextKey);
-        }
-        else
-        {
-            var newContextKey = Guid.NewGuid();
-            contextKeysService.SetValue(key, newContextKey);
-            return new KeyValuePair<string, Guid>(key, newContextKey);
-        }
-    }
-
-    private void SetContextKey(Message answer, KeyValuePair<string, Guid> prevKey)
-    {
-        var key = GetKey(answer.Chat.Id, answer.MessageId);
-        contextKeysService.SetValue(key, prevKey.Value);
-        contextKeysService.RemoveValue(prevKey.Key);
-    }
 }

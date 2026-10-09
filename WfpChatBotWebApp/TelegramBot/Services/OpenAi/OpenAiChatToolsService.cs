@@ -9,63 +9,20 @@ namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
 public interface IOpenAiChatToolsService
 {
-    ResponseTool[] GetRegisteredTools();
-
     IAsyncEnumerable<OpenAiResponse> GetToolCallOutput(
         FunctionCallResponseItem toolCall,
         CancellationToken cancellationToken,
         ImageToolContext? imageContext = null);
 }
 
+// CreateImage/EditImage are declared on the Foundry agent definition (see docs/foundry-agent.md);
+// this service executes the calls the agent returns.
 public class OpenAiChatToolsService(
     IAiImageService aiImageService,
     IAiImageEditService imageEditService,
     ILogger<OpenAiChatToolsService>? logger = null)
     : IOpenAiChatToolsService
 {
-    public ResponseTool[] GetRegisteredTools()
-    {
-        var createImageTool = ResponseTool.CreateFunctionTool(
-            functionName: nameof(aiImageService.CreateImage),
-            functionDescription: "Creates an image by provided prompt.",
-            functionParameters: BinaryData.FromString(
-                """
-                {
-                    "type": "object",
-                    "properties": {
-                        "prompt": {
-                            "type": "string",
-                            "description": "The visual description of a new image to generate. Use EditImage instead when modifying a supplied image."
-                        }
-                    },
-                    "required": [ "prompt" ],
-                    "additionalProperties": false
-                }
-                """),
-            strictModeEnabled: true);
-
-        var editImageTool = ResponseTool.CreateFunctionTool(
-            functionName: nameof(imageEditService.EditImage),
-            functionDescription: "Edits the current attached image or the image being replied to. Requires a supplied source image; preserves the subject while applying the requested changes. Source bytes are supplied by the application, not tool arguments.",
-            functionParameters: BinaryData.FromString(
-                """
-                {
-                    "type": "object",
-                    "properties": {
-                        "prompt": {
-                            "type": "string",
-                            "description": "Describe the changes to the supplied image and what should be preserved."
-                        }
-                    },
-                    "required": [ "prompt" ],
-                    "additionalProperties": false
-                }
-                """),
-            strictModeEnabled: true);
-
-        return [createImageTool, editImageTool];
-    }
-
     public async IAsyncEnumerable<OpenAiResponse> GetToolCallOutput(
         FunctionCallResponseItem toolCall,
         [EnumeratorCancellation] CancellationToken cancellationToken,
