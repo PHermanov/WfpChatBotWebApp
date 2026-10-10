@@ -4,4 +4,5 @@ public sealed record ImageToolContext(
     BinaryData? SourceImage,
     string MissingImageMessage = "",
     string EditFailureMessage = "",
-    Func<CancellationToken, ValueTask<BinaryData?>>? LoadThreadImage = null);
+    Func<CancellationToken, ValueTask<BinaryData?>>? LoadThreadImage = null,
+    int? SourceMessageId = null);

@@ -71,10 +71,12 @@ A starting point for the persona. The app supplies time and participants: each c
 ```text
 You are a witty and friendly assistant living in a Telegram group chat.
 Reply in the language of the message you are answering. Keep answers short, helpful and conversational.
-Each user message starts with a header "Telegram UserId: <id>; Time: <UTC time>"; use it to tell participants apart and to know the current time. Do not repeat the header.
+Each user message starts with a header "Telegram UserId: <id>; MessageId: <id>; ReplyToMessageId: <id>; Time: <UTC time>" (ReplyToMessageId only for replies); use it to tell participants apart, to know the current time, and to find the message a user replies to. Do not repeat the header.
 Format text only with Telegram supported HTML tags: <b>, <i>, <u>, <s>, <code>, <pre> and <a>. Never use Markdown and never use any other HTML tag.
 Do not put links inline; web sources are appended to your reply automatically.
 Use CreateImage when a request needs a new image and EditImage when the user wants to change an attached or replied-to image.
+Images you sent are attached to the conversation after the tool output and labeled with their Telegram MessageId (and the source MessageId for edits); when the user replies to a message, discuss the image with that MessageId, otherwise the latest one.
+Only describe images you can actually see. If an image is unavailable, say so and never describe it from the prompt.
 ```
 
 ### Function tools
@@ -118,7 +120,7 @@ $created = Invoke-RestMethod -Method Post -Uri "$endpoint/agents/$agent/versions
 After each successful turn, the user message and the bot answer are also mapped, so replies continue a chain in private chats and basic groups. The same store keeps the Telegram file id of the conversation's last image as the `EditImage` fallback. A restart clears the map and the next message starts a new conversation.
 - New conversations get a context message (UTC timestamp, participants, bot identity) and metadata `telegram_chat_id` and `telegram_thread_key`. Each user message header includes its send time.
 - Turns in the same conversation run one at a time.
-- Image tools send bytes straight to Telegram, then append a `function_call_output` to the conversation without an extra model turn.
+- Image tools send bytes straight to Telegram, then append a `function_call_output` to the conversation without an extra model turn. Each image Telegram accepted follows its output in the same append as a user `input_image` item labeled with the tool, call id, result MessageId and, for edits, the source MessageId, so later turns can see and compare versions. Undelivered images are not attached; if the append with images fails, the output is appended alone with a note that the image is unavailable.
 - On a failed, incomplete, cancelled, or empty turn, or a tool failure, the thread mapping is removed and unanswered function calls are closed with a failure output (best effort).
 - Web search `url_citation` annotations are appended to the final reply as up to five de-duplicated, HTML-encoded `🔗` links.
 
@@ -134,6 +136,7 @@ Run `dotnet run --project LocalStart/LocalStart.csproj` against development Tele
 4. Follow-ups continue the same conversation in a supergroup reply thread (confirm `MessageThreadId` is present), a private-chat reply chain, and a forum topic.
 5. "Draw ..." calls `CreateImage`, sends the image, and makes no extra model turn; the next reply in the thread succeeds (the tool output was appended).
 6. Replying to a photo with a small edit calls `EditImage` and preserves the subject.
+   - After two consecutive edits, asking about the result describes the latest picture; replying to the first result asks about that version. Check the conversation items in Foundry contain each result image.
 7. Web search and image generation work in the same thread (both come from the agent definition).
 8. Describing a photo works.
 9. "Who is here?" uses the participant context.

@@ -40,6 +40,7 @@
 - After each successful turn, `BotReplyService` records the newest image the turn added to the conversation (a user photo or static sticker, or a bot-generated photo) as a Telegram file id in `IConversationStore`. The file is downloaded only when `EditImage` runs, so image bytes stay request-local.
 - Static image stickers can be edited; animated and video stickers cannot.
 - Images go straight to Telegram, and the tool output is appended to the Foundry conversation (linked by `CallId`) without an extra model turn. A missing or failed edit returns a database-backed message instead of a raw provider error.
+- `BotReplyService` reports each delivered image's Telegram MessageId back on the yielded `OpenAiResponse` (`DeliveredMessageId`). `OpenAiChatService` then appends the result as a labeled user `input_image` item after the output, so the agent can analyze results without a re-upload and tell the original from each version by MessageId. Undelivered or unattachable results are reported in the output as unavailable.
 
 ## Winner artwork
 
@@ -60,4 +61,4 @@ Each winner's image attempt is isolated, so one failure does not affect the othe
 
 ## Automated validation
 
-conversation reuse and tool-output appends, and the last-thread-image fallback.
+conversation reuse and tool-output appends, the last-thread-image fallback, and result images attached to the conversation (labels, undelivered and rejected attachments).

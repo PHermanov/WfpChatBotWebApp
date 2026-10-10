@@ -44,8 +44,8 @@ public class BotReplyService(
         var threadKey = TelegramThreadKey.GetThreadKey(message);
 
         // The newest image this turn adds to the conversation: the current one, otherwise a replied one sent as a new request.
-        var lastImageFileId = message.GetImageFileId()
-            ?? (repliedMessageInContext ? null : message.ReplyToMessage?.GetImageFileId());
+        var lastImage = GetConversationImage(message)
+            ?? (repliedMessageInContext ? null : GetConversationImage(message.ReplyToMessage));
 
         try
         {
@@ -70,13 +70,18 @@ public class BotReplyService(
                     previousContentLength = response.Content.Length;
                 }
 
-                answerMessage = await EditMessage(
+                var updatedMessage = await EditMessage(
                     answerMessage,
                     response,
                     cancellationToken);
 
-                if (response.ContentType is OpenAiContentType.ImageBytes)
-                    lastImageFileId = answerMessage.GetImageFileId() ?? lastImageFileId;
+                if (response.ContentType is OpenAiContentType.ImageBytes && GetConversationImage(updatedMessage) is { } deliveredImage)
+                {
+                    response.DeliveredMessageId = deliveredImage.MessageId;
+                    lastImage = deliveredImage;
+                }
+
+                answerMessage = updatedMessage ?? answerMessage;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
@@ -104,8 +109,8 @@ public class BotReplyService(
             {
                 conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(message.Chat.Id, message.MessageId), conversationId);
                 conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(answerMessage.Chat.Id, answerMessage.MessageId), conversationId);
-                if (lastImageFileId is not null)
-                    conversationStore.SetLastImageFileId(conversationId, lastImageFileId);
+                if (lastImage is not null)
+                    conversationStore.SetLastImage(conversationId, lastImage);
             }
         }
     }
@@ -128,16 +133,22 @@ public class BotReplyService(
     private async Task<ImageToolContext> CreateImageToolContext(Message message, string threadKey, OpenAiRequest[] requests, CancellationToken cancellationToken)
     {
         var source = requests[^1].Image;
+        int? sourceMessageId = source is null ? null : message.MessageId;
         if (source is null && message.ReplyToMessage is not null)
+        {
             source = requests.Length > 1 ? requests[0].Image : (await CreateRequest(message.ReplyToMessage, cancellationToken)).Image;
+            if (source is not null)
+                sourceMessageId = message.ReplyToMessage.MessageId;
+        }
 
         // Without a current or replied image, EditImage falls back to the last image of the thread's conversation.
         Func<CancellationToken, ValueTask<BinaryData?>>? loadThreadImage = null;
         if (source is null
             && conversationStore.TryGetConversationId(threadKey, out var conversationId)
-            && conversationStore.TryGetLastImageFileId(conversationId, out var threadImageFileId))
+            && conversationStore.TryGetLastImage(conversationId, out var threadImage))
         {
-            loadThreadImage = token => botClient.GetImageByFileId(threadImageFileId, token);
+            loadThreadImage = token => botClient.GetImageByFileId(threadImage.FileId, token);
+            sourceMessageId = threadImage.MessageId;
         }
 
         var missing = await messageService.GetMessageByNameAsync(Messages.ImageSourceMissing, cancellationToken);
@@ -146,8 +157,11 @@ public class BotReplyService(
         var failed = await messageService.GetMessageByNameAsync(Messages.ImageEditFailed, cancellationToken);
         if (string.IsNullOrWhiteSpace(failed))
             failed = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken);
-        return new ImageToolContext(source, missing, failed, loadThreadImage);
+        return new ImageToolContext(source, missing, failed, loadThreadImage, sourceMessageId);
     }
+
+    private static ConversationImage? GetConversationImage(Message? message) =>
+        message?.GetImageFileId() is { } fileId ? new ConversationImage(message.MessageId, fileId) : null;
 
     private async Task<OpenAiRequest> CreateRequest(
         Message message,
@@ -155,11 +169,13 @@ public class BotReplyService(
         new()
         {
             UserId = message.From?.Id,
+            MessageId = message.MessageId,
+            ReplyToMessageId = message.ReplyToMessage?.MessageId,
             MessageText = message.GetMessageText(),
             Image = await botClient.GetPhotoFromMessage(message, cancellationToken) ?? await botClient.GetStickerFromMessage(message, cancellationToken)
         };
 
-    private async Task<Message> EditMessage(
+    private async Task<Message?> EditMessage(
         Message message,
         OpenAiResponse response,
         CancellationToken cancellationToken)
@@ -225,7 +241,7 @@ public class BotReplyService(
                 }
         }
 
-        return updatedMessage ?? message;
+        return updatedMessage;
 
         static string GetText(OpenAiResponse response) =>
             response.ContentComplete

@@ -107,8 +107,11 @@ public class ImageRoutingTests
         Assert.Empty(logger.Errors);
         Assert.NotNull(sent);
         Assert.Equal(inHistory ? 1 : 2, sent.Length);
+        Assert.Equal(42, sent[^1].MessageId);
+        Assert.Equal(99, sent[^1].ReplyToMessageId);
         Assert.NotNull(received);
         Assert.Equal(ImageTestData.Png, received.SourceImage!.ToArray());
+        Assert.Equal(99, received.SourceMessageId);
     }
 
     [Fact]
@@ -214,8 +217,8 @@ public class ImageRoutingTests
             Photo = [new PhotoSize { FileId = "thread_photo", FileUniqueId = "thread_photo", Width = 20, Height = 20 }]
         }, TestContext.Current.CancellationToken);
 
-        Assert.True(store.TryGetLastImageFileId("conv_test", out var lastImage));
-        Assert.Equal("thread_photo", lastImage);
+        Assert.True(store.TryGetLastImage("conv_test", out var lastImage));
+        Assert.Equal(new ConversationImage(42, "thread_photo"), lastImage);
 
         // A follow-up replying to the bot's text answer carries no image of its own.
         await sut.Reply(new Message
@@ -232,6 +235,7 @@ public class ImageRoutingTests
         Assert.NotNull(received);
         Assert.Null(received.SourceImage);
         Assert.NotNull(received.LoadThreadImage);
+        Assert.Equal(42, received.SourceMessageId);
         Assert.Single(requestedFiles);
 
         var images = new FakeImages();
@@ -246,25 +250,32 @@ public class ImageRoutingTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task BotReply_RecordsGeneratedImageAsLastThreadImageOnlyWhenTurnSucceeds(bool succeeds)
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task BotReply_ReportsDeliveredImageAndRecordsItOnlyWhenTurnSucceeds(bool succeeds, bool delivered)
     {
         using var handler = new ImageHttpHandler((request, _) =>
         {
             var path = request.RequestUri!.AbsolutePath;
-            return Task.FromResult(path.EndsWith("/editMessageMedia")
-                ? ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, chat = new { id = 10, type = "private" },
-                    photo = new[] { new { file_id = "generated", file_unique_id = "generated", width = 1, height = 1 } } } })
-                : ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } }));
+            if (!path.EndsWith("/editMessageMedia"))
+                return Task.FromResult(ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } }));
+            if (!delivered)
+                return Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("{\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: message can't be edited\"}", System.Text.Encoding.UTF8, "application/json")
+                });
+            return Task.FromResult(ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, chat = new { id = 10, type = "private" },
+                photo = new[] { new { file_id = "generated", file_unique_id = "generated", width = 1, height = 1 } } } }));
         });
         using var client = new HttpClient(handler);
         var store = new ConversationStore(new MemoryCache(new MemoryCacheOptions()));
+        var image = new OpenAiResponse { ContentType = OpenAiContentType.ImageBytes, ImageContent = ImageTestData.Png, ContentComplete = true };
         var ai = TestProxy.Create<IOpenAiChatService>((_, args) =>
         {
             if (succeeds)
                 store.SetConversationId(Assert.IsType<string>(args![0]), "conv_test");
-            return ImageResponse();
+            return ImageResponse(image);
         });
         var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
             new FakeImageMessages(), store, NullLogger<BotReplyService>.Instance);
@@ -274,14 +285,15 @@ public class ImageRoutingTests
             Id = 42, Chat = new Chat { Id = 10 }, Text = "@test_bot draw a cup", From = new User { Id = 42, FirstName = "Alice" }
         }, TestContext.Current.CancellationToken);
 
-        Assert.Equal(succeeds, store.TryGetLastImageFileId("conv_test", out var lastImage));
-        if (succeeds)
-            Assert.Equal("generated", lastImage);
+        Assert.Equal(delivered ? 100 : (int?)null, image.DeliveredMessageId);
+        Assert.Equal(succeeds && delivered, store.TryGetLastImage("conv_test", out var lastImage));
+        if (succeeds && delivered)
+            Assert.Equal(new ConversationImage(100, "generated"), lastImage);
 
-        static async IAsyncEnumerable<OpenAiResponse> ImageResponse()
+        static async IAsyncEnumerable<OpenAiResponse> ImageResponse(OpenAiResponse response)
         {
             await Task.CompletedTask;
-            yield return new OpenAiResponse { ContentType = OpenAiContentType.ImageBytes, ImageContent = ImageTestData.Png, ContentComplete = true };
+            yield return response;
         }
     }
 

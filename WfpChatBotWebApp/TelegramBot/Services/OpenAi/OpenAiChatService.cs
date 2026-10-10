@@ -36,6 +36,9 @@ public class OpenAiChatService(
     : IOpenAiChatService
 {
     private const string FailedToolOutput = "The tool call failed and produced no result.";
+    private const string ImagesAttachedNote = "The resulting image is attached after this output, labeled with its Telegram MessageId.";
+    private const string ImagesUnavailableNote = "The resulting image could not be added to this conversation, so you cannot see it. If asked about it, say that it is unavailable and do not describe it from the prompt.";
+    private const string ImageNotDeliveredOutput = "The image was generated, but sending it to the Telegram chat failed, so neither you nor the user can see it. If asked about it, say that it is unavailable and do not describe it from the prompt.";
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _conversationLocks = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _creationLock = new(1, 1);
 
@@ -166,21 +169,35 @@ public class OpenAiChatService(
                     conversationId);
 
                 StringBuilder toolResult = new();
+                List<ResponseItem> resultImages = [];
                 await foreach (var toolOutput in openAiChatToolsService.GetToolCallOutput(toolCall, cancellationToken, imageContext))
                 {
-                    toolResult.AppendLine(toolOutput.ContentType == OpenAiContentType.ImageBytes
-                        ? "Image generated and sent to the Telegram chat."
-                        : toolOutput.Content);
                     yield return toolOutput;
+
+                    if (toolOutput.ContentType != OpenAiContentType.ImageBytes)
+                    {
+                        toolResult.AppendLine(toolOutput.Content);
+                        continue;
+                    }
+
+                    // DeliveredMessageId is set by the consumer while this iterator was suspended at the yield above.
+                    if (toolOutput.DeliveredMessageId is not { } deliveredMessageId)
+                    {
+                        toolResult.AppendLine(ImageNotDeliveredOutput);
+                        continue;
+                    }
+
+                    var label = DescribeImageResult(toolCall, deliveredMessageId, imageContext);
+                    toolResult.AppendLine($"{label}.");
+                    resultImages.Add(ResponseItem.CreateUserMessageItem([
+                        ResponseContentPart.CreateInputTextPart($"Image of the {label}."),
+                        CreateImagePart(BinaryData.FromBytes(toolOutput.ImageContent!))]));
                 }
 
                 if (toolResult.Length == 0)
                     throw new InvalidOperationException($"OpenAI tool '{toolCall.FunctionName}' returned no output.");
 
-                await conversationsClient.CreateProjectConversationItemsAsync(
-                    conversationId,
-                    [ResponseItem.CreateFunctionCallOutputItem(toolCall.CallId, toolResult.ToString())],
-                    cancellationToken: cancellationToken);
+                await AppendToolOutput(conversationsClient, conversationId, toolCall.CallId, toolResult.ToString(), resultImages, cancellationToken);
                 unansweredCallIds.Remove(toolCall.CallId);
             }
 
@@ -214,7 +231,9 @@ public class OpenAiChatService(
         var me = await GetMe(cancellationToken);
         var isAssistant = request.UserId == me.Id;
         var userId = request.UserId?.ToString(CultureInfo.InvariantCulture) ?? "unknown";
-        var text = $"Telegram UserId: {userId}; Time: {DateTimeOffset.UtcNow:O}\n{request.MessageText ?? string.Empty}";
+        var messageId = request.MessageId is { } id ? $"; MessageId: {id.ToString(CultureInfo.InvariantCulture)}" : string.Empty;
+        var replyTo = request.ReplyToMessageId is { } replyId ? $"; ReplyToMessageId: {replyId.ToString(CultureInfo.InvariantCulture)}" : string.Empty;
+        var text = $"Telegram UserId: {userId}{messageId}{replyTo}; Time: {DateTimeOffset.UtcNow:O}\n{request.MessageText ?? string.Empty}";
 
         if (request.Image is null)
         {
@@ -223,17 +242,67 @@ public class OpenAiChatService(
                 : ResponseItem.CreateUserMessageItem(text)];
         }
 
-        var mediaType = ImageInput.GetMediaType(request.Image) ?? "image/jpeg";
-        var imageUri = new Uri($"data:{mediaType};base64,{Convert.ToBase64String(request.Image.ToArray())}");
-        var imagePart = ResponseContentPart.CreateInputImagePart(imageUri, ResponseImageDetailLevel.High);
+        var imagePart = CreateImagePart(request.Image);
 
         // Responses accepts input images on user messages, not assistant output messages.
         return isAssistant
             ? [ResponseItem.CreateAssistantMessageItem(text),
                 ResponseItem.CreateUserMessageItem([
-                    ResponseContentPart.CreateInputTextPart($"Image attached to the preceding message from Telegram UserId: {userId}."),
+                    ResponseContentPart.CreateInputTextPart($"Image attached to the preceding message from Telegram UserId: {userId}{messageId}."),
                     imagePart])]
             : [ResponseItem.CreateUserMessageItem([ResponseContentPart.CreateInputTextPart(text), imagePart])];
+    }
+
+    private static ResponseContentPart CreateImagePart(BinaryData image)
+    {
+        var mediaType = ImageInput.GetMediaType(image) ?? "image/jpeg";
+        var imageUri = new Uri($"data:{mediaType};base64,{Convert.ToBase64String(image.ToMemory().Span)}");
+        return ResponseContentPart.CreateInputImagePart(imageUri, ResponseImageDetailLevel.High);
+    }
+
+    private static string DescribeImageResult(FunctionCallResponseItem toolCall, int deliveredMessageId, ImageToolContext imageContext)
+    {
+        var source = toolCall.FunctionName == nameof(IAiImageEditService.EditImage) && imageContext.SourceMessageId is { } sourceMessageId
+            ? $", edited from the image in Telegram MessageId: {sourceMessageId.ToString(CultureInfo.InvariantCulture)}"
+            : string.Empty;
+        return $"{toolCall.FunctionName} result (call {toolCall.CallId}) that you sent to the Telegram chat as MessageId: {deliveredMessageId.ToString(CultureInfo.InvariantCulture)}{source}";
+    }
+
+    // Result images go right after the function_call_output; if they cannot be stored, the output alone keeps the conversation valid.
+    private async Task AppendToolOutput(
+        ProjectConversationsClient conversationsClient,
+        string conversationId,
+        string callId,
+        string output,
+        IReadOnlyList<ResponseItem> resultImages,
+        CancellationToken cancellationToken)
+    {
+        if (resultImages.Count > 0)
+        {
+            try
+            {
+                await conversationsClient.CreateProjectConversationItemsAsync(
+                    conversationId,
+                    [ResponseItem.CreateFunctionCallOutputItem(callId, output + ImagesAttachedNote), .. resultImages],
+                    cancellationToken: cancellationToken);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception e)
+            {
+                logger.LogWarning(
+                    "Failed to attach {ImageCount} result images to conversation {ConversationId}: {ErrorType}",
+                    resultImages.Count,
+                    conversationId,
+                    e.GetType().Name);
+                output += ImagesUnavailableNote;
+            }
+        }
+
+        await conversationsClient.CreateProjectConversationItemsAsync(
+            conversationId,
+            [ResponseItem.CreateFunctionCallOutputItem(callId, output)],
+            cancellationToken: cancellationToken);
     }
 
     private async Task<string> GetOrCreateConversationId(

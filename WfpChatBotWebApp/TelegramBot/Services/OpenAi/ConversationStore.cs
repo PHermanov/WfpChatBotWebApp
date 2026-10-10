@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
+using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
 namespace WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -8,8 +10,8 @@ public interface IConversationStore
     bool ContainsKey(string key);
     void SetConversationId(string key, string conversationId);
     void Remove(string key);
-    bool TryGetLastImageFileId(string conversationId, out string fileId);
-    void SetLastImageFileId(string conversationId, string fileId);
+    bool TryGetLastImage(string conversationId, [NotNullWhen(true)] out ConversationImage? image);
+    void SetLastImage(string conversationId, ConversationImage image);
 }
 
 public class ConversationStore(IMemoryCache memoryCache) : IConversationStore
@@ -30,14 +32,15 @@ public class ConversationStore(IMemoryCache memoryCache) : IConversationStore
 
     public void Remove(string key) => memoryCache.Remove(key);
 
-    public bool TryGetLastImageFileId(string conversationId, out string fileId) =>
-        TryGetValue(LastImageKeyPrefix + conversationId, out fileId);
+    public bool TryGetLastImage(string conversationId, [NotNullWhen(true)] out ConversationImage? image) =>
+        memoryCache.TryGetValue(LastImageKeyPrefix + conversationId, out image) && image is not null;
 
-    public void SetLastImageFileId(string conversationId, string fileId)
+    public void SetLastImage(string conversationId, ConversationImage image)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(conversationId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(fileId);
-        SetValue(LastImageKeyPrefix + conversationId, fileId);
+        ArgumentNullException.ThrowIfNull(image);
+        ArgumentException.ThrowIfNullOrWhiteSpace(image.FileId);
+        SetValue(LastImageKeyPrefix + conversationId, image);
     }
 
     private bool TryGetValue(string key, out string value)
@@ -52,7 +55,7 @@ public class ConversationStore(IMemoryCache memoryCache) : IConversationStore
         return false;
     }
 
-    private void SetValue(string key, string value) =>
+    private void SetValue(string key, object value) =>
         memoryCache.Set(key, value, new MemoryCacheEntryOptions
         {
             SlidingExpiration = SlidingExpiration

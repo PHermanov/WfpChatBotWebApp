@@ -145,6 +145,7 @@ public class OpenAiChatServiceTests
     {
         using var harness = new Harness(Completed(Message("A reply.")));
         var referencedMessage = Request("My picture", 123456);
+        referencedMessage.MessageId = 99;
         referencedMessage.Image = BinaryData.FromBytes(new byte[] { 0xFF, 0xD8, 0xFF });
 
         await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [referencedMessage, Request("Change it", 42)], TestContext.Current.CancellationToken));
@@ -155,8 +156,23 @@ public class OpenAiChatServiceTests
         Assert.Contains("My picture", input[0].GetProperty("content")[0].GetProperty("text").GetString());
         Assert.Equal("user", input[1].GetProperty("role").GetString());
         Assert.Contains("123456", input[1].GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.Contains("MessageId: 99", input[1].GetProperty("content")[0].GetProperty("text").GetString());
         Assert.Equal("input_image", input[1].GetProperty("content")[1].GetProperty("type").GetString());
         Assert.Contains("Change it", input[2].GetProperty("content")[0].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task ProcessMessage_HeaderIncludesTelegramMessageAndReplyIds()
+    {
+        using var harness = new Harness(Completed(Message("Sure.")));
+        var request = Request("What differs?", 42);
+        request.MessageId = 43;
+        request.ReplyToMessageId = 100;
+
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [request], TestContext.Current.CancellationToken));
+
+        var input = Assert.Single(Assert.Single(harness.Of(RequestKind.CreateResponse)).Body.GetProperty("input").EnumerateArray());
+        Assert.StartsWith("Telegram UserId: 42; MessageId: 43; ReplyToMessageId: 100; Time: ", input.GetProperty("content")[0].GetProperty("text").GetString());
     }
 
     [Fact]
@@ -165,7 +181,7 @@ public class OpenAiChatServiceTests
         using var harness = new Harness(
             Completed(Reasoning(), Message("Here are your pictures.", "commentary"), FunctionCall("call_first", "first"), FunctionCall("call_second", "second")));
 
-        var results = await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw two images", 42)], TestContext.Current.CancellationToken));
+        var results = await CollectDelivered(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw two images", 42)], TestContext.Current.CancellationToken));
 
         Assert.Single(harness.Of(RequestKind.CreateResponse));
         Assert.Equal(["first", "second"], harness.Images.CreatePrompts);
@@ -174,8 +190,59 @@ public class OpenAiChatServiceTests
 
         var outputs = harness.ToolOutputs();
         Assert.Equal(["call_first", "call_second"], outputs.Select(output => output.CallId));
-        Assert.All(outputs, output => Assert.Contains("Image generated", output.Output));
+        Assert.Contains("CreateImage result (call call_first) that you sent to the Telegram chat as MessageId: 100.", outputs[0].Output);
+        Assert.Contains("CreateImage result (call call_second) that you sent to the Telegram chat as MessageId: 101.", outputs[1].Output);
+        Assert.All(outputs, output => Assert.Contains("attached after this output", output.Output));
         Assert.All(harness.Of(RequestKind.CreateItems), request => Assert.Contains("/conversations/conv_1/items", request.Path));
+
+        // Each output is followed by its labeled result image in the same append.
+        var appends = harness.Of(RequestKind.CreateItems).Select(request => request.Body.GetProperty("items")).ToArray();
+        Assert.Equal(2, appends.Length);
+        for (var i = 0; i < appends.Length; i++)
+        {
+            Assert.Equal(2, appends[i].GetArrayLength());
+            Assert.Equal("function_call_output", appends[i][0].GetProperty("type").GetString());
+            var image = appends[i][1];
+            Assert.Equal("user", image.GetProperty("role").GetString());
+            Assert.Contains($"as MessageId: {100 + i}", image.GetProperty("content")[0].GetProperty("text").GetString());
+            Assert.Equal("input_image", image.GetProperty("content")[1].GetProperty("type").GetString());
+            Assert.Equal($"data:image/png;base64,{Convert.ToBase64String(ImageTestData.Png)}", image.GetProperty("content")[1].GetProperty("image_url").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task ProcessMessage_ReportsUndeliveredImageAsUnavailableWithoutAttachingIt()
+    {
+        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_lost", "first")));
+
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken));
+
+        var append = Assert.Single(harness.Of(RequestKind.CreateItems)).Body.GetProperty("items");
+        Assert.Equal(1, append.GetArrayLength());
+        var output = Assert.Single(harness.ToolOutputs());
+        Assert.Contains("sending it to the Telegram chat failed", output.Output);
+        Assert.Contains("do not describe it from the prompt", output.Output);
+        Assert.True(harness.Store.TryGetConversationId(ThreadKey, out _));
+    }
+
+    [Fact]
+    public async Task ProcessMessage_ReportsResultImageUnavailableWhenConversationRejectsIt()
+    {
+        using var harness = new Harness(Completed(Reasoning(), FunctionCall("call_big", "first")), Completed(Message("Next."))) { RejectImageItems = true };
+
+        await CollectDelivered(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Draw", 42)], TestContext.Current.CancellationToken));
+
+        var appends = harness.Of(RequestKind.CreateItems).Select(request => request.Body.GetProperty("items")).ToArray();
+        Assert.Equal([2, 1], appends.Select(items => items.GetArrayLength()));
+        var output = harness.ToolOutputs()[^1];
+        Assert.Equal("call_big", output.CallId);
+        Assert.Contains("as MessageId: 100", output.Output);
+        Assert.Contains("could not be added to this conversation, so you cannot see it", output.Output);
+        Assert.DoesNotContain("attached after this output", output.Output);
+        Assert.True(harness.Store.TryGetConversationId(ThreadKey, out _));
+
+        await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("What is on it?", 42)], TestContext.Current.CancellationToken));
+        Assert.Single(harness.Of(RequestKind.CreateConversation));
     }
 
     [Fact]
@@ -224,7 +291,7 @@ public class OpenAiChatServiceTests
         Assert.Empty(harness.Images.CreatePrompts);
         var closed = Assert.Single(harness.ToolOutputs());
         Assert.Equal("call_partial", closed.CallId);
-        Assert.DoesNotContain("Image generated", closed.Output);
+        Assert.DoesNotContain("sent to the Telegram chat", closed.Output);
         Assert.False(harness.Store.TryGetConversationId(ThreadKey, out _));
 
         await Collect(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Retry", 42)], TestContext.Current.CancellationToken));
@@ -247,7 +314,7 @@ public class OpenAiChatServiceTests
 
         var closed = Assert.Single(harness.ToolOutputs());
         Assert.Equal("call_failed", closed.CallId);
-        Assert.DoesNotContain("Image generated", closed.Output);
+        Assert.DoesNotContain("sent to the Telegram chat", closed.Output);
         Assert.False(harness.Store.TryGetConversationId(ThreadKey, out _));
     }
 
@@ -357,6 +424,21 @@ public class OpenAiChatServiceTests
         Assert.Contains("Attach a photo.", outputs[1].Output);
     }
 
+    [Fact]
+    public async Task EditImage_LabelsResultWithResultAndSourceMessageIds()
+    {
+        var editCall = new { type = "function_call", id = "fc_edit", call_id = "call_edit", name = "EditImage", arguments = "{\"prompt\":\"use a VAZ-2106 carburetor\"}", status = "completed" };
+        using var harness = new Harness(Completed(Reasoning(), editCall));
+
+        await CollectDelivered(harness.Service.ProcessMessage(ThreadKey, 10, [Request("Swap the carburetor", 42)], TestContext.Current.CancellationToken,
+            new ImageToolContext(new BinaryData(ImageTestData.Png), "Attach a photo.", "Editing failed.", SourceMessageId: 77)), firstMessageId: 120);
+
+        const string label = "EditImage result (call call_edit) that you sent to the Telegram chat as MessageId: 120, edited from the image in Telegram MessageId: 77";
+        Assert.Contains(label, Assert.Single(harness.ToolOutputs()).Output);
+        var image = Assert.Single(harness.Of(RequestKind.CreateItems)).Body.GetProperty("items")[1];
+        Assert.Equal($"Image of the {label}.", image.GetProperty("content")[0].GetProperty("text").GetString());
+    }
+
     [Theory]
     [InlineData("{}")]
     [InlineData("{\"prompt\":null}")]
@@ -448,6 +530,20 @@ public class OpenAiChatServiceTests
         return results;
     }
 
+    // Mirrors BotReplyService: reports each image as delivered before resuming enumeration.
+    private static async Task<List<OpenAiResponse>> CollectDelivered(IAsyncEnumerable<OpenAiResponse> stream, int firstMessageId = 100)
+    {
+        List<OpenAiResponse> results = [];
+        var messageId = firstMessageId;
+        await foreach (var result in stream)
+        {
+            if (result.ContentType == OpenAiContentType.ImageBytes)
+                result.DeliveredMessageId = messageId++;
+            results.Add(result);
+        }
+        return results;
+    }
+
     private static OpenAiRequest Request(string text, long userId) => new() { MessageText = text, UserId = userId };
 
     private static string Event(object update)
@@ -507,6 +603,7 @@ public class OpenAiChatServiceTests
         public ConversationStore Store { get; } = new(new MemoryCache(new MemoryCacheOptions()));
         public OpenAiChatService Service { get; }
         public bool BlockResponses { get; init; }
+        public bool RejectImageItems { get; init; }
         public TaskCompletionSource ResponseStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public IReadOnlyList<CapturedRequest> Requests
@@ -542,6 +639,11 @@ public class OpenAiChatServiceTests
                         var id = $"conv_{Interlocked.Increment(ref _conversationCount)}";
                         return Json($"{{\"id\":\"{id}\",\"object\":\"conversation\",\"created_at\":1800000000,\"metadata\":{{}}}}");
                     case RequestKind.CreateItems:
+                        if (RejectImageItems && body.RootElement.GetProperty("items").EnumerateArray().Any(item => item.TryGetProperty("role", out _)))
+                            return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                            {
+                                Content = new StringContent("{\"error\":{\"message\":\"Rejected.\",\"type\":\"invalid_request_error\"}}", Encoding.UTF8, "application/json")
+                            };
                         return Json("{\"object\":\"list\",\"data\":[],\"first_id\":null,\"last_id\":null,\"has_more\":false}");
                     case RequestKind.CreateResponse:
                         ResponseStarted.TrySetResult();
@@ -582,7 +684,7 @@ public class OpenAiChatServiceTests
 
         public List<(string CallId, string Output)> ToolOutputs() => Of(RequestKind.CreateItems)
             .SelectMany(request => request.Body.GetProperty("items").EnumerateArray())
-            .Where(item => item.GetProperty("type").GetString() == "function_call_output")
+            .Where(item => item.TryGetProperty("type", out var type) && type.GetString() == "function_call_output")
             .Select(item => (item.GetProperty("call_id").GetString()!, item.GetProperty("output").GetString()!))
             .ToList();
 
