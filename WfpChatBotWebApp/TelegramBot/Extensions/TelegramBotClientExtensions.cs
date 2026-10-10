@@ -232,21 +232,7 @@ public static class TelegramBotClientExtensions
                 throw new ArgumentException("The image exceeds the 10 MiB limit.");
             var fileId = photo?.FileId;
 
-            if (fileId != null)
-            {
-                var imageFile = await client.GetFile(fileId, cancellationToken);
-                if (imageFile.FileSize > ImageInput.MaxBytes)
-                    throw new ArgumentException("The image exceeds the 10 MiB limit.");
-
-                if (!string.IsNullOrEmpty(imageFile.FilePath))
-                {
-                    using var imageStream = new MemoryStream();
-                    await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
-                    return new BinaryData(imageStream.ToArray());
-                }
-            }
-
-            return null;
+            return fileId is null ? null : await client.GetImageByFileId(fileId, cancellationToken);
         }
 
         public async ValueTask<BinaryData?> GetStickerFromMessage(
@@ -258,17 +244,23 @@ public static class TelegramBotClientExtensions
 
             var fileId = message.Sticker?.FileId;
 
-            if (fileId != null)
-            {
-                var stickerFile = await client.GetFile(fileId, cancellationToken);
-                if (!string.IsNullOrEmpty(stickerFile.FilePath))
-                {
-                    using var stickerStream = new MemoryStream();
-                    await client.DownloadFile(stickerFile.FilePath, stickerStream, cancellationToken);
-                    return new BinaryData(stickerStream.ToArray());
-                }
-            }
-            return null;
+            return fileId is null ? null : await client.GetImageByFileId(fileId, cancellationToken);
+        }
+
+        public async ValueTask<BinaryData?> GetImageByFileId(
+            string fileId,
+            CancellationToken cancellationToken)
+        {
+            var imageFile = await client.GetFile(fileId, cancellationToken);
+            if (imageFile.FileSize > ImageInput.MaxBytes)
+                throw new ArgumentException("The image exceeds the 10 MiB limit.");
+
+            if (string.IsNullOrEmpty(imageFile.FilePath))
+                return null;
+
+            using var imageStream = new MemoryStream();
+            await client.DownloadFile(imageFile.FilePath, imageStream, cancellationToken);
+            return new BinaryData(imageStream.ToArray());
         }
     }
 }

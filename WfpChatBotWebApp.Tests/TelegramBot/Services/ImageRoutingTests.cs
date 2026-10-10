@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using OpenAI.Responses;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
@@ -9,6 +10,8 @@ using WfpChatBotWebApp.TelegramBot.Commands;
 using WfpChatBotWebApp.TelegramBot.Services;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
+
+#pragma warning disable OPENAI001 // Exercise the installed experimental Responses APIs.
 
 namespace WfpChatBotWebApp.Tests.TelegramBot.Services;
 
@@ -173,6 +176,112 @@ public class ImageRoutingTests
         {
             Assert.Equal("conv_test", userConversation);
             Assert.Equal("conv_test", answerConversation);
+        }
+    }
+
+    [Fact]
+    public async Task BotReply_EditsLastThreadImageWhenFollowUpHasNoImage()
+    {
+        ImageToolContext? received = null;
+        List<string> requestedFiles = [];
+        using var handler = new ImageHttpHandler(async (request, token) =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/getFile"))
+            {
+                requestedFiles.Add(await request.Content!.ReadAsStringAsync(token));
+                return ImageTestData.Json(new { ok = true, result = new { file_id = "thread_photo", file_unique_id = "thread_photo", file_path = "thread.png" } });
+            }
+            if (path.EndsWith("/thread.png"))
+                return new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new ByteArrayContent(ImageTestData.Png) };
+            return ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } });
+        });
+        using var client = new HttpClient(handler);
+        var store = new ConversationStore(new MemoryCache(new MemoryCacheOptions()));
+        var ai = TestProxy.Create<IOpenAiChatService>((_, args) =>
+        {
+            store.SetConversationId(Assert.IsType<string>(args![0]), "conv_test");
+            received = Assert.IsType<ImageToolContext>(args[4]);
+            return Empty();
+        });
+        var logger = new CapturingLogger<BotReplyService>();
+        var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
+            new FakeImageMessages(), store, logger);
+
+        await sut.Reply(new Message
+        {
+            Id = 42, Chat = new Chat { Id = 10 }, Caption = "@test_bot look", From = new User { Id = 42, FirstName = "Alice" },
+            Photo = [new PhotoSize { FileId = "thread_photo", FileUniqueId = "thread_photo", Width = 20, Height = 20 }]
+        }, TestContext.Current.CancellationToken);
+
+        Assert.True(store.TryGetLastImageFileId("conv_test", out var lastImage));
+        Assert.Equal("thread_photo", lastImage);
+
+        // A follow-up replying to the bot's text answer carries no image of its own.
+        await sut.Reply(new Message
+        {
+            Id = 43, Chat = new Chat { Id = 10 }, Text = "@test_bot add a dad", From = new User { Id = 7, FirstName = "Bob" },
+            ReplyToMessage = new Message
+            {
+                Id = 100, Chat = new Chat { Id = 10 }, Text = "...",
+                From = new User { Id = 123456, IsBot = true, FirstName = "Bot", Username = "test_bot" }
+            }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Empty(logger.Errors);
+        Assert.NotNull(received);
+        Assert.Null(received.SourceImage);
+        Assert.NotNull(received.LoadThreadImage);
+        Assert.Single(requestedFiles);
+
+        var images = new FakeImages();
+        var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString("{\"prompt\":\"add a dad\"}"));
+        var result = await ImageEditingTests.Collect(new OpenAiChatToolsService(images, images)
+            .GetToolCallOutput(call, TestContext.Current.CancellationToken, received));
+
+        Assert.Equal(OpenAiContentType.ImageBytes, Assert.Single(result).ContentType);
+        Assert.Equal(ImageTestData.Png, Assert.Single(images.Sources).ToArray());
+        Assert.Equal(2, requestedFiles.Count);
+        Assert.All(requestedFiles, body => Assert.Contains("thread_photo", body));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BotReply_RecordsGeneratedImageAsLastThreadImageOnlyWhenTurnSucceeds(bool succeeds)
+    {
+        using var handler = new ImageHttpHandler((request, _) =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            return Task.FromResult(path.EndsWith("/editMessageMedia")
+                ? ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, chat = new { id = 10, type = "private" },
+                    photo = new[] { new { file_id = "generated", file_unique_id = "generated", width = 1, height = 1 } } } })
+                : ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } }));
+        });
+        using var client = new HttpClient(handler);
+        var store = new ConversationStore(new MemoryCache(new MemoryCacheOptions()));
+        var ai = TestProxy.Create<IOpenAiChatService>((_, args) =>
+        {
+            if (succeeds)
+                store.SetConversationId(Assert.IsType<string>(args![0]), "conv_test");
+            return ImageResponse();
+        });
+        var sut = new BotReplyService(new TelegramBotClient("123456:test-key", client), ai,
+            new FakeImageMessages(), store, NullLogger<BotReplyService>.Instance);
+
+        await sut.Reply(new Message
+        {
+            Id = 42, Chat = new Chat { Id = 10 }, Text = "@test_bot draw a cup", From = new User { Id = 42, FirstName = "Alice" }
+        }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(succeeds, store.TryGetLastImageFileId("conv_test", out var lastImage));
+        if (succeeds)
+            Assert.Equal("generated", lastImage);
+
+        static async IAsyncEnumerable<OpenAiResponse> ImageResponse()
+        {
+            await Task.CompletedTask;
+            yield return new OpenAiResponse { ContentType = OpenAiContentType.ImageBytes, ImageContent = ImageTestData.Png, ContentComplete = true };
         }
     }
 

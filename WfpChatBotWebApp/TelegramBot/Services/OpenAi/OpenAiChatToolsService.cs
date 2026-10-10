@@ -62,11 +62,12 @@ public class OpenAiChatToolsService(
 
     private async Task<OpenAiResponse> Edit(string prompt, ImageToolContext? context, CancellationToken cancellationToken)
     {
-        if (context?.SourceImage is null)
-            return TextResult(context?.MissingImageMessage, "EditImage requires a current or replied image.");
+        var source = await GetSourceImage(context, cancellationToken);
+        if (source is null)
+            return TextResult(context?.MissingImageMessage, "EditImage requires a current, replied, or thread image.");
         try
         {
-            await foreach (var bytes in imageEditService.EditImage(prompt, context.SourceImage, cancellationToken: cancellationToken))
+            await foreach (var bytes in imageEditService.EditImage(prompt, source, cancellationToken: cancellationToken))
             {
                 if (bytes.Length == 0) break;
                 return new OpenAiResponse { ContentType = OpenAiContentType.ImageBytes, ImageContent = bytes, ContentComplete = true };
@@ -77,7 +78,23 @@ public class OpenAiChatToolsService(
         catch (Exception e)
         {
             logger?.LogWarning("EditImage tool failed: {ErrorType}", e.GetType().Name);
-            return TextResult(context.EditFailureMessage, "EditImage failed to produce an image.");
+            return TextResult(context?.EditFailureMessage, "EditImage failed to produce an image.");
+        }
+    }
+
+    private async Task<BinaryData?> GetSourceImage(ImageToolContext? context, CancellationToken cancellationToken)
+    {
+        if (context?.SourceImage is not null || context?.LoadThreadImage is null)
+            return context?.SourceImage;
+        try
+        {
+            return await context.LoadThreadImage(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception e)
+        {
+            logger?.LogWarning("EditImage could not load the last thread image: {ErrorType}", e.GetType().Name);
+            return null;
         }
     }
 
