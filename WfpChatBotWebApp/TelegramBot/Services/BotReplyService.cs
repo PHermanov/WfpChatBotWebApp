@@ -43,10 +43,14 @@ public class BotReplyService(
 
         var threadKey = TelegramThreadKey.GetThreadKey(message);
 
+        // The newest image this turn adds to the conversation: the current one, otherwise a replied one sent as a new request.
+        var lastImageFileId = message.GetImageFileId()
+            ?? (repliedMessageInContext ? null : message.ReplyToMessage?.GetImageFileId());
+
         try
         {
             var requests = await CreateRequestsQueue(message, repliedMessageInContext, cancellationToken);
-            var imageContext = await CreateImageToolContext(message, requests, cancellationToken);
+            var imageContext = await CreateImageToolContext(message, threadKey, requests, cancellationToken);
             var previousContentLength = 0;
 
             await foreach (var response in openAiChatService.ProcessMessage(threadKey, message.Chat.Id, requests, cancellationToken, imageContext))
@@ -70,6 +74,9 @@ public class BotReplyService(
                     answerMessage,
                     response,
                     cancellationToken);
+
+                if (response.ContentType is OpenAiContentType.ImageBytes)
+                    lastImageFileId = answerMessage.GetImageFileId() ?? lastImageFileId;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(1100), cancellationToken);
             }
@@ -97,6 +104,8 @@ public class BotReplyService(
             {
                 conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(message.Chat.Id, message.MessageId), conversationId);
                 conversationStore.SetConversationId(TelegramThreadKey.GetMessageKey(answerMessage.Chat.Id, answerMessage.MessageId), conversationId);
+                if (lastImageFileId is not null)
+                    conversationStore.SetLastImageFileId(conversationId, lastImageFileId);
             }
         }
     }
@@ -116,11 +125,20 @@ public class BotReplyService(
         return requests.ToArray();
     }
 
-    private async Task<ImageToolContext> CreateImageToolContext(Message message, OpenAiRequest[] requests, CancellationToken cancellationToken)
+    private async Task<ImageToolContext> CreateImageToolContext(Message message, string threadKey, OpenAiRequest[] requests, CancellationToken cancellationToken)
     {
         var source = requests[^1].Image;
         if (source is null && message.ReplyToMessage is not null)
             source = requests.Length > 1 ? requests[0].Image : (await CreateRequest(message.ReplyToMessage, cancellationToken)).Image;
+
+        // Without a current or replied image, EditImage falls back to the last image of the thread's conversation.
+        Func<CancellationToken, ValueTask<BinaryData?>>? loadThreadImage = null;
+        if (source is null
+            && conversationStore.TryGetConversationId(threadKey, out var conversationId)
+            && conversationStore.TryGetLastImageFileId(conversationId, out var threadImageFileId))
+        {
+            loadThreadImage = token => botClient.GetImageByFileId(threadImageFileId, token);
+        }
 
         var missing = await messageService.GetMessageByNameAsync(Messages.ImageSourceMissing, cancellationToken);
         if (string.IsNullOrWhiteSpace(missing))
@@ -128,7 +146,7 @@ public class BotReplyService(
         var failed = await messageService.GetMessageByNameAsync(Messages.ImageEditFailed, cancellationToken);
         if (string.IsNullOrWhiteSpace(failed))
             failed = await messageService.GetMessageByNameAsync(Messages.FuckOff, cancellationToken);
-        return new ImageToolContext(source, missing, failed);
+        return new ImageToolContext(source, missing, failed, loadThreadImage);
     }
 
     private async Task<OpenAiRequest> CreateRequest(

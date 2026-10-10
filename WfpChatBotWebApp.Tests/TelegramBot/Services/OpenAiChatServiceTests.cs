@@ -386,6 +386,49 @@ public class OpenAiChatServiceTests
         Assert.Equal("Editing failed.", Assert.Single(result).Content);
     }
 
+    [Fact]
+    public async Task EditImage_LoadsThreadImageOnlyWithoutRequestSource()
+    {
+        var images = new FakeImages();
+        var tools = new OpenAiChatToolsService(images, images);
+        var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString("{\"prompt\":\"cup\"}"));
+        var source = new BinaryData(ImageTestData.Png);
+        var threadImage = new BinaryData(ImageTestData.Png);
+        var loads = 0;
+
+        await Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken,
+            new ImageToolContext(source, "Attach a photo.", "Editing failed.", LoadThreadImage)));
+        var result = await Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken,
+            new ImageToolContext(null, "Attach a photo.", "Editing failed.", LoadThreadImage)));
+
+        Assert.Equal(OpenAiContentType.ImageBytes, Assert.Single(result).ContentType);
+        Assert.Equal(1, loads);
+        Assert.Collection(images.Sources,
+            first => Assert.Same(source, first),
+            second => Assert.Same(threadImage, second));
+
+        ValueTask<BinaryData?> LoadThreadImage(CancellationToken _)
+        {
+            loads++;
+            return ValueTask.FromResult<BinaryData?>(threadImage);
+        }
+    }
+
+    [Fact]
+    public async Task EditImage_ReturnsMissingMessageWhenThreadImageCannotBeLoaded()
+    {
+        var images = new FakeImages();
+        var tools = new OpenAiChatToolsService(images, images);
+        var call = ResponseItem.CreateFunctionCallItem("call_edit", "EditImage", BinaryData.FromString("{\"prompt\":\"cup\"}"));
+
+        var result = await Collect(tools.GetToolCallOutput(call, TestContext.Current.CancellationToken,
+            new ImageToolContext(null, "Attach a photo.", "Editing failed.",
+                _ => ValueTask.FromException<BinaryData?>(new HttpRequestException("Private Telegram details")))));
+
+        Assert.Equal("Attach a photo.", Assert.Single(result).Content);
+        Assert.Empty(images.Sources);
+    }
+
     private static ServiceProvider BuildProvider(Dictionary<string, string?> settings)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();

@@ -115,7 +115,7 @@ $created = Invoke-RestMethod -Method Post -Uri "$endpoint/agents/$agent/versions
 
 - Each Telegram thread maps to a server-side Foundry conversation, which holds the history. The app sends only the new messages per turn with `truncation=auto`; tools come from the agent definition.
 - Thread key `{chatId}_{id}`: `MessageThreadId` when Telegram provides it (supergroup reply threads and forum topics; a whole forum topic shares one conversation), otherwise the message itself for a new mention, or the replied message for a reply.
-- Foundry assigns conversation IDs (`conv_...`), so the app keeps an in-memory map (`IConversationStore`, 7-day sliding expiry). After each successful turn, the user message and the bot answer are also mapped, so replies continue a chain in private chats and basic groups. A restart clears the map and the next message starts a new conversation.
+After each successful turn, the user message and the bot answer are also mapped, so replies continue a chain in private chats and basic groups. The same store keeps the Telegram file id of the conversation's last image as the `EditImage` fallback. A restart clears the map and the next message starts a new conversation.
 - New conversations get a context message (UTC timestamp, participants, bot identity) and metadata `telegram_chat_id` and `telegram_thread_key`. Each user message header includes its send time.
 - Turns in the same conversation run one at a time.
 - Image tools send bytes straight to Telegram, then append a `function_call_output` to the conversation without an extra model turn.

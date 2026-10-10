@@ -36,7 +36,8 @@
 ## Agent image tools
 
 - `CreateImage` and `EditImage` are strict, prompt-only function tools declared on the Foundry agent (see `docs/foundry-agent.md`). `OpenAiChatToolsService` validates the tool name and the non-empty `prompt` argument and runs FLUX.
-- The application supplies the current or replied image bytes to `EditImage`; the model never supplies URLs, file paths, or base64. A request without a source image never reuses an earlier request's image. Replied images stay available even when their messages are already part of the conversation.
+- The application supplies the source image bytes to `EditImage`; the model never supplies URLs, file paths, or base64. Source precedence: the current image, then the replied image, then the last image in the thread's Foundry conversation. Replied images stay available even when their messages are already part of the conversation.
+- After each successful turn, `BotReplyService` records the newest image the turn added to the conversation (a user photo or static sticker, or a bot-generated photo) as a Telegram file id in `IConversationStore`. The file is downloaded only when `EditImage` runs, so image bytes stay request-local.
 - Static image stickers can be edited; animated and video stickers cannot.
 - Images go straight to Telegram, and the tool output is appended to the Foundry conversation (linked by `CallId`) without an extra model turn. A missing or failed edit returns a database-backed message instead of a raw provider error.
 
@@ -54,9 +55,9 @@ Each winner's image attempt is isolated, so one failure does not affect the othe
 - Use development Telegram resources and run `dotnet run --project LocalStart/LocalStart.csproj`.
 - Exercise `/draw`, `/redraw` as a caption, `/redraw` replying to a user photo, and `/redraw` replying to a bot-generated photo. Also check missing prompt/image and throttling.
 - For `/redraw`, use a localized prompt (for example, adding only a small red hat) and confirm the subject and background stay recognizable. A successful response and a valid PNG alone do not prove the source image was used.
-- Ask the agent to modify a supplied photo and confirm it calls `EditImage`; ask for a new picture to check `CreateImage`. Reply to an edited photo to check that replied images are still found.
+- Ask the agent to modify a supplied photo and confirm it calls `EditImage`; ask for a new picture to check `CreateImage`. Reply to an edited photo to check that replied images are still found. Reply to a bot text answer in a thread that contains a photo and ask for an edit to check that the last thread image is used.
 - Winner artwork runs through `/monthlyjob` and `/yearlyjob` in LocalStart, which process every game-enabled chat in the configured database; point LocalStart at a development database first.
 
 ## Automated validation
 
-Run `dotnet build WfpChatBotWebApp.slnx` and `dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj`. Tests use fake image services, fake Telegram HTTP, and a fake Foundry project transport with a fake credential; they need no bot credentials, Telegram resources, or Foundry access. Coverage includes command parsing and routing, source precedence, the FLUX request contract, winner fallback and cancellation, caption preservation, tool argument validation, conversation reuse and tool-output appends, and image isolation between requests.
+conversation reuse and tool-output appends, and the last-thread-image fallback.
