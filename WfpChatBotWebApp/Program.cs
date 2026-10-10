@@ -84,12 +84,12 @@ builder.Services.AddSingleton<IAiImageService>(services => services.GetRequiredS
 builder.Services.AddSingleton<IAiImageEditService>(services => services.GetRequiredService<FluxImageService>());
 builder.Services.AddScoped<IWinnerArtworkService, WinnerArtworkService>();
 builder.Services.AddScoped<IWinnerAnnouncementService, WinnerAnnouncementService>();
-builder.Services.AddSingleton<IContextKeysService, ContextKeysService>();
+builder.Services.AddSingleton<IConversationStore, ConversationStore>();
 builder.Services.AddSingleton<IThrottlingService, ThrottlingService>();
 builder.Services.AddSingleton<IRandomNumbersQueueService, RandomNumbersQueueService>();
 builder.Services.AddSingleton<IRandomService, RandomService>();
 
-builder.Services.Configure<OpenAiOptions>(builder.Configuration);
+builder.Services.Configure<FoundryAgentOptions>(builder.Configuration);
 builder.Services.Configure<ThrottlingServiceOptions>(builder.Configuration);
 
 // Message bus
