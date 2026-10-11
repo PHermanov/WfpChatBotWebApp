@@ -1,3 +1,4 @@
+using System.ClientModel.Primitives;
 using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
 using Azure.Core;
@@ -24,7 +25,8 @@ public static class OpenAiServiceCollectionExtensions
             var credential = provider.GetRequiredService<TokenCredential>();
             return new AIProjectClient(
                 endpoint: new Uri(options.FoundryProjectEndpoint),
-                tokenProvider: credential);
+                tokenProvider: credential,
+                options: CreateProjectClientOptions());
         });
 
         services.AddSingleton(provider =>
@@ -45,5 +47,12 @@ public static class OpenAiServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    public static AIProjectClientOptions CreateProjectClientOptions()
+    {
+        var options = new AIProjectClientOptions();
+        options.AddPolicy(new MemoryScopePolicy(), PipelinePosition.PerCall);
+        return options;
     }
 }

@@ -80,6 +80,7 @@ public class OpenAiChatServiceTests
 
         var response = Assert.Single(harness.Of(RequestKind.CreateResponse));
         Assert.Equal("/api/projects/test-project/openai/v1/responses", response.Path);
+        Assert.Equal("telegram_chat_10", response.MemoryUserId);
         var agent = response.Body.GetProperty("agent_reference");
         Assert.Equal("agent_reference", agent.GetProperty("type").GetString());
         Assert.Equal("wfp-agent", agent.GetProperty("name").GetString());
@@ -100,6 +101,19 @@ public class OpenAiChatServiceTests
         Assert.EndsWith("\nHello", input.GetProperty("content")[0].GetProperty("text").GetString());
 
         Assert.All(harness.Requests, request => Assert.Equal("Bearer test-token", request.Authorization));
+    }
+
+    [Fact]
+    public async Task ProcessMessage_SendsChatScopedMemoryUserIdForEachChat()
+    {
+        using var harness = new Harness(Completed(Message("First.")), Completed(Message("Second.")));
+
+        await Collect(harness.Service.ProcessMessage("10_1", 10, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+        await Collect(harness.Service.ProcessMessage("-100200_1", -100200, [Request("Hello", 42)], TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            ["telegram_chat_10", "telegram_chat_-100200"],
+            harness.Of(RequestKind.CreateResponse).Select(response => response.MemoryUserId));
     }
 
     [Fact]
@@ -589,7 +603,7 @@ public class OpenAiChatServiceTests
         Other
     }
 
-    private sealed record CapturedRequest(RequestKind Kind, string Path, string? Authorization, JsonElement Body);
+    private sealed record CapturedRequest(RequestKind Kind, string Path, string? Authorization, string? MemoryUserId, JsonElement Body);
 
     private sealed class Harness : IDisposable
     {
@@ -630,8 +644,9 @@ public class OpenAiChatServiceTests
                     : path.EndsWith("/conversations", StringComparison.Ordinal) ? RequestKind.CreateConversation
                     : path.EndsWith("/responses", StringComparison.Ordinal) ? RequestKind.CreateResponse
                     : RequestKind.Other;
+                var memoryUserId = request.Headers.TryGetValues(MemoryScopePolicy.HeaderName, out var memoryValues) ? memoryValues.Single() : null;
                 lock (_lock)
-                    _requests.Add(new CapturedRequest(kind, path, request.Headers.Authorization?.ToString(), body.RootElement.Clone()));
+                    _requests.Add(new CapturedRequest(kind, path, request.Headers.Authorization?.ToString(), memoryUserId, body.RootElement.Clone()));
 
                 switch (kind)
                 {
@@ -661,10 +676,12 @@ public class OpenAiChatServiceTests
                 }
             }));
 
+            var clientOptions = OpenAiServiceCollectionExtensions.CreateProjectClientOptions();
+            clientOptions.Transport = new HttpClientPipelineTransport(_httpClient);
             var projectClient = new AIProjectClient(
                 endpoint: new Uri("https://example.services.ai.azure.com/api/projects/test-project"),
                 tokenProvider: new FakeTokenCredential(),
-                options: new AIProjectClientOptions { Transport = new HttpClientPipelineTransport(_httpClient) });
+                options: clientOptions);
 
             var repository = TestProxy.Create<IGameRepository>((method, _) => method!.Name == nameof(IGameRepository.GetActiveUsersForChatAsync)
                 ? Task.FromResult(Array.Empty<User>())

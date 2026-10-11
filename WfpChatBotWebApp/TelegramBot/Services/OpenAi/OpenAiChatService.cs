@@ -84,6 +84,8 @@ public class OpenAiChatService(
             var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(
                 agentReference,
                 defaultConversationId: conversationId);
+            // Isolates Foundry agent memory per Telegram chat; the request is sent on the first stream read below.
+            using var memoryScope = MemoryScopePolicy.Use(MemoryScopePolicy.ForChat(chatId));
             var stream = responsesClient.CreateResponseStreamingAsync(responseOptions, cancellationToken);
             StringBuilder contentBuilder = new();
             ResponseResult? completedResponse = null;

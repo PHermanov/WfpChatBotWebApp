@@ -43,6 +43,7 @@
 - Use FLUX (`FluxImageService`) for all image creation and editing; `IAiImageService`/`IAiImageEditService` return image bytes (`IAsyncEnumerable<byte[]>`) that callers upload to Telegram.
 Append tool outputs via `CreateProjectConversationItemsAsync` (linked by `CallId`) without an extra model turn, followed by each Telegram-delivered result image as a labeled user `input_image` item (`DeliveredMessageId` handshake with `BotReplyService`); report undelivered or unattachable images as unavailable; on failure, drop the mapping and close unanswered calls.
 - Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1.
+- Keep Foundry agent memory chat-scoped: the memory tool scope stays `{{$userId}}` and `MemoryScopePolicy` (registered via `CreateProjectClientOptions()`) sends `x-memory-user-id: telegram_chat_{chatId}` around each agent response request.
 - Send edit sources to FLUX as raw base64 `input_image`; keep edit source bytes request-local (resolve current, then replied, then the conversation's last image file id from `IConversationStore`), and validate against the provider contract, not SDK serialization.
 - Keep winner prompts in `TextMessages`; seed scripts and setup are documented in `docs/image-editing.md`. Preserve edit-to-generate-to-text fallbacks.
 - Test image/Telegram/agent behavior with fakes (fake `TokenCredential` + `HttpClientPipelineTransport`) and assert the observed wire contract; use LocalStart with development resources for explicit manual verification (checklist in `docs/foundry-agent.md`).

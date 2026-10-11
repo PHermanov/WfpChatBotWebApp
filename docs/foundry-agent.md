@@ -123,6 +123,7 @@ After each successful turn, the user message and the bot answer are also mapped,
 - Image tools send bytes straight to Telegram, then append a `function_call_output` to the conversation without an extra model turn. Each image Telegram accepted follows its output in the same append as a user `input_image` item labeled with the tool, call id, result MessageId and, for edits, the source MessageId, so later turns can see and compare versions. Undelivered images are not attached; if the append with images fails, the output is appended alone with a note that the image is unavailable.
 - On a failed, incomplete, cancelled, or empty turn, or a tool failure, the thread mapping is removed and unanswered function calls are closed with a failure output (best effort).
 - Web search `url_citation` annotations are appended to the final reply as up to five de-duplicated, HTML-encoded `🔗` links.
+- Agent memory is isolated per Telegram chat: keep the memory tool scope as `{{$userId}}`; the app sends `x-memory-user-id: telegram_chat_{chatId}` on every agent response request (`MemoryScopePolicy`). Without the header Foundry falls back to the caller's Entra identity, so all chats would share one scope. Memories stored before this header was sent stay under the old identity scope until you delete that scope yourself.
 
 Chat text and images are stored in Foundry conversations and are kept until deleted; see `docs/foundry-agent-known-limits.md` for retention and other open decisions.
 
@@ -149,4 +150,4 @@ If a request field is rejected with `Not allowed when agent is specified`, move 
 
 ## Automated validation
 
-`dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj` uses a fake credential and fake HTTP transport and needs no Foundry or Telegram access. It asserts the SDK wire contract: `POST {project}/openai/v1/responses` with `agent_reference {type, name, version}` and `conversation {id}` and without `tools`/`tool_choice`, conversation creation with metadata and context, and `conversations/{id}/items` tool outputs.
+`POST {project}/openai/v1/responses` with `agent_reference {type, name, version}`, `conversation {id}`, and the chat-scoped `x-memory-user-id` header and without
