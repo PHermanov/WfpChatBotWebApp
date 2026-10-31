@@ -18,6 +18,7 @@ public interface IGameRepository
     Task<PlayerCountViewModel?> GetWinnerForMonthAsync(long chatId, DateTime date, CancellationToken cancellationToken);
     Task<long[]> GetGameEnabledChatIdsAsync(CancellationToken cancellationToken);
     Task<bool> IsAutoReplyEnabledAsync(long chatId, CancellationToken cancellationToken);
+    Task<bool> IsAiEnabledAsync(long chatId, CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersAsync(long chatId, CancellationToken cancellationToken);
     Task<PlayerCountViewModel?> GetYearWinnerByCountAsync(long chatId, int year, CancellationToken cancellationToken);
     Task<PlayerCountViewModel[]> GetAllWinnersForYearAsync(long chatId, int year, CancellationToken cancellationToken);

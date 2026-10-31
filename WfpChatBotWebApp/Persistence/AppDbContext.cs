@@ -92,6 +92,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.AutoReplyEnabled)
                 .IsRequired();
 
+            entity.Property(e => e.AiEnabled)
+                .IsRequired();
+
             entity.Property(e => e.Comment)
                 .HasColumnType("nvarchar(max)");
         });

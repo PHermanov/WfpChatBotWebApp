@@ -67,7 +67,8 @@ public class TelegramBotService(
             var botMentioned = IsBotMentioned(message, bot.Username);
             if (botMentioned)
             {
-                await botReplyService.Reply(message, cancellationToken);
+                if (await gameRepository.IsAiEnabledAsync(message.Chat.Id, cancellationToken))
+                    await botReplyService.Reply(message, cancellationToken);
                 return;
             }
 

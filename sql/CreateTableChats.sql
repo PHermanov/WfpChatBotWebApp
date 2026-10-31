@@ -4,5 +4,6 @@ CREATE TABLE Chats
     ChatId BIGINT NOT NULL,
     GameEnabled bit NOT NULL,
     AutoReplyEnabled bit NOT NULL,
+    AiEnabled bit NOT NULL,
     Comment nvarchar(max) NULL
 )
