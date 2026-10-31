@@ -10,7 +10,7 @@ namespace WfpChatBotWebApp.TelegramBot.Services;
 public interface IAutoReplyService
 {
     Task AutoReplyAsync(Message message, CancellationToken cancellationToken);
-    Task AutoMentionAsync(Message message, CancellationToken cancellationToken);
+    Task MentionAllAsync(Message message, CancellationToken cancellationToken);
 }
 
 public partial class AutoReplyService(
@@ -58,7 +58,7 @@ public partial class AutoReplyService(
         }
     }
 
-    public async Task AutoMentionAsync(Message message, CancellationToken cancellationToken)
+    public async Task MentionAllAsync(Message message, CancellationToken cancellationToken)
     {
         var splitText = message.Text!.Split([' '], StringSplitOptions.RemoveEmptyEntries);
 

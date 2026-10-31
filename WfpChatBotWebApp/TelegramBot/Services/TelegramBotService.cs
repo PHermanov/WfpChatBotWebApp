@@ -76,8 +76,10 @@ public class TelegramBotService(
 
             if (!string.IsNullOrEmpty(text) && !text.TrimStart().StartsWith('/'))
             {
-                await autoReplyService.AutoReplyAsync(message, cancellationToken);
-                await autoReplyService.AutoMentionAsync(message, cancellationToken);
+                if (await gameRepository.IsAutoReplyEnabledAsync(message.Chat.Id, cancellationToken))
+                    await autoReplyService.AutoReplyAsync(message, cancellationToken);
+
+                await autoReplyService.MentionAllAsync(message, cancellationToken);
             }
         }
     }

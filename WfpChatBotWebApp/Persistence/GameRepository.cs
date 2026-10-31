@@ -40,7 +40,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
                 var newChat = new Chat
                 {
                     ChatId = chatId,
-                    GameEnabled = false
+                    GameEnabled = false,
+                    AutoReplyEnabled = false
                 };
                 await context.Chats.AddAsync(newChat, cancellationToken);
             }
@@ -145,6 +146,16 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             .Where(c => c.GameEnabled)
             .Select(c => c.ChatId)
             .ToArrayAsync(cancellationToken);
+
+    public async Task<bool> IsAutoReplyEnabledAsync(long chatId, CancellationToken cancellationToken)
+        => await cache.GetOrCreateAsync((nameof(Chat.AutoReplyEnabled), chatId), async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            return await context.Chats
+                .Where(c => c.ChatId == chatId)
+                .Select(c => c.AutoReplyEnabled)
+                .FirstOrDefaultAsync(cancellationToken);
+        });
 
     #endregion
 }
