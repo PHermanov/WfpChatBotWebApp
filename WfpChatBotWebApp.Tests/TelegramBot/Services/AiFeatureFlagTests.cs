@@ -4,6 +4,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 
 namespace WfpChatBotWebApp.Tests.TelegramBot.Services;
 
@@ -47,6 +48,7 @@ public class AiFeatureFlagTests
             TestProxy.Create<IAutoReplyService>((_, _) => throw new InvalidOperationException("Unexpected auto reply")),
             new TelegramBotClient("123456:test-key", client),
             botReply,
+            TestProxy.Create<IInstagramService>((_, _) => throw new InvalidOperationException("Unexpected Instagram call")),
             TestProxy.Create<IThrottlingService>((_, _) => throw new InvalidOperationException("Unexpected throttling")),
             NullLogger<TelegramBotService>.Instance);
 

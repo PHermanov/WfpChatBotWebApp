@@ -51,7 +51,7 @@ public class OpenAiChatService(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(threadKey);
         imageContext ??= new ImageToolContext(requests.LastOrDefault(request => request.Image is not null)?.Image);
-        var conversationsClient = projectClient.OpenAI.GetProjectConversationsClient();
+        var conversationsClient = projectClient.ProjectOpenAIClient.GetProjectConversationsClient();
         var conversationId = await GetOrCreateConversationId(threadKey, chatId, conversationsClient, cancellationToken);
         var conversationLock = _conversationLocks.GetOrAdd(conversationId, _ => new SemaphoreSlim(1, 1));
 
@@ -81,7 +81,7 @@ public class OpenAiChatService(
                 responseOptions.InputItems.Add(inputItem);
             }
 
-            var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(
+            var responsesClient = projectClient.ProjectOpenAIClient.GetProjectResponsesClientForAgent(
                 agentReference,
                 defaultConversationId: conversationId);
             // Isolates Foundry agent memory per Telegram chat; the request is sent on the first stream read below.

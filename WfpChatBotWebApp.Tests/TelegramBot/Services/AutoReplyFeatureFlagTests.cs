@@ -4,6 +4,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 
 namespace WfpChatBotWebApp.Tests.TelegramBot.Services;
 
@@ -46,6 +47,9 @@ public class AutoReplyFeatureFlagTests
             autoReply,
             new TelegramBotClient("123456:test-key", client),
             TestProxy.Create<IBotReplyService>((_, _) => throw new InvalidOperationException("Unexpected AI reply")),
+            TestProxy.Create<IInstagramService>((method, _) => method!.Name == nameof(IInstagramService.ContainsInstagramUrl)
+                ? false
+                : throw new InvalidOperationException("Unexpected Instagram reshare")),
             TestProxy.Create<IThrottlingService>((_, _) => throw new InvalidOperationException("Unexpected throttling")),
             NullLogger<TelegramBotService>.Instance);
 

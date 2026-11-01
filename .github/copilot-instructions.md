@@ -3,7 +3,7 @@
 ## Architecture and data flow
 - This is a .NET 10 solution: `WfpChatBotWebApp/` is the ASP.NET Core production app; `LocalStart/` references it and runs the same bot logic through Telegram long polling; `WfpChatBotWebApp.Tests/` is the xUnit test project.
 - Production startup is centralized in `WfpChatBotWebApp/Program.cs`: Azure Key Vault configuration, Azure Monitor, SQL Server EF Core, Telegram/HTTP clients, MediatR, and an in-memory SlimMessageBus are registered there.
-- Telegram posts to `POST /telegrambot`. `TelegramBotController` validates `X-Telegram-Bot-Api-Secret-Token`, publishes the `Update` without awaiting it, and returns immediately; ten scoped consumers call `ITelegramBotService.HandleUpdateAsync`, which routes mentions/photos to AI replies, slash commands to MediatR, and ordinary text to auto-reply services.
+- Telegram posts to `POST /telegrambot`. `TelegramBotController` validates `X-Telegram-Bot-Api-Secret-Token`, publishes the `Update` without awaiting it, and returns immediately; ten scoped consumers call `ITelegramBotService.HandleUpdateAsync`, which routes mentions/photos to AI replies, slash commands to MediatR, Instagram post/reel links to `InstagramService` (reshares media as reply files instead of auto-replying), and ordinary text to auto-reply services.
 - `JobController` maps secret-protected job names to MediatR requests. `LocalStart/LocalTelegramBotService.cs` exposes equivalent `/dailyjob`, `/monthlyjob`, etc. commands for local debugging.
 
 ## Established implementation patterns
@@ -18,13 +18,13 @@
 ## Configuration and integrations
 - Production loads secrets through `AzureKeyVaultUri` and `DefaultAzureCredential`; expected keys are referenced in `Program.cs` and the options classes (`FoundryAgentOptions`, `ThrottlingServiceOptions`). Do not add Foundry agent keys to `appsettings.json`; LocalStart uses `appSettingsLocal.json`, production uses Key Vault.
 - `LocalStart` loads `appSettingsLocal.json`, uses SQLite `local.db`, console logging, and long polling instead of webhooks/SQL Server. Never copy credential values from local settings into code, docs, tests, or logs.
-- Named HTTP clients are `Google`, `Pictures`, `Random`, and `Flux`; Telegram uses the typed `ITelegramBotClient`. Keep these names when resolving clients and register named clients in both hosts.
-- External systems include Telegram Bot API, Microsoft Foundry (agent and FLUX), Google Custom Search, random.org, Azure SQL/SQLite, Azure Key Vault, Azure Monitor, and Azure Blob-hosted stickers.
+- Named HTTP clients are `Google`, `Pictures`, `Random`, `Flux`, and `Instagram` (no auto-redirect/cookies; media redirects are followed manually only to Instagram CDN hosts); Telegram uses the typed `ITelegramBotClient`. Keep these names when resolving clients and register named clients in both hosts.
+- External systems include Telegram Bot API, Microsoft Foundry (agent and FLUX), Google Custom Search, random.org, public Instagram post/embed pages and CDN, Azure SQL/SQLite, Azure Key Vault, Azure Monitor, and Azure Blob-hosted stickers.
 
 ## Build, run, and deployment
 - CI restores the test project and referenced web project, builds the web project, runs `WfpChatBotWebApp.Tests`, and only then publishes the deployment artifact.
 - Run local polling with `dotnet run --project LocalStart/LocalStart.csproj`; run the webhook app with `dotnet run --project WfpChatBotWebApp/WfpChatBotWebApp.csproj` when Azure credentials/configuration are available.
-- Run automated tests with `dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj`; add focused xUnit coverage for changed behavior, then validate the affected project or full solution build.
+- Run automated tests with `dotnet test WfpChatBotWebApp.Tests/WfpChatBotWebApp.Tests.csproj` (root `global.json` opts `dotnet test` into Microsoft.Testing.Platform, required by xUnit v3 on the .NET 10 SDK); add focused xUnit coverage for changed behavior, then validate the affected project or full solution build.
 - `.github/workflows/master_wfpchatbotwebapp.yml` runs for relevant web, test, solution, and workflow changes on `master`; failed tests block publishing and Azure Web App deployment.
 
 ## Copilot Instructions
@@ -39,10 +39,10 @@
 - Use imperative mood for instructions (e.g., "Use X" instead of "You should use X").
 
 ### AI and image integration
-- Use the Foundry agent for Astra chat: `AddOpenAiClients()` (both hosts) registers `AIProjectClient` with `DefaultAzureCredential` and an `AgentReference` from `FoundryProjectEndpoint`/`FoundryAgentName`/`FoundryAgentVersion`; build a per-turn `ProjectResponsesClient` via `projectClient.OpenAI.GetProjectResponsesClientForAgent(agent, conversationId)`. The agent owns model, reasoning, persona instructions, and tools; send only input items, streaming, and `truncation`. `FoundryUrl` + `OpenAiKey` serve FLUX only.
+- Use the Foundry agent for Astra chat: `AddOpenAiClients()` (both hosts) registers `AIProjectClient` with `DefaultAzureCredential` and an `AgentReference` from `FoundryProjectEndpoint`/`FoundryAgentName`/`FoundryAgentVersion`; build a per-turn `ProjectResponsesClient` via `projectClient.ProjectOpenAIClient.GetProjectResponsesClientForAgent(agent, conversationId)`. The agent owns model, reasoning, persona instructions, and tools; send only input items, streaming, and `truncation`. `FoundryUrl` + `OpenAiKey` serve FLUX only.
 - Use FLUX (`FluxImageService`) for all image creation and editing; `IAiImageService`/`IAiImageEditService` return image bytes (`IAsyncEnumerable<byte[]>`) that callers upload to Telegram.
 Append tool outputs via `CreateProjectConversationItemsAsync` (linked by `CallId`) without an extra model turn, followed by each Telegram-delivered result image as a labeled user `input_image` item (`DeliveredMessageId` handshake with `BotReplyService`); report undelivered or unattachable images as unavailable; on failure, drop the mapping and close unanswered calls.
-- Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1.
+- Use file-scoped OPENAI001 pragmas for the experimental Responses APIs in OpenAI 2.9.1. Keep the `OpenAI` package at the version `Azure.AI.Extensions.OpenAI` is built against (2.9.1 for 2.0.0); newer `OpenAI` releases compile but fail at runtime with `MissingMethodException`.
 - Keep Foundry agent memory chat-scoped: the memory tool scope stays `{{$userId}}` and `MemoryScopePolicy` (registered via `CreateProjectClientOptions()`) sends `x-memory-user-id: telegram_chat_{chatId}` around each agent response request.
 - Send edit sources to FLUX as raw base64 `input_image`; keep edit source bytes request-local (resolve current, then replied, then the conversation's last image file id from `IConversationStore`), and validate against the provider contract, not SDK serialization.
 - Keep winner prompts in `TextMessages`; seed scripts and setup are documented in `docs/image-editing.md`. Preserve edit-to-generate-to-text fallbacks.

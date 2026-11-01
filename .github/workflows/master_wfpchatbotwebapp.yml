@@ -8,6 +8,7 @@ on:
       - WfpChatBotWebApp/**
       - WfpChatBotWebApp.Tests/**
       - WfpChatBotWebApp.slnx
+      - global.json
       - .github/workflows/master_wfpchatbotwebapp.yml
   workflow_dispatch:
 

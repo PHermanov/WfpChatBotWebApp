@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Azure.Identity;
 using SlimMessageBus.Host;
 using SlimMessageBus.Host.Memory;
+using System.Net;
 using System.Reflection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -54,6 +56,14 @@ builder.Services.AddHttpClient("Random",
 builder.Services.AddHttpClient("Flux", client => client.Timeout = TimeSpan.FromMinutes(5))
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
+builder.Services.AddHttpClient("Instagram", client => client.Timeout = TimeSpan.FromMinutes(2))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AllowAutoRedirect = false,
+        UseCookies = false,
+        AutomaticDecompression = DecompressionMethods.All
+    });
+
 builder.Services.AddDbContext<AppDbContext>(
     dbContextOptions => dbContextOptions.UseSqlServer(builder.Configuration["azure-sql-connection-string"]));
 
@@ -75,6 +85,7 @@ builder.Services.AddScoped<IReplyMessagesService, ReplyMessagesService>();
 builder.Services.AddScoped<IStickerService, StickerService>();
 builder.Services.AddScoped<IAutoReplyService, AutoReplyService>();
 builder.Services.AddScoped<IBotReplyService, BotReplyService>();
+builder.Services.AddScoped<IInstagramService, InstagramService>();
 builder.Services.AddOpenAiClients();
 builder.Services.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
 builder.Services.AddSingleton<IOpenAiChatService, OpenAiChatService>();

@@ -4,6 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands.Common;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 
 namespace WfpChatBotWebApp.TelegramBot.Services;
 
@@ -18,6 +19,7 @@ public class TelegramBotService(
     IAutoReplyService autoReplyService,
     ITelegramBotClient botClient,
     IBotReplyService botReplyService,
+    IInstagramService instagramService,
     IThrottlingService throttlingService,
     ILogger<TelegramBotService> logger)
     : ITelegramBotService
@@ -77,7 +79,9 @@ public class TelegramBotService(
 
             if (!string.IsNullOrEmpty(text) && !text.TrimStart().StartsWith('/'))
             {
-                if (await gameRepository.IsAutoReplyEnabledAsync(message.Chat.Id, cancellationToken))
+                if (instagramService.ContainsInstagramUrl(message))
+                    await instagramService.TrySendMediaAsync(message, cancellationToken);
+                else if (await gameRepository.IsAutoReplyEnabledAsync(message.Chat.Id, cancellationToken))
                     await autoReplyService.AutoReplyAsync(message, cancellationToken);
 
                 await autoReplyService.MentionAllAsync(message, cancellationToken);

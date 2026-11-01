@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,6 +8,7 @@ using Telegram.Bot;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 using WfpChatBotWebApp.TelegramBot.Services.InternetSearch;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 
@@ -81,6 +83,14 @@ public static class ApplicationHost
         serviceCollection.AddHttpClient("Flux", client => client.Timeout = TimeSpan.FromMinutes(5))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
+        serviceCollection.AddHttpClient("Instagram", client => client.Timeout = TimeSpan.FromMinutes(2))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+                UseCookies = false,
+                AutomaticDecompression = DecompressionMethods.All
+            });
+
         serviceCollection.AddMemoryCache();
         serviceCollection.AddMediatR(conf =>
         {
@@ -95,6 +105,7 @@ public static class ApplicationHost
         serviceCollection.AddScoped<IStickerService, StickerService>();
         serviceCollection.AddScoped<IAutoReplyService, AutoReplyService>();
         serviceCollection.AddScoped<IBotReplyService, BotReplyService>();
+        serviceCollection.AddScoped<IInstagramService, InstagramService>();
         serviceCollection.AddOpenAiClients();
         serviceCollection.AddSingleton<IOpenAiChatToolsService, OpenAiChatToolsService>();
         serviceCollection.AddSingleton<IOpenAiChatService, OpenAiChatService>();

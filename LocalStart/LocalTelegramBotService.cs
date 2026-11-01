@@ -8,6 +8,7 @@ using Telegram.Bot.Types.Enums;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Jobs;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 
 namespace LocalStart;
 
@@ -28,6 +29,7 @@ public class LocalTelegramBotService : ILocalTelegramBotService
         IGameRepository gameRepository,
         IAutoReplyService autoReplyService,
         IBotReplyService botReplyService,
+        IInstagramService instagramService,
         IThrottlingService throttlingService,
         ILogger<TelegramBotService> logger)
     {
@@ -40,6 +42,7 @@ public class LocalTelegramBotService : ILocalTelegramBotService
             autoReplyService,
             _telegramBotClient,
             botReplyService,
+            instagramService,
             throttlingService,
             logger);
     }

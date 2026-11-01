@@ -186,7 +186,7 @@ public static class TelegramBotClientExtensions
             }
         }
 
-        public async Task TrySendVideoAsync(
+        public async Task<Message?> TrySendVideoAsync(
             ChatId chatId,
             InputFile video,
             ILogger logger,
@@ -195,15 +195,43 @@ public static class TelegramBotClientExtensions
         {
             try
             {
-                await client.SendVideo(
+                return await client.SendVideo(
                     chatId: chatId,
                     video: video,
                     replyParameters: replyToMessageId,
+                    supportsStreaming: true,
                     cancellationToken: cancellationToken);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Exception in TrySendVideoAsync");
+
+                return null;
+            }
+        }
+
+        public async Task<Message[]?> TrySendMediaGroupAsync(
+            ChatId chatId,
+            IEnumerable<IAlbumInputMedia> media,
+            ILogger logger,
+            int replyToMessageId = 0,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await client.SendMediaGroup(
+                    chatId: chatId,
+                    media: media,
+                    replyParameters: replyToMessageId,
+                    cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Exception in TrySendMediaGroupAsync");
+
+                return null;
             }
         }
 

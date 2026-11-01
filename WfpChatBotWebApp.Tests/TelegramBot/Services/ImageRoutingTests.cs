@@ -8,6 +8,7 @@ using Telegram.Bot.Types;
 using WfpChatBotWebApp.Persistence;
 using WfpChatBotWebApp.TelegramBot.Commands;
 using WfpChatBotWebApp.TelegramBot.Services;
+using WfpChatBotWebApp.TelegramBot.Services.Instagram;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi;
 using WfpChatBotWebApp.TelegramBot.Services.OpenAi.Models;
 
@@ -52,6 +53,7 @@ public class ImageRoutingTests
             TestProxy.Create<IAutoReplyService>((_, _) => throw new InvalidOperationException("Unexpected auto reply")),
             new TelegramBotClient("123456:test-key", client),
             TestProxy.Create<IBotReplyService>((_, _) => throw new InvalidOperationException("Unexpected AI reply")),
+            TestProxy.Create<IInstagramService>((_, _) => throw new InvalidOperationException("Unexpected Instagram call")),
             throttle, NullLogger<TelegramBotService>.Instance);
         var message = new Message
         {
