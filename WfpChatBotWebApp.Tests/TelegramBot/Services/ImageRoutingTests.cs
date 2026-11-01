@@ -125,7 +125,7 @@ public class ImageRoutingTests
             {
                 Assert.EndsWith("/editMessageMedia", path);
                 var multipart = Assert.IsType<MultipartFormDataContent>(request.Content);
-                var image = Assert.Single(multipart.Where(part => part.Headers.ContentDisposition?.FileName?.Trim('"') == "image.png"));
+                var image = Assert.Single(multipart, part => part.Headers.ContentDisposition?.FileName?.Trim('"') == "image.png");
                 uploaded = await image.ReadAsByteArrayAsync(token);
             }
             return ImageTestData.Json(new { ok = true, result = new { message_id = 100, date = 0, text = "...", chat = new { id = 10, type = "private" } } });
