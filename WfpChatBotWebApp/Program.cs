@@ -114,7 +114,7 @@ builder.Services.AddSlimMessageBus(mbb =>
                     .Instances(10))
                 .WithProviderMemory();
         }
-    ).AddHttpContextAccessor(); // This is required for the SlimMessageBus.Host.AspNetCore plugin
+    );
 
 var app = builder.Build();
 
