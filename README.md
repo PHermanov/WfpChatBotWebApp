@@ -6,9 +6,4 @@ This project aims to provide users with an interactive conversational interface 
 To get started, clone the repo and open the solution file WfpChatBotWebApp.slnx in Visual Studio.
 Configure the required settings before running: `LocalStart/appSettingsLocal.json` for local polling (see `LocalStart/appSettingsLocal.example.json`), Key Vault for production.
 
-Documentation:
-- [Foundry agent chat integration](docs/foundry-agent.md)
-- [Image generation, editing, and winner artwork](docs/image-editing.md)
-- [Foundry agent known limits](docs/foundry-agent-known-limits.md)
-
 For contributing, please fork the repository and submit a pull request with your changes.
