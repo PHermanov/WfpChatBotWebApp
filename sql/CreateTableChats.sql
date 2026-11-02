@@ -5,5 +5,6 @@ CREATE TABLE Chats
     GameEnabled bit NOT NULL,
     AutoReplyEnabled bit NOT NULL,
     AiEnabled bit NOT NULL,
+    InstagramEnabled bit NOT NULL,
     Comment nvarchar(max) NULL
 )

@@ -95,6 +95,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.AiEnabled)
                 .IsRequired();
 
+            entity.Property(e => e.InstagramEnabled)
+                .IsRequired();
+
             entity.Property(e => e.Comment)
                 .HasColumnType("nvarchar(max)");
         });

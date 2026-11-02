@@ -7,5 +7,6 @@ public record Chat
     public bool GameEnabled { get; set; }
     public bool AutoReplyEnabled { get; set; }
     public bool AiEnabled { get; set; }
+    public bool InstagramEnabled { get; set; }
     public string? Comment { get; set; }
 }

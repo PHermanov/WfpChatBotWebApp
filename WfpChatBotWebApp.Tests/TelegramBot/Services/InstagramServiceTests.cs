@@ -220,9 +220,12 @@ public class InstagramServiceTests
             return Task.FromResult(ImageTestData.Json(new { ok = true, result = new { id = 123456, is_bot = true, first_name = "Bot", username = "test_bot" } }));
         });
         using var client = new HttpClient(handler);
-        var repository = TestProxy.Create<IGameRepository>((method, _) => method!.Name == nameof(IGameRepository.CheckUserAsync)
-            ? Task.CompletedTask
-            : throw new InvalidOperationException($"Unexpected repository call {method.Name}"));
+        var repository = TestProxy.Create<IGameRepository>((method, _) => method!.Name switch
+        {
+            nameof(IGameRepository.CheckUserAsync) => Task.CompletedTask,
+            nameof(IGameRepository.IsInstagramEnabledAsync) => Task.FromResult(true),
+            _ => throw new InvalidOperationException($"Unexpected repository call {method.Name}")
+        });
         var instagram = TestProxy.Create<IInstagramService>((method, _) =>
         {
             calls.Add(method!.Name);

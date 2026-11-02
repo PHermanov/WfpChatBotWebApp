@@ -42,7 +42,8 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
                     ChatId = chatId,
                     GameEnabled = false,
                     AutoReplyEnabled = false,
-                    AiEnabled = false
+                    AiEnabled = false,
+                    InstagramEnabled = true
                 };
                 await context.Chats.AddAsync(newChat, cancellationToken);
             }
@@ -165,6 +166,16 @@ public class GameRepository(AppDbContext context, IMemoryCache cache) : IGameRep
             return await context.Chats
                 .Where(c => c.ChatId == chatId)
                 .Select(c => c.AiEnabled)
+                .FirstOrDefaultAsync(cancellationToken);
+        });
+
+    public async Task<bool> IsInstagramEnabledAsync(long chatId, CancellationToken cancellationToken)
+        => await cache.GetOrCreateAsync((nameof(Chat.InstagramEnabled), chatId), async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            return await context.Chats
+                .Where(c => c.ChatId == chatId)
+                .Select(c => c.InstagramEnabled)
                 .FirstOrDefaultAsync(cancellationToken);
         });
 

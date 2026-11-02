@@ -79,7 +79,8 @@ public class TelegramBotService(
 
             if (!string.IsNullOrEmpty(text) && !text.TrimStart().StartsWith('/'))
             {
-                if (instagramService.ContainsInstagramUrl(message))
+                if (instagramService.ContainsInstagramUrl(message)
+                    && await gameRepository.IsInstagramEnabledAsync(message.Chat.Id, cancellationToken))
                     await instagramService.TrySendMediaAsync(message, cancellationToken);
                 else if (await gameRepository.IsAutoReplyEnabledAsync(message.Chat.Id, cancellationToken))
                     await autoReplyService.AutoReplyAsync(message, cancellationToken);

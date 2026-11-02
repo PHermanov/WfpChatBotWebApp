@@ -3,7 +3,7 @@
 ## Architecture and data flow
 - This is a .NET 10 solution: `WfpChatBotWebApp/` is the ASP.NET Core production app; `LocalStart/` references it and runs the same bot logic through Telegram long polling; `WfpChatBotWebApp.Tests/` is the xUnit test project.
 - Production startup is centralized in `WfpChatBotWebApp/Program.cs`: Azure Key Vault configuration, Azure Monitor, SQL Server EF Core, Telegram/HTTP clients, MediatR, and an in-memory SlimMessageBus are registered there.
-- Telegram posts to `POST /telegrambot`. `TelegramBotController` validates `X-Telegram-Bot-Api-Secret-Token`, publishes the `Update` without awaiting it, and returns immediately; ten scoped consumers call `ITelegramBotService.HandleUpdateAsync`, which routes mentions/photos to AI replies, slash commands to MediatR, Instagram post/reel links to `InstagramService` (reshares media as reply files instead of auto-replying), and ordinary text to auto-reply services.
+Instagram post/reel links to `InstagramService` when the chat's `InstagramEnabled` flag is on (reshares media as reply files instead of auto-replying)
 - `JobController` maps secret-protected job names to MediatR requests. `LocalStart/LocalTelegramBotService.cs` exposes equivalent `/dailyjob`, `/monthlyjob`, etc. commands for local debugging.
 
 ## Established implementation patterns
